@@ -5,12 +5,12 @@ import React from "react";
 export default function FCCACHomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-teal-900">
-      {/* HERO SECTION - Enhanced storytelling */}
+      {/* HERO SECTION - Enhanced storytelling with real FCCAC building */}
       <section className="relative overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAD/APIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUWEHInGBMhORobHBCNHw8fEUFSNCYqLyFVLBzNHi4+T1Bjkzw6LCRU7/2gAMAwEAAhEDEQA/A/n1+DfwM8P/ABO0fRtXvb+70zWLG5tbqOQaVNNG8kEyTSRyZ+wnAZzOK1/Cf7CPg7T9G8O+CdI8Y+INC1fRbCFdOv5ftFfK8QN3Lf8AJo7D9sTw')"
+            backgroundImage: "url('http://localhost:1337/uploads/Front_of_FCCAC_e5b8d9f0f5.jpg')"
           }}
         ></div>
         <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-purple-900/50 to-black/70"></div>
@@ -69,20 +69,20 @@ export default function FCCACHomePage() {
         </div>
       </section>
 
-      {/* ABOUT SECTION - Enhanced with mission focus */}
+      {/* ABOUT SECTION - Enhanced with mission focus and real storefront imagery */}
       <section className="py-20 bg-gradient-to-r from-slate-800 to-slate-900">
         <div className="container mx-auto px-6">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-teal-400">
             Our Creative Community Story
           </h2>
           
-          {/* Gallery showcase */}
+          {/* Gallery showcase with real FCCAC storefront */}
           <div className="mb-16">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div className="order-2 md:order-1">
                 <img 
-                  src="data:image/jpeg;base64,..." 
-                  alt="FCCAC Interior Gallery Display featuring Harmony for Hope tree mural and local artwork" 
+                  src="http://localhost:1337/uploads/FCCAC_storefrontwindow_9d420bff25.jpg" 
+                  alt="FCCAC Storefront Gallery Display featuring local artwork curated by Karen Leathers" 
                   className="rounded-2xl shadow-2xl w-full h-80 object-cover"
                 />
               </div>
@@ -222,7 +222,7 @@ export default function FCCACHomePage() {
         </div>
       </section>
 
-      {/* MEMBERSHIP & ENGAGEMENT SECTION */}
+      {/* MEMBERSHIP & ENGAGEMENT SECTION with real community photo */}
       <section className="py-20 bg-gradient-to-r from-slate-800 to-slate-900">
         <div className="container mx-auto px-6">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-400">
@@ -272,7 +272,7 @@ export default function FCCACHomePage() {
             </div>
           </div>
 
-          {/* Community engagement showcase */}
+          {/* Community engagement showcase with real community photo */}
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="bg-gradient-to-br from-green-800/50 to-emerald-800/50 p-8 rounded-2xl shadow-2xl border border-green-400/20">
               <h3 className="text-2xl font-bold text-amber-300 mb-4">🤗 Intergenerational Community</h3>
@@ -286,8 +286,8 @@ export default function FCCACHomePage() {
             </div>
             <div>
               <img 
-                src="data:image/jpeg;base64,..." 
-                alt="Community gathering showing multiple generations enjoying activities together at FCCAC" 
+                src="http://localhost:1337/uploads/Various_ages_arts_e912934c91.jpg" 
+                alt="Community gathering showing multiple generations enjoying arts activities together at FCCAC" 
                 className="rounded-2xl shadow-2xl w-full h-64 object-cover"
               />
             </div>
@@ -295,7 +295,7 @@ export default function FCCACHomePage() {
         </div>
       </section>
 
-      {/* VISIT SECTION - Enhanced with practical info */}
+      {/* VISIT SECTION - Enhanced with real FCCAC facility photos */}
       <section className="py-20 bg-gradient-to-r from-amber-900 via-orange-900 to-red-900">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-300">
@@ -312,7 +312,7 @@ export default function FCCACHomePage() {
               <h3 className="text-xl font-bold text-amber-300 mb-3">Gallery Spaces</h3>
               <p className="text-orange-100">Rotating exhibitions and permanent displays showcasing local talent, curated by resident artist Karen Leathers</p>
               <img 
-                src="data:image/jpeg;base64,..." 
+                src="http://localhost:1337/uploads/FCCAC_storefrontwindow_9d420bff25.jpg" 
                 alt="FCCAC Downtown Storefront Gallery displaying local artwork" 
                 className="mt-4 rounded-lg w-full h-32 object-cover shadow-lg"
               />
@@ -322,8 +322,8 @@ export default function FCCACHomePage() {
               <h3 className="text-xl font-bold text-amber-300 mb-3">Performance Areas</h3>
               <p className="text-orange-100">Professional venues for concerts, theater, and community events</p>
               <img 
-                src="data:image/jpeg;base64,..." 
-                alt="FCCAC Evening exterior showing performance spaces with artistic lighting" 
+                src="http://localhost:1337/uploads/FCCAC_Exterior_88f95b3f63.jpg" 
+                alt="FCCAC Exterior showing performance spaces and community areas" 
                 className="mt-4 rounded-lg w-full h-32 object-cover shadow-lg"
               />
             </div>
@@ -332,8 +332,8 @@ export default function FCCACHomePage() {
               <h3 className="text-xl font-bold text-amber-300 mb-3">Workshop Facilities</h3>
               <p className="text-orange-100">Fully equipped spaces for woodworking, metalwork, and pottery</p>
               <img 
-                src="data:image/jpeg;base64,..." 
-                alt="Workshop space showing tools and creative workspace" 
+                src="http://localhost:1337/uploads/Front_of_FCCAC_e5b8d9f0f5.jpg" 
+                alt="Front entrance of FCCAC showing accessible workshop and community spaces" 
                 className="mt-4 rounded-lg w-full h-32 object-cover shadow-lg"
               />
             </div>
