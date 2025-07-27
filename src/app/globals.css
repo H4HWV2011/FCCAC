@@ -2,7 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Test styles to verify CSS is loading */
 body {
   margin: 0;
   padding: 0;
+  background: linear-gradient(to bottom right, #4c1d95, #7c2d12) !important;
+  min-height: 100vh;
+}
+
+/* Force some basic styling to test */
+h1 {
+  color: #fbbf24 !important;
+  font-size: 3rem !important;
+}
+
+main {
+  background: linear-gradient(to bottom right, #1e1b4b, #7c2d12) !important;
 }
