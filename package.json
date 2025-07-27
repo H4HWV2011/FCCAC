@@ -1,0 +1,29 @@
+{
+  "name": "fccac-website",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fayette County Community Arts Center official website - Harmony for Hope",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "engines": {
+    "node": "22.x",
+    "npm": "10.x"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "next": "15.4.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss":"^4",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^9",
+    "eslint-config-next": "15.4.4",
+    "@eslint/eslintrc": "^3"
+  }
+}
