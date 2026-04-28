@@ -1,1313 +1,3803 @@
-crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/ms-allis-frontend$ # And check if there's a proxy config in next.config
-cat ~/msjarvis-rebuild-working/ms-allis-frontend/next.config.js 2>/dev/null || \
-cat ~/msjarvis-rebuild-working/ms-allis-frontend/next.config.ts 2>/dev/null || \
-cat ~/msjarvis-rebuild-working/ms-allis-frontend/next.config.mjs 2>/dev/null
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/auth/:path*',
-        destination: 'http://127.0.0.1:8092/auth/:path*',
-      },
-      {
-        source: '/api/:path*',
-        destination: 'http://127.0.0.1:8092/api/:path*',
-      },
-    ]
-  },
-}
-module.exports = nextConfig
-(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/ms-allis-frontend$ cat > ~/msjarvis-rebuild-working/ms-allis-frontend/next.config.js << 'EOF'
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/auth/:path*',
-        destination: 'http://127.0.0.1:8092/auth/:path*',
-      },
-      {
-        source: '/api/chat/:path*',
-        destination: 'http://127.0.0.1:8050/chat/:path*',
-      },
-      {
-        source: '/api/chatlight/:path*',
-        destination: 'http://127.0.0.1:8050/chatlight/:path*',
-      },
-      {
-        source: '/api/:path*',
-        destination: 'http://127.0.0.1:8092/api/:path*',
-      },
-    ]
-  },
-EOFule.exports = nextConfig
-(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/ms-allis-frontend$ cat ~/msjarvis-rebuild-working/ms-allis-frontend/lib/chat.ts
-cat ~/msjarvis-rebuild-working/ms-allis-frontend/lib/portal.ts
-cat ~/msjarvis-rebuild-working/ms-allis-frontend/app/portal/page.tsx
-cat ~/msjarvis-rebuild-working/ms-allis-frontend/components/ChatPanel.tsx
-// lib/chat.ts
-// Client for Ms. Allis async chat endpoint.
-// Uses /chat/async to submit, /chat/status/{job_id} to poll.
-// History is stored in React state per session; persistence to Redis is
-// done server-side by main-brain (or wired in by Perplexity / a follow-up).
-
-import { session } from "./api";
-
-const CHAT_BASE = "https://chat.mountainshares.us";
-
-export interface TruthVerdict {
-  service?: string;
-  status?: string;
-  consensus_score?: number;
-  judges?: Record<string, unknown>;
-}
-
-export interface ChatResponse {
-  response: string;
-  services_used: string[];
-  consciousness_level: string;
-  processing_time: number;
-  architecture_layers: number;
-  truthverdict?: TruthVerdict | null;
-}
-
-export interface ChatJobStatus {
-  job_id?: string;
-  status: "pending" | "running" | "completed" | "failed" | "cancelled" | string;
-  progress?: number;
-  result?: ChatResponse;
-  error?: string;
-  message?: string;
-}
-
-export class ChatError extends Error {
-  status: number;
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-    this.name = "ChatError";
-  }
-}
-
-function authHeaders(): Record<string, string> {
-  const token = session.get();
-  if (!token) throw new ChatError(401, "no session");
-  return {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
-}
-
-/**
- * Submit a chat message. Returns a job_id for polling.
- */
-export async function submitChatJob(
-  message: string,
-  userId: string,
-): Promise<string> {
-  const response = await fetch(`${CHAT_BASE}/chat/async`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({
-      message,
-      user_id: userId,
-    }),
-  });
-
-  if (!response.ok) {
-    let detail = response.statusText;
-    try {
-      const body = await response.json();
-      detail = body.detail || body.message || detail;
-    } catch {}
-    throw new ChatError(response.status, detail);
-  }
-
-  const body = await response.json();
-  const jobId = body.job_id || body.id;
-  if (!jobId) {
-    throw new ChatError(500, "no job_id returned");
-  }
-  return jobId;
-}
-
-/**
- * Get the current status of a chat job.
- */
-export async function getJobStatus(jobId: string): Promise<ChatJobStatus> {
-  const response = await fetch(`${CHAT_BASE}/chat/status/${encodeURIComponent(jobId)}`, {
-    headers: authHeaders(),
-  });
-  if (!response.ok) {
-    throw new ChatError(response.status, response.statusText);
-  }
-  return response.json();
-}
-
-/**
- * Poll until a job completes. Calls onUpdate with each status check.
- * Returns the final ChatResponse, or throws if the job fails.
- */
-export async function pollUntilComplete(
-  jobId: string,
-  onUpdate?: (status: ChatJobStatus) => void,
-  intervalMs: number = 2000,
-  timeoutMs: number = 600000, // 3 minutes max
-): Promise<ChatResponse> {
-  const start = Date.now();
-
-  while (Date.now() - start < timeoutMs) {
-    const status = await getJobStatus(jobId);
-    if (onUpdate) onUpdate(status);
-
-    if ((status.status === "completed" || status.status === "complete") && status.result) {
-      return status.result;
-    }
-    if (status.status === "failed") {
-      throw new ChatError(500, status.error || status.message || "Job failed");
-    }
-    if (status.status === "cancelled") {
-      throw new ChatError(499, "Cancelled");
-    }
-
-    await new Promise((r) => setTimeout(r, intervalMs));
-  }
-
-  throw new ChatError(504, `Job ${jobId} timed out after ${timeoutMs}ms`);
-}
-
-/**
- * Cancel an in-flight job.
- */
-export async function cancelJob(jobId: string): Promise<void> {
-  await fetch(`${CHAT_BASE}/chat/cancel/${encodeURIComponent(jobId)}`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  });
-}
-// lib/portal.ts
-// Client for portal data endpoints (balances + founder token).
-// These come from auth_router on egeria.mountainshares.us, NOT chat.
-
-import { session } from "./api";
-
-export interface FounderTokenInfo {
-  serial_number: number;
-  display: string;
-  minted_at: string | null;
-  cohort: string;
-  allocation_type: string;
-}
-
-export interface BalancesResponse {
-  ueid: string;
-  ems_balance: number;
-  pms_balance: number;
-  balance_last_updated: string | null;
-  founder_token: FounderTokenInfo | null;
-}
-
-export class PortalApiError extends Error {
-  status: number;
-  constructor(status: number, msg: string) {
-    super(msg);
-    this.status = status;
-    this.name = "PortalApiError";
-  }
-}
-
-
-export interface LedgerEntry {
-  id: number;
-  transaction_type: string;
-  amount: string;
-  token_class: 'EMS' | 'PMS';
-  reason: string | null;
-  reference_id: string | null;
-  created_at: string;
-  created_by: string;
-}
-
-export interface LedgerResponse {
-  ueid: string;
-  total: number;
-  limit: number;
-  offset: number;
-  entries: LedgerEntry[];
-}
-
-export const portalApi = {
-  /**
-   * GET /portal/me/balances
-   * Privacy contract: returns ONLY the requesting user's balances + founder token.
-   * Never another user's data.
-   */
-  myLedger: async (limit: number = 50, offset: number = 0): Promise<LedgerResponse> => {
-    const token = sessionStorage.getItem('msallis_session_token');
-    if (!token) throw new Error('no session');
-    const resp = await fetch('/auth/portal/me/ledger?limit=' + limit + '&offset=' + offset, {
-      headers: { Authorization: 'Bearer ' + token },
-    });
-    if (!resp.ok) throw new Error('ledger fetch failed');
-    return resp.json();
-  },
-
-  myBalances: async (): Promise<BalancesResponse | null> => {
-    const token = session.get();
-    if (!token) return null;
-    const response = await fetch("/auth/portal/me/balances", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (response.status === 404) {
-      // No balance record yet — treat as zeros
-      return null;
-    }
-    if (!response.ok) {
-      let detail = response.statusText;
-      try {
-        const body = await response.json();
-        detail = body.detail || detail;
-      } catch {}
-      throw new PortalApiError(response.status, detail);
-    }
-    return response.json();
-  },
-};
-// app/portal/page.tsx
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  api,
-  ApiError,
-  session,
-  ApplicationListItem,
-  MeResponse,
-} from "@/lib/api";
-import { portalApi, BalancesResponse, LedgerEntry, LedgerResponse } from "@/lib/portal";
-import { ChatPanel } from "@/components/ChatPanel";
-import { FounderToken } from "@/components/FounderToken";
-import { MsAllisPortrait } from "@/components/MsAllisPortrait";
-import { HeartOrnament } from "@/components/HeartOrnament";
-import { MountainSilhouette } from "@/components/MountainSilhouette";
-
-type State = "checking" | "ready";
-type Tab = "champion" | "admin";
-
-export default function PortalPage() {
-  const router = useRouter();
-  const [state, setState] = useState<State>("checking");
-  const [me, setMe] = useState<MeResponse | null>(null);
-  const [balances, setBalances] = useState<BalancesResponse | null>(null);
-  const [tab, setTab] = useState<Tab>("champion");
-
-  // Admin tab state
-  const [pending, setPending] = useState<ApplicationListItem[]>([]);
-  const [pendingState, setPendingState] = useState<"idle" | "loading" | "ready" | "error">("idle");
-  const [pendingError, setPendingError] = useState("");
-  const [actingOn, setActingOn] = useState<string | null>(null);
-  const [denyingId, setDenyingId] = useState<string | null>(null);
-  const [denyReason, setDenyReason] = useState("");
-
-  useEffect(() => {
-    if (!session.get()) {
-      router.push("/sign-in");
-      return;
-    }
-    api.me()
-      .then((m) => {
-        setMe(m);
-        setState("ready");
-        // Fetch balances in parallel; fail silently
-        portalApi.myBalances()
-          .then((b) => setBalances(b))
-          .catch(() => setBalances(null));
-      })
-      .catch(() => {
-        session.clear();
-        router.push("/sign-in");
-      });
-  }, [router]);
-
-  const isAdmin = me?.roles?.includes("admin") ?? false;
-
-  useEffect(() => {
-    if (tab !== "admin" || !isAdmin || pendingState !== "idle") return;
-    loadPending();
-  }, [tab, isAdmin, pendingState]);
-
-  async function loadPending() {
-    setPendingState("loading");
-    setPendingError("");
-    try {
-      const result = await api.pending();
-      setPending(result.applications || []);
-      setPendingState("ready");
-    } catch (err) {
-      setPendingError(err instanceof ApiError ? err.detail : "Failed to load");
-      setPendingState("error");
-    }
-  }
-
-  async function handleApprove(id: string) {
-    setActingOn(id);
-    setPendingError("");
-    try {
-      await api.approve(id);
-      await loadPending();
-    } catch (err) {
-      setPendingError(err instanceof ApiError ? err.detail : "Approve failed");
-    }
-    setActingOn(null);
-  }
-
-  async function handleDeny(id: string) {
-    if (denyReason.trim().length < 5) {
-      setPendingError("Denial reason must be at least 5 characters.");
-      return;
-    }
-    setActingOn(id);
-    setPendingError("");
-    try {
-      await api.deny(id, denyReason.trim());
-      setDenyingId(null);
-      setDenyReason("");
-      await loadPending();
-    } catch (err) {
-      setPendingError(err instanceof ApiError ? err.detail : "Deny failed");
-    }
-    setActingOn(null);
-  }
-
-  function handleSignOut() {
-    session.clear();
-    router.push("/");
-  }
-
-  if (state === "checking") {
-    return (
-      <main className="min-h-screen bg-cream flex items-center justify-center">
-        <p className="font-display italic text-ink-fade">Checking your session…</p>
-      </main>
-    );
-  }
-
-  return (
-    <main className="min-h-screen bg-cream pb-12">
-      <header className="border-b border-cream-deep bg-bone">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <MsAllisPortrait className="w-10 h-10" />
-            <div>
-              <p className="font-display text-base text-teal-deep">Ms. Allis</p>
-              <p className="font-body text-xs text-ink-fade italic">{me?.userid ?? "—"}</p>
-            </div>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="font-body text-sm text-ink-fade hover:text-terracotta transition-colors underline decoration-cream-deep hover:decoration-terracotta underline-offset-4"
-          >
-            Sign out
-          </button>
-        </div>
-      </header>
-
-      {isAdmin && (
-        <div className="border-b border-cream-deep bg-cream">
-          <div className="max-w-6xl mx-auto px-6 flex">
-            <button
-              onClick={() => setTab("champion")}
-              className={`px-6 py-3 font-display text-sm transition-colors ${
-                tab === "champion" ? "text-teal-deep border-b-2 border-terracotta" : "text-ink-fade hover:text-teal-deep"
-              }`}
-            >
-              My Champion
-            </button>
-            <button
-              onClick={() => setTab("admin")}
-              className={`px-6 py-3 font-display text-sm transition-colors ${
-                tab === "admin" ? "text-teal-deep border-b-2 border-terracotta" : "text-ink-fade hover:text-teal-deep"
-              }`}
-            >
-              Admin
-              {pending.length > 0 && (
-                <span className="ml-2 inline-flex items-center justify-center bg-terracotta text-cream-light text-xs px-2 py-0.5 rounded-full">
-                  {pending.length}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="max-w-6xl mx-auto px-6 pt-10">
-        {tab === "champion" && <ChampionDashboard me={me} balances={balances} isAdmin={isAdmin} />}
-
-        {tab === "admin" && isAdmin && (
-          <AdminQueue
-            applications={pending}
-            state={pendingState}
-            error={pendingError}
-            actingOn={actingOn}
-            denyingId={denyingId}
-            denyReason={denyReason}
-            setDenyingId={setDenyingId}
-            setDenyReason={setDenyReason}
-            onApprove={handleApprove}
-            onDeny={handleDeny}
-            onClearError={() => setPendingError("")}
-          />
-        )}
-      </div>
-
-      <div className="mt-16">
-        <MountainSilhouette className="text-forest" />
-      </div>
-    </main>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────
-// Champion dashboard — data first, identity collapsed at bottom
-// ────────────────────────────────────────────────────────────────────
-
-function ChampionDashboard({
-  me,
-  balances,
-  isAdmin,
-}: {
-  me: MeResponse | null;
-  balances: BalancesResponse | null;
-  isAdmin: boolean;
-}) {
-  const [showIdentity, setShowIdentity] = useState(false);
-  const [showChat, setShowChat] = useState(false);
-  const [showLedger, setShowLedger] = useState(false);
-  const [ledger, setLedger] = useState<LedgerResponse | null>(null);
-  const [ledgerLoading, setLedgerLoading] = useState(false);
-  const [dateFrom, setDateFrom] = useState<string>("");
-  const [dateTo, setDateTo] = useState<string>("");
-
-  async function loadLedger() {
-    if (ledger) return;
-    setLedgerLoading(true);
-    try {
-      const data = await portalApi.myLedger();
-      setLedger(data);
-    } catch {
-      // fail silently — non-critical
-    }
-    setLedgerLoading(false);
-  }
-
-  const ems = balances?.ems_balance ?? 0;
-  const pms = balances?.pms_balance ?? 0;
-
-  return (
-    <>
-      {/* Hero — smaller than before */}
-      <div className="text-center mb-10">
-        <div className="flex justify-center mb-4">
-          <HeartOrnament className="w-6 h-6 text-terracotta" />
-        </div>
-        <h1 className="font-display italic text-3xl md:text-4xl text-teal-deep mb-1">
-          Welcome, {me?.userid ?? ""}
-        </h1>
-        <p className="font-body text-sm text-ink-fade italic">
-          {me?.county ? `${me.county} County` : "—"}
-          {me?.county ? " · " : ""}Community Champion
-        </p>
-      </div>
-
-      {/* Founder Token + Balances row */}
-      <section className="grid md:grid-cols-3 gap-4 mb-6">
-        <div className="surface p-6 flex flex-col items-center justify-center text-center">
-          {balances?.founder_token ? (
-            <>
-              <FounderToken
-                serialNumber={balances.founder_token.serial_number}
-                mintedAt={balances.founder_token.minted_at}
-                cohort={balances.founder_token.cohort}
-                size={112}
-              />
-              <p className="font-display text-base text-teal-deep mt-3">
-                {balances.founder_token.display}
-              </p>
-              <p className="font-body text-xs text-ink-fade italic">Phase 0 token holder</p>
-            </>
-          ) : (
-            <>
-              <div
-                className="rounded-full bg-cream-deep flex items-center justify-center"
-                style={{ width: 112, height: 112 }}
-              >
-                <span className="font-display text-xs text-ink-fade italic">No token yet</span>
-              </div>
-              <p className="font-display text-base text-ink-fade mt-3 italic">Founder Token</p>
-              <p className="font-body text-xs text-ink-fade italic">Coming soon</p>
-            </>
-          )}
-        </div>
-
-        <BalanceCard
-          label="Earned MountainShares"
-          shortLabel="EMS"
-          amount={ems}
-          accent="teal"
-        />
-
-        <BalanceCard
-          label="Purchased MountainShares"
-          shortLabel="PMS"
-          amount={pms}
-          accent="terracotta"
-        />
-      </section>
-
-      {/* Region scaffolding row */}
-      <section className="grid md:grid-cols-3 gap-4 mb-6">
-        <PlaceholderCard
-          title="Local businesses"
-          subtitle={me?.county ? `${me.county} County directory` : "Your county"}
-          note="Coming soon"
-        />
-        <PlaceholderCard
-          title="Weather"
-          subtitle="Real-time conditions"
-          note="Coming soon"
-        />
-        <PlaceholderCard
-          title="County resources"
-          subtitle="Public services & support"
-          note="Coming soon"
-        />
-      </section>
-
-      {/* Action buttons */}
-      <section className="flex flex-col sm:flex-row gap-3 mb-8 justify-center">
-        <button
-          onClick={() => setShowChat((v) => !v)}
-          className="btn-primary"
-        >
-          {showChat ? "Hide Ms. Allis" : "Talk to Ms. Allis →"}
-        </button>
-        <button
-          disabled
-          className="font-display text-sm bg-cream-deep text-ink-fade py-3 px-6 cursor-not-allowed italic"
-          title="Coming soon"
-        >
-          Enter The Commons →
-        </button>
-      </section>
-
-      {/* Chat panel — toggles open/closed */}
-      {showChat && (
-        <section className="mb-6">
-          <ChatPanel userId={me?.userid ?? ""} isAdmin={isAdmin} />
-        </section>
-      )}
-
-      {/* Transaction history */}
-      <section className="surface mt-4">
-        <button
-          onClick={() => { setShowLedger(v => !v); if (!showLedger) loadLedger(); }}
-          className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-bone transition-colors"
-        >
-          <span className="font-display text-base text-teal-deep">Transaction history</span>
-          <span className="font-body text-xs text-ink-fade italic">
-            {showLedger ? "▼ Hide" : "▶ Show"}{ledger ? ` · ${ledger.total} entries` : ""}
-          </span>
-        </button>
-        {showLedger && (
-          <div className="px-6 pb-6 border-t border-cream-deep">
-            {ledgerLoading ? (
-              <p className="font-body text-sm text-ink-fade italic mt-4">Loading…</p>
-            ) : ledger && ledger.entries.length > 0 ? (
-<>
-                <div className="mt-4 mb-4 flex flex-wrap items-end gap-3 print:hidden">
-                  <div>
-                    <label className="block font-body text-xs text-ink-fade italic mb-1">From</label>
-                    <input
-                      type="date"
-                      value={dateFrom}
-                      onChange={(e) => setDateFrom(e.target.value)}
-                      className="px-2 py-1 bg-bone border border-cream-deep focus:border-teal focus:outline-none font-body text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-body text-xs text-ink-fade italic mb-1">To</label>
-                    <input
-                      type="date"
-                      value={dateTo}
-                      onChange={(e) => setDateTo(e.target.value)}
-                      className="px-2 py-1 bg-bone border border-cream-deep focus:border-teal focus:outline-none font-body text-sm"
-                    />
-                  </div>
-                  {(dateFrom || dateTo) && (
-                    <button
-                      type="button"
-                      onClick={() => { setDateFrom(""); setDateTo(""); }}
-                      className="font-body text-xs text-ink-fade hover:text-terracotta transition-colors underline decoration-cream-deep hover:decoration-terracotta underline-offset-4"
-                    >
-                      Clear
-                    </button>
-                  )}
-                  <div className="ml-auto">
-                    <button
-                      type="button"
-                      onClick={() => window.print()}
-                      className="font-display text-sm bg-teal-deep text-cream-light px-4 py-1.5 hover:bg-teal transition-colors"
-                    >
-                      Print
-                    </button>
-                  </div>
-                </div>
-                {(() => {
-                  const filteredEntries = ledger.entries.filter((e) => {
-                    if (!dateFrom && !dateTo) return true;
-                    const ts = new Date(e.created_at).getTime();
-                    if (dateFrom) {
-                      const fromTs = new Date(dateFrom + "T00:00:00").getTime();
-                      if (ts < fromTs) return false;
-                    }
-                    if (dateTo) {
-                      const toTs = new Date(dateTo + "T23:59:59").getTime();
-                      if (ts > toTs) return false;
-                    }
-                    return true;
-                  });
-                  return filteredEntries.length === 0 ? (
-                    <p className="font-body text-sm text-ink-fade italic">
-                      No transactions in this date range.
-                    </p>
-                  ) : (
-                    <div id="ledger-print-area">
-                      <div className="hidden print:block mb-4">
-                        <h2 className="font-display text-xl text-teal-deep">Transaction history</h2>
-                        <p className="font-body text-xs text-ink-fade italic">
-                          {me?.userid ?? ""} {dateFrom || dateTo ? `· ${dateFrom || "earliest"} to ${dateTo || "latest"}` : ""}
-                        </p>
-                      </div>
-                      <table className="w-full font-body text-sm">
-                        <thead>
-                          <tr className="text-left text-ink-fade text-xs uppercase tracking-wider border-b border-cream-deep">
-                            <th className="pb-2 pr-4">Date</th>
-                            <th className="pb-2 pr-4">Type</th>
-                            <th className="pb-2 pr-4">Token</th>
-                            <th className="pb-2 text-right">Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredEntries.map((e) => (
-                            <tr key={e.id} className="border-b border-cream-deep/50 hover:bg-bone transition-colors">
-                              <td className="py-2 pr-4 text-ink-fade text-xs">
-                                {new Date(e.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
-                              </td>
-                              <td className="py-2 pr-4 text-ink italic">{e.transaction_type.replace(/_/g, " ")}</td>
-                              <td className="py-2 pr-4">
-                                <span className={e.token_class === "EMS" ? "text-teal-deep font-display text-xs" : "text-terracotta font-display text-xs"}>
-                                  {e.token_class}
-                                </span>
-                              </td>
-                              <td className="py-2 text-right font-mono text-xs text-ink">
-                                +{parseFloat(e.amount).toLocaleString(undefined, { minimumFractionDigits: 4 })}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {(dateFrom || dateTo) && (
-                        <p className="font-body text-xs text-ink-fade italic mt-3">
-                          Showing {filteredEntries.length} of {ledger.entries.length} transactions in selected range.
-                        </p>
-                      )}
-                    </div>
-                  );
-                })()}
-              </>
-            ) : (
-              <p className="font-body text-sm text-ink-fade italic mt-4">No transactions yet.</p>
-            )}
-            {ledger && ledger.total > ledger.limit && (
-              <p className="font-body text-xs text-ink-fade italic mt-3">
-                Showing {ledger.entries.length} of {ledger.total} transactions.
-              </p>
-            )}
-          </div>
-        )}
-      </section>
-
-      {/* Identity — collapsed accordion at bottom */}
-      <section className="surface mt-4">
-        <button
-          onClick={() => setShowIdentity((v) => !v)}
-          className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-bone transition-colors"
-        >
-          <span className="font-display text-base text-teal-deep">Your identity</span>
-          <span className="font-body text-xs text-ink-fade italic">
-            {showIdentity ? "▼ Hide" : "▶ Show"}
-          </span>
-        </button>
-        {showIdentity && (
-          <div className="px-6 pb-6 border-t border-cream-deep">
-            <dl className="grid sm:grid-cols-2 gap-4 mt-4 font-body text-sm">
-              <Field label="Userid" value={me?.userid ?? "—"} mono />
-              <Field label="UEID" value={me?.uei || "—"} mono small />
-              <Field label="County" value={me?.county ?? "—"} />
-              <Field label="Roles" value={me?.roles?.join(", ") || "user"} />
-              {balances?.balance_last_updated && (
-                <Field
-                  label="Balances updated"
-                  value={new Date(balances.balance_last_updated).toLocaleString()}
-                  small
-                />
-              )}
-            </dl>
-            <p className="font-body text-xs text-ink-fade italic mt-4 leading-relaxed">
-              Your data is private. Only you can see this — no other Champion or admin
-              can view your balances, UEID, or wallet. If anything looks wrong, email{" "}
-              <a
-                href="mailto:kiddstechnical@gmail.com"
-                className="text-terracotta hover:text-terracotta-deep underline decoration-terracotta/30 hover:decoration-terracotta underline-offset-4 transition-colors"
-              >
-                kiddstechnical@gmail.com
-              </a>.
-            </p>
-          </div>
-        )}
-      </section>
-    </>
-  );
-}
-
-function BalanceCard({
-  label,
-  shortLabel,
-  amount,
-  accent,
-}: {
-  label: string;
-  shortLabel: string;
-  amount: number;
-  accent: "teal" | "terracotta";
-}) {
-  const color = accent === "teal" ? "text-teal-deep" : "text-terracotta-deep";
-  const formatted = amount.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 4,
-  });
-  return (
-    <div className="surface p-6 flex flex-col items-center justify-center text-center">
-      <p className="font-body text-xs text-ink-fade italic uppercase tracking-wider">
-        {shortLabel}
-      </p>
-      <p className={`font-display italic text-5xl ${color} my-2`}>{formatted}</p>
-      <p className="font-body text-xs text-ink-fade italic">{label}</p>
-    </div>
-  );
-}
-
-function PlaceholderCard({
-  title,
-  subtitle,
-  note,
-}: {
-  title: string;
-  subtitle: string;
-  note: string;
-}) {
-  return (
-    <div className="surface p-6 flex flex-col items-center justify-center text-center opacity-60">
-      <p className="font-display text-base text-teal-deep">{title}</p>
-      <p className="font-body text-xs text-ink-fade italic mt-1">{subtitle}</p>
-      <p className="font-body text-xs text-terracotta/70 italic mt-3">{note}</p>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  mono = false,
-  small = false,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-  small?: boolean;
-}) {
-  return (
-    <div>
-      <dt className="text-ink-fade italic text-xs uppercase tracking-wider">{label}</dt>
-      <dd className={`text-ink ${mono ? "font-mono" : ""} ${small ? "text-xs break-all" : ""}`}>
-        {value}
-      </dd>
-    </div>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────
-// Admin queue — unchanged from previous version
-// ────────────────────────────────────────────────────────────────────
-
-function AdminQueue({
-  applications,
-  state,
-  error,
-  actingOn,
-  denyingId,
-  denyReason,
-  setDenyingId,
-  setDenyReason,
-  onApprove,
-  onDeny,
-  onClearError,
-}: {
-  applications: ApplicationListItem[];
-  state: "idle" | "loading" | "ready" | "error";
-  error: string;
-  actingOn: string | null;
-  denyingId: string | null;
-  denyReason: string;
-  setDenyingId: (id: string | null) => void;
-  setDenyReason: (r: string) => void;
-  onApprove: (id: string) => void;
-  onDeny: (id: string) => void;
-  onClearError: () => void;
-}) {
-  return (
-    <>
-      <div className="flex justify-center mb-6">
-        <HeartOrnament className="w-7 h-7 text-terracotta" />
-      </div>
-      <h1 className="font-display italic text-display text-teal-deep text-center mb-2">
-        Pending applications
-      </h1>
-      <p className="font-body text-sm text-ink-fade text-center mb-10 italic">
-        {state === "loading"
-          ? "Loading…"
-          : applications.length === 0
-            ? "Nothing waiting right now."
-            : applications.length === 1
-              ? "1 application waiting"
-              : `${applications.length} applications waiting`}
-      </p>
-
-      {error && (
-        <div className="max-w-2xl mx-auto mb-6 font-body text-sm text-terracotta-deep bg-terracotta/10 border border-terracotta/30 p-3 italic flex items-baseline justify-between">
-          <span>{error}</span>
-          <button onClick={onClearError} className="text-xs text-terracotta-deep hover:underline ml-3">
-            dismiss
-          </button>
-        </div>
-      )}
-
-      <div className="space-y-6 max-w-3xl mx-auto">
-        {applications.map((a) => (
-          <div key={a.application_id} className="surface p-6">
-            <div className="flex items-baseline justify-between mb-4">
-              <div>
-                <h2 className="font-display text-xl text-teal-deep">{a.name}</h2>
-                <p className="font-body text-sm text-ink-fade italic">
-                  {a.county} County ·{" "}
-                  {new Date(a.submitted_at).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </p>
-              </div>
-              <p className="font-body text-xs text-ink-fade font-mono">
-                {a.application_id.slice(0, 8)}…
-              </p>
-            </div>
-
-            <p className="font-body text-sm text-ink mb-1">{a.email}</p>
-            <p className="font-body text-xs text-ink-fade mb-4 font-mono">
-              proposed_userid: {a.proposed_userid} · {a.agreement_version}
-            </p>
-
-            {a.county_warning && (
-              <div className="bg-terracotta/10 border border-terracotta/30 px-4 py-2 mb-4 font-body text-xs text-terracotta-deep italic">
-                {a.county_warning}
-              </div>
-            )}
-
-            <div className="bg-bone border border-cream-deep p-4 mb-4">
-              <p className="font-display text-sm text-teal-deep mb-1">Why they want to participate</p>
-              <p className="font-body text-sm text-ink leading-relaxed whitespace-pre-wrap">
-                {a.motivation}
-              </p>
-            </div>
-
-            {denyingId === a.application_id ? (
-              <div className="space-y-3">
-                <textarea
-                  value={denyReason}
-                  onChange={(e) => setDenyReason(e.target.value)}
-                  placeholder="Reason for denial (5+ characters)…"
-                  className="w-full px-3 py-2 bg-bone border border-cream-deep focus:border-terracotta focus:outline-none font-body text-sm"
-                  rows={3}
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => onDeny(a.application_id)}
-                    disabled={actingOn === a.application_id}
-                    className="btn-terracotta text-sm flex-1"
-                  >
-                    Confirm deny
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDenyingId(null);
-                      setDenyReason("");
-                      onClearError();
-                    }}
-                    className="btn-secondary text-sm flex-1"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex gap-3">
-                <button
-                  onClick={() => onApprove(a.application_id)}
-                  disabled={actingOn === a.application_id}
-                  className="btn-primary"
-                >
-                  {actingOn === a.application_id ? "Approving…" : "Approve"}
-                </button>
-                <button
-                  onClick={() => {
-                    setDenyingId(a.application_id);
-                    onClearError();
-                  }}
-                  disabled={actingOn !== null}
-                  className="font-display text-sm text-ink-fade hover:text-terracotta transition-colors underline decoration-cream-deep hover:decoration-terracotta underline-offset-4 px-4"
-                >
-                  Deny
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-// components/ChatPanel.tsx
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-import {
-  submitChatJob,
-  pollUntilComplete,
-  cancelJob,
-  ChatError,
-  ChatResponse,
-  ChatJobStatus,
-} from "@/lib/chat";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant" | "system";
-  text: string;
-  meta?: ChatResponse;
-  timestamp: number;
-  blocked?: boolean;
-}
-
-interface Props {
-  userId: string;       // proposed_userid (e.g. "carrie_kidd")
-  isAdmin: boolean;     // shows pipeline metadata caret if true
-}
-
-export function ChatPanel({ userId, isAdmin }: Props) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
-  const [pollStatus, setPollStatus] = useState<string>("");
-  const [error, setError] = useState("");
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Auto-scroll to newest message
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, pollStatus]);
-
-  function makeMessage(role: Message["role"], text: string, meta?: ChatResponse): Message {
-    return {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      role,
-      text,
-      meta,
-      timestamp: Date.now(),
-      blocked: meta?.truthverdict?.status === "blocked" ||
-               (Array.isArray(meta?.services_used) &&
-                meta.services_used.includes("judge_consensus_blocked")),
-    };
-  }
-
-  async function handleSubmit() {
-    const message = input.trim();
-    if (!message || submitting) return;
-
-    setError("");
-    setMessages((prev) => [...prev, makeMessage("user", message)]);
-    setInput("");
-    setSubmitting(true);
-    setPollStatus("Submitting…");
-
-    let jobId: string | null = null;
-    try {
-      jobId = await submitChatJob(message, userId);
-      setCurrentJobId(jobId);
-      setPollStatus("Ms. Allis is thinking…");
-
-      const result = await pollUntilComplete(
-        jobId,
-        (status: ChatJobStatus) => {
-          if (status.status === "running" && status.progress != null) {
-            setPollStatus(`Working… ${Math.round(status.progress * 100)}%`);
-          } else if (status.message) {
-            setPollStatus(status.message);
-          }
-        },
-      );
-
-      setMessages((prev) => [
-        ...prev,
-        makeMessage("assistant", result.response, result),
-      ]);
-    } catch (err) {
-      const msg =
-        err instanceof ChatError
-          ? `${err.status}: ${err.message}`
-          : "Something went wrong while contacting Ms. Allis.";
-      setError(msg);
-      setMessages((prev) => [
-        ...prev,
-        makeMessage("system", `(error) ${msg}`),
-      ]);
-    } finally {
-      setSubmitting(false);
-      setCurrentJobId(null);
-      setPollStatus("");
-      // Refocus the input so the user can keep typing
-      setTimeout(() => textareaRef.current?.focus(), 50);
-    }
-  }
-
-  async function handleCancel() {
-    if (!currentJobId) return;
-    try {
-      await cancelJob(currentJobId);
-    } catch {
-      // ignore — backend will mark cancelled or it's already done
-    }
-  }
-
-  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      void handleSubmit();
-    }
-  }
-
-  return (
-    <div className="surface p-6 flex flex-col h-[640px]">
-      <div className="flex items-baseline justify-between mb-4">
-        <h2 className="font-display text-lg text-teal-deep">Talk to Ms. Allis</h2>
-        <p className="font-body text-xs text-ink-fade italic">
-          Async pipeline · 21 LLMs · {isAdmin ? "red-team mode" : "Champion mode"}
-        </p>
-      </div>
-
-      {/* Conversation */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto bg-bone border border-cream-deep p-4 mb-4 space-y-4"
-      >
-        {messages.length === 0 && (
-          <p className="font-body text-sm text-ink-fade italic text-center py-12">
-            Ask Ms. Allis anything about Appalachia, MountainShares, your county, or
-            the work she stewards. Responses can take 30–90 seconds while the full
-            pipeline runs.
-          </p>
-        )}
-
-        {messages.map((m) => (
-          <MessageBubble key={m.id} message={m} showMeta={isAdmin} />
-        ))}
-
-        {pollStatus && (
-          <div className="font-body text-sm text-ink-fade italic flex items-center gap-2">
-            <span className="inline-block w-2 h-2 bg-terracotta rounded-full animate-pulse" />
-            {pollStatus}
-          </div>
-        )}
-      </div>
-
-      {error && (
-        <div className="font-body text-sm text-terracotta-deep bg-terracotta/10 border border-terracotta/30 p-2 mb-2 italic">
-          {error}
-        </div>
-      )}
-
-      {/* Input */}
-      <div className="flex flex-col gap-2">
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder="Type your message. Enter to send, Shift+Enter for a new line."
-          rows={3}
-          disabled={submitting}
-          className="w-full px-3 py-2 bg-bone border border-cream-deep focus:border-teal focus:outline-none font-body text-sm resize-none disabled:opacity-50"
-        />
-        <div className="flex justify-between items-center">
-          <p className="font-body text-xs text-ink-fade italic">
-            {messages.filter((m) => m.role === "user").length} sent this session
-          </p>
-          <div className="flex gap-2">
-            {submitting && currentJobId && (
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="font-display text-sm text-ink-fade hover:text-terracotta transition-colors underline decoration-cream-deep hover:decoration-terracotta underline-offset-4 px-3"
-              >
-                Cancel
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={submitting || !input.trim()}
-              className="btn-primary text-sm"
-            >
-              {submitting ? "Working…" : "Send"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MessageBubble({
-  message,
-  showMeta,
-}: {
-  message: Message;
-  showMeta: boolean;
-}) {
-  const [showDetails, setShowDetails] = useState(false);
-
-  if (message.role === "system") {
-    return (
-      <p className="font-body text-xs text-ink-fade italic text-center py-2">
-        {message.text}
-      </p>
-    );
-  }
-
-  const isUser = message.role === "user";
-  const blocked = message.blocked;
-
-  return (
-    <div className={isUser ? "ml-12" : "mr-12"}>
-      <p className="font-body text-xs text-ink-fade italic mb-1">
-        {isUser ? "You" : blocked ? "Ms. Allis · blocked by judges" : "Ms. Allis"}
-      </p>
-      <div
-        className={
-          isUser
-            ? "bg-teal-deep/5 border border-teal-deep/20 p-3 font-body text-sm text-ink whitespace-pre-wrap"
-            : blocked
-              ? "bg-terracotta/5 border border-terracotta/30 p-3 font-body text-sm text-ink whitespace-pre-wrap italic"
-              : "bg-cream border border-cream-deep p-3 font-body text-sm text-ink whitespace-pre-wrap"
-        }
-      >
-        {message.text}
-      </div>
-
-      {showMeta && message.meta && (
-        <div className="mt-1">
-          <button
-            type="button"
-            onClick={() => setShowDetails((v) => !v)}
-            className="font-body text-xs text-ink-fade hover:text-terracotta transition-colors italic"
-          >
-            {showDetails ? "▼ Hide" : "▶ Show"} pipeline details ·{" "}
-            {message.meta.processing_time.toFixed(1)}s ·{" "}
-            {message.meta.architecture_layers} layers
-          </button>
-          {showDetails && (
-            <div className="mt-2 bg-cream border border-cream-deep p-3 font-mono text-xs text-ink-fade space-y-2">
-              <div>
-                <span className="text-ink">consciousness_level:</span>{" "}
-                {message.meta.consciousness_level}
-              </div>
-              <div>
-                <span className="text-ink">services_used:</span>
-                <ul className="ml-4 mt-1 space-y-0.5">
-                  {message.meta.services_used.map((s) => (
-                    <li key={s}>· {s}</li>
-                  ))}
-                </ul>
-              </div>
-              {message.meta.truthverdict && (
-                <div>
-                  <span className="text-ink">truthverdict:</span>
-                  <pre className="ml-4 mt-1 whitespace-pre-wrap break-all">
-                    {JSON.stringify(message.meta.truthverdict, null, 2)}
-                  </pre>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/ms-allis-frontend$ # In the ms-allis-frontend directory (Ctrl+C the running server first, then):
-npm run dev
-
-> ms-allis-frontend@0.1.0 dev
-> next dev
-
-⚠ Port 3000 is in use by an unknown process, using available port 3003 instead.
-▲ Next.js 16.2.4 (Turbopack)
-- Local:         http://localhost:3003
-- Network:       http://192.168.0.17:3003
-- Environments: .env.local
-✓ Ready in 299ms
-⨯ Another next dev server is already running.
-
-- Local:        http://localhost:3002
-- PID:          1115876
-- Dir:          /home/cakidd/msjarvis-rebuild-working/ms-allis-frontend
-- Log:          .next/dev/logs/next-development.log
-
-Run kill 1115876 to stop it.
-
-(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/ms-allis-frontend$ curl -s -X POST http://127.0.0.1:8050/chatlight \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: $ALLIS_API_KEY" \
-  -d '{"message": "Hello Ms. Allis", "user_id": "test"}' | head -c 500
-{"detail":"Not Found"}(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/ms-allis-frontend$ 
+crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/ms-allis-frontend$ grep -r "system_prompt\|You are\|Ms. Egeria\|Ms. Allis\|DeepSeek\|identity" \
+  ~/msjarvis-rebuild-working \
+  --include="*.py" --include="*.json" --include="*.yaml" \
+  --exclude-dir=node_modules --exclude-dir=.next \
+  -l 2>/dev/null | grep -v __pycache__
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_consciousness_unified_bridge.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/egeria_autonomous_inquiry.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_production_chat.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_email_service.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/simple_prompt_fix.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/working_full_pipeline.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/implement_safe_optimizations.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_swagger_gateway_FIXED_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/polling_client.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_main_gateway.proxy_final.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/add_fifth_dgm_to_chat.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/llm_consensus_22.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/fix_persona.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/create_immutable_security_layer.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_swagger_gateway_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/integrate_orchestrator_flow.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_facebook_full.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/create_i_statement_feedback_loop.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/backup_chroma_research_history.json
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/egeria_web_ui_working.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/master_chat_orchestrator_v5_consciousness.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/llm_consensus_20_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/consciousness_with_egeria_voice.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_main_gateway.py.full_backup_1762223304.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_swagger_gateway_FIXED.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/llm_consensus_22_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ai_server_19llm_CONSCIOUS.backup_20251013_082519.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_dynamic_model_selector.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/egeria_facebook_perpetual_scheduler.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/domain_service_router.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/add_jarvis_personality.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/activate_egeria_persona.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/integrate_complete_architecture.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/aaacpe_scraper_service.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/bridge_autonomous_to_i_container_fixed.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_autonomous_learner_optimized.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/complete_system_audit_with_swagger.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_main_gateway.backup_error.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/update_theological_boundaries.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/egeria_web_ui_with_execution.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ai_server.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_facebook_brain_integrated.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_swagger_gateway_FINAL.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ai_server_19llm_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_main_gateway.broken_final.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/mountainshares_registry.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/integrate_consciousness_into_swarm.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_main_gateway.backup_test.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/fix_creator_recognition.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/integrate_fifth_dgm_autonomous_learner.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_gateway_v4.3.ORIGINAL_SWAGGER.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/dgm_supervisor_woah.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_psychology_services.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_contract_builder_v2.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_swagger_gateway_COMPLETE.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/dgm_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_production_chat_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_geo_ueid_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_gateway_v4.3.CONSTITUTIONAL_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/patch_mother_persona.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_expiration_monitor.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_command_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/old_chroma_analysis.json
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_fully_autonomous_coordinator.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/master_chat_orchestrator_dynamic.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/llm9_health_proxy.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_email_identity_verifier.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/apply_ollama_fix.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_swagger_gateway_SECURED.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_metadata_aware_learner.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/truth_filter_bbb_verification.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/gateway_messenger_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/fifth_dgm_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_conversational_gateway_4022.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_main_gateway.proxy_still_broken.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_main_gateway.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/egeria_web_ui_final_biological.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/safe_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/psychology_integration_adapter.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/fraud_detection_ai.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_command_orchestrator_v5_backup.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_main_gateway.backup_1762220815.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/msjarvisunifiedswaggergatewayFIXED.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_production_chat.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_email_service.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/simple_prompt_fix.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/implement_safe_optimizations.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/polling_client.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/add_fifth_dgm_to_chat.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/llm_consensus_22.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/fix_persona.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/integrate_orchestrator_flow.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/master_chat_orchestrator_v5_consciousness.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/llm_consensus_20_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/llm_consensus_22_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_19llm_CONSCIOUS.backup_20251013_082519.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/domain_service_router.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/add_jarvis_personality.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/activate_egeria_persona.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/integrate_complete_architecture.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/aaacpe_scraper_service.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_autonomous_learner_optimized.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/update_theological_boundaries.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_facebook_brain_integrated.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_19llm_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/integrate_fifth_dgm_autonomous_learner.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_psychology_services.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/patch_mother_persona.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_fully_autonomous_coordinator.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/master_chat_orchestrator_dynamic.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/apply_ollama_fix.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/fifth_dgm_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/egeria_web_ui_final_biological.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/safe_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/facebook_messenger_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/verify_and_document_system.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_facebook_poster.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/llm_consensus_19_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_egeria_facebook_autopost.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_autonomous_learner.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_i_containers_service.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/integrate_i_container_interests.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_location_services.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_20llm_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/i_container_interest_algorithm.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/llm_consensus_22_OPTIMIZED_ORDER.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/patch_agent_identity.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/integrate_full_neural_architecture.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/performance_optimization_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/master_chat_orchestrator_v8_spiritual_complete.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_swarm_intelligence.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_facebook_autonomous_social.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/REFERENCE_windows_swarm.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/enhance_agent_prompts.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/add_identity_context.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_20llm_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/web_connectivity_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/master_chat_orchestrator_v9_dgm_complete.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/gpu_accelerated_rag_fixed.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ultimate_web_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/master_chat_orchestrator_v9_optimized.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/fix_agent_prompts.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/hierarchical_coordinator_autonomous.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/clean_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_autonomous_learner_WITH_FIFTH_DGM.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/complete_system_audit.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_restored.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_fifth_dgm_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_woah_algorithms_enhanced.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/egeria_multi_mode_system.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/fix_context_flow.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ollama_fix.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/integrate_all_services.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_original_backup.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/multi_model_consensus.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_web_deployer_old.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/master_chat_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/configure_facebook_webhook.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/test_knowledge_base.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_22llm_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/master_chat_orchestrator_v6_biologics.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/dgm_supervisor_woah.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/test_fifth_dgm_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_19llm_PRODUCTION_WITH_HEALTH.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/master_chat_orchestrator_v9_gpu_optimized.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_22llm_SEQUENTIAL.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/context_manager.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_consciousness_bridge_WITH_FIFTH_DGM.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/mamma_kidd_auth.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_22llm_SEQUENTIAL_OPTIMIZED_ORDER.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/optimized_timeouts.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/INTEGRATION_IMPLEMENTATION.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/cloudflare_domain_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_4llm.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/master_chat_orchestrator_v7_dynamic.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/master_chat_orchestrator_v7_complete.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_19llm_CONSCIOUS.backup_20251013_083103.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/hardware_optimization_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_facebook_DGM.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_agents_ollama.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_woah_algorithms.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/egeria_web_ui_v3_consciousness.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_web_deployer.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/add_dynamic_context.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/autonomous_learner_topic_source.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_22llm.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/phase7_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_consciousness_poster.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ai_server_11llm_OPTIMIZED.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/services/ms_jarvis_contract_builder.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/facebook_messenger_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/verify_and_document_system.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_main_gateway.error_final.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ai/ai_server.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ai/ai_server_simple.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ai_server_19llm_CONSCIOUS.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_facebook_poster.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_gateway_v4.3.pre_manifest.backup.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_facebook_poster_temp.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/web_chat_server.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/llm_consensus_19_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/swagger_chat_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_egeria_facebook_autopost.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_consciousness_complete.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/backup_chroma_mountainshares_knowledge.json
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_production_chat_BEFORE_GIS.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_autonomous_learner.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/audit_attrs.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/integrate_i_container_to_schedulers.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_swagger_gateway_PROD.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_gis_enhanced_chat.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_i_containers_service.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/egeria_active_heartbeat.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/master_unified_consciousness_scheduler_ENRICHED.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/restored_documents.json
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/integrate_i_container_interests.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/egeria_web_ui_fixed_simple.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_location_services.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ai_server_20llm_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/i_container_interest_algorithm.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/add_messenger_to_gateway.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/llm_consensus_22_OPTIMIZED_ORDER.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_main_gateway.proxy_backup.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/set_intelligent_accuracy_scores.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/patch_agent_identity.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/integrate_full_neural_architecture.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/performance_optimization_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/master_chat_orchestrator_v8_spiritual_complete.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_swarm_intelligence.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/registration_biometric_production_final.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_facebook_autonomous_social.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/seed_spatial_identity.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/REFERENCE_windows_swarm.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/enhance_agent_prompts.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/bridge_autonomous_to_i_container_dgm_woah.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/quantum_insight_llm.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/add_identity_context.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ai_server_20llm_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/web_connectivity_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_gateway_v4.3.BEFORE_69DGM_INTEGRATION.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_gateway_v4.3.20251124.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/master_chat_orchestrator_v9_dgm_complete.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/egeria_web_ui_plain_authentic.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_main_gateway.py.corrupted37_backup_1762223499.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/gpu_accelerated_rag_fixed.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ultimate_web_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/create_ueid_identity_layer.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/master_chat_orchestrator_v9_optimized.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/fix_agent_prompts.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_fifth_dgm_orchestrator.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/hierarchical_coordinator_autonomous.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/egeria_autonomous_inquiry_active.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/clean_integration.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/egeria_safe_self_correction.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_showcase_api.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_autonomous_learner_WITH_FIFTH_DGM.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_authentic_multi_llm.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/bridge_autonomous_to_i_container_dgm_woah.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/complete_system_audit.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ai_server_restored.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_fifth_dgm_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/woah_optimizer.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_full_neurobio_chat.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_woah_algorithms_enhanced.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/facebook_voice_orchestrator_egeria.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/backup_chroma_autonomous_learning.json
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/egeria_multi_mode_system.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/fix_context_flow.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ollama_fix.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_silent_geo_tracker.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/integrate_all_services.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ai_server_original_backup.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/multi_model_consensus.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_complete_knowledge_ingestion.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/truth_filter_service.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_web_deployer_old.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/master_chat_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/configure_facebook_webhook.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/test_knowledge_base.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/create_dual_consciousness_i_containers.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/judge_pipeline.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/inject_egeria_persona.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_facebook_poster_8040.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/registration_service_clean.backup_1762220206.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ai_server_22llm_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/facebook_consciousness_daemon.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/immutable_core_enforcement.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/website_deployment_manager.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/master_chat_orchestrator_v6_biologics.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/ms_jarvis_unified_swagger_gateway_CLEAN.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/master_unified_consciousness_scheduler.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/app/services/main_brain.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/pdb.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/importlib/util.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/pydoc.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/codecs.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp869.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp862.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp863.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp858.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp861.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp850.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp864.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp860.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp775.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp855.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp437.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp852.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/rot_13.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp866.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp857.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/mac_arabic.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp1125.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp737.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/encodings/cp865.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/multiprocessing/managers.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/multiprocessing/process.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/argparse.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/smtplib.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/distutils/command/upload.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/_pydecimal.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/xml/dom/expatbuilder.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/xml/etree/ElementTree.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/xmlrpc/server.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/pydoc_data/topics.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/wheel/vendored/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/click/_termui_impl.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/h11/_util.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/starlette/authentication.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/setuptools/_vendor/wheel/vendored/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/setuptools/_vendor/jaraco/collections/__init__.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/setuptools/_vendor/jaraco/functools/__init__.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/setuptools/_vendor/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/setuptools/_vendor/more_itertools/more.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/setuptools/command/easy_install.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/setuptools/config/_apply_pyprojecttoml.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/typing_inspection/typing_objects.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/httpx/_client.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/httpx/_decoders.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/websockets/protocol.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/pip/_vendor/urllib3/contrib/_securetransport/low_level.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/pip/_vendor/chardet/cli/chardetect.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/pip/_vendor/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/pip/_vendor/distlib/locators.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/pip/_vendor/pygments/lexers/python.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/pip/_vendor/rich/console.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/pip/_internal/resolution/resolvelib/factory.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/pip/_internal/network/utils.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/site-packages/pip/_internal/vcs/versioncontrol.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/pickletools.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/http/client.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/lib2to3/pytree.py
+/home/cakidd/msjarvis-rebuild-working/safe-rootfs/usr/local/lib/python3.10/lib2to3/refactor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_consciousness_unified_bridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/egeria_autonomous_inquiry.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_production_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/msjarvisunifiedswaggergatewayFINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_email_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/simple_prompt_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/working_full_pipeline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/implement_safe_optimizations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_unified_swagger_gateway_FIXED_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/polling_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_main_gateway.proxy_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/add_fifth_dgm_to_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/llm_consensus_22.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/matlib.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/msjarvis_icontainers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/fix_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/create_immutable_security_layer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_unified_swagger_gateway_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/integrate_orchestrator_flow.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/icontainers_fastapi.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_facebook_full.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/create_i_statement_feedback_loop.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/backup_chroma_research_history.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/egeria_web_ui_working.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/master_chat_orchestrator_v5_consciousness.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/llm_consensus_20_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/consciousness_with_egeria_voice.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_main_gateway.py.full_backup_1762223304.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_unified_swagger_gateway_FIXED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/llm_consensus_22_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ai_server_19llm_CONSCIOUS.backup_20251013_082519.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_dynamic_model_selector.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/test_ufunc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/egeria_facebook_perpetual_scheduler.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/domain_service_router.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/add_jarvis_personality.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/activate_egeria_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/integrate_complete_architecture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/bridge_autonomous_to_i_container_fixed.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/_internal.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/array_constructors.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/gen_ai_attributes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/test_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/fromnumeric.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_autonomous_learner.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/seed_chromadb.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/test_array_coercion.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/app_attributes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/_methods.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/enduser_attributes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/test_overrides.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/test_linalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_fifth_dgm_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/seed_v2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/main_brain.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/test_hashtable.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/dgm_connectors_active.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/test_umath.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/ms_jarvis_woah_algorithms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/_add_newdocs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/_linalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-576-recovered/test_function_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/adversarial_results_20260321_191257.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/ms-allis-auth-install/backend/auth_api_patch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/adversarial_results_20260321_180551.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/swarm_intelligence.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/admin_cli.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/adversarial_results_20260321_202552.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/msjarvis-rebuild/ms_jarvis_unified_gateway.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/msjarvis-rebuild/egeria_clean.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/msjarvis-rebuild/egeria_web_ui_working.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/msjarvis-rebuild/safe_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_consciousness_unified_bridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/egeria_autonomous_inquiry.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_production_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_email_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/simple_prompt_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/working_full_pipeline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/implement_safe_optimizations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_swagger_gateway_FIXED_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/polling_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_main_gateway.proxy_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/add_fifth_dgm_to_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/llm_consensus_22.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/fix_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/create_immutable_security_layer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_swagger_gateway_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/integrate_orchestrator_flow.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_facebook_full.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/create_i_statement_feedback_loop.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/backup_chroma_research_history.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/egeria_web_ui_working.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/master_chat_orchestrator_v5_consciousness.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/llm_consensus_20_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/consciousness_with_egeria_voice.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_main_gateway.py.full_backup_1762223304.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_swagger_gateway_FIXED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/llm_consensus_22_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ai_server_19llm_CONSCIOUS.backup_20251013_082519.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_dynamic_model_selector.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/egeria_facebook_perpetual_scheduler.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/domain_service_router.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/add_jarvis_personality.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/activate_egeria_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/integrate_complete_architecture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/aaacpe_scraper_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/bridge_autonomous_to_i_container_fixed.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_autonomous_learner_optimized.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/complete_system_audit_with_swagger.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_main_gateway.backup_error.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/update_theological_boundaries.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/egeria_web_ui_with_execution.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ai_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_facebook_brain_integrated.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_swagger_gateway_FINAL.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ai_server_19llm_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_main_gateway.broken_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/mountainshares_registry.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/integrate_consciousness_into_swarm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_main_gateway.backup_test.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/fix_creator_recognition.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/integrate_fifth_dgm_autonomous_learner.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_gateway_v4.3.ORIGINAL_SWAGGER.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/dgm_supervisor_woah.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_psychology_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_contract_builder_v2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_swagger_gateway_COMPLETE.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/dgm_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_production_chat_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_geo_ueid_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_gateway_v4.3.CONSTITUTIONAL_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/patch_mother_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_expiration_monitor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_command_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/old_chroma_analysis.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_fully_autonomous_coordinator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/master_chat_orchestrator_dynamic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/llm9_health_proxy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_email_identity_verifier.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/apply_ollama_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_swagger_gateway_SECURED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_metadata_aware_learner.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/truth_filter_bbb_verification.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/gateway_messenger_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/fifth_dgm_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_conversational_gateway_4022.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_main_gateway.proxy_still_broken.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_main_gateway.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/egeria_web_ui_final_biological.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/safe_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/psychology_integration_adapter.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/fraud_detection_ai.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_command_orchestrator_v5_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_main_gateway.backup_1762220815.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/msjarvisunifiedswaggergatewayFIXED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_production_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_email_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/simple_prompt_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/implement_safe_optimizations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/polling_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/add_fifth_dgm_to_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/llm_consensus_22.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/fix_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/integrate_orchestrator_flow.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/master_chat_orchestrator_v5_consciousness.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/llm_consensus_20_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/llm_consensus_22_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_19llm_CONSCIOUS.backup_20251013_082519.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/domain_service_router.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/add_jarvis_personality.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/activate_egeria_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/integrate_complete_architecture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/aaacpe_scraper_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_autonomous_learner_optimized.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/update_theological_boundaries.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_facebook_brain_integrated.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_19llm_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/integrate_fifth_dgm_autonomous_learner.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_psychology_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/patch_mother_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_fully_autonomous_coordinator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/master_chat_orchestrator_dynamic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/apply_ollama_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/fifth_dgm_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/egeria_web_ui_final_biological.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/safe_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/facebook_messenger_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/verify_and_document_system.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_facebook_poster.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/llm_consensus_19_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_egeria_facebook_autopost.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_autonomous_learner.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_i_containers_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/integrate_i_container_interests.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_location_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_20llm_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/i_container_interest_algorithm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/llm_consensus_22_OPTIMIZED_ORDER.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/patch_agent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/integrate_full_neural_architecture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/performance_optimization_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/master_chat_orchestrator_v8_spiritual_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_swarm_intelligence.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_facebook_autonomous_social.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/REFERENCE_windows_swarm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/enhance_agent_prompts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/add_identity_context.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_20llm_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/web_connectivity_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/master_chat_orchestrator_v9_dgm_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/gpu_accelerated_rag_fixed.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ultimate_web_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/master_chat_orchestrator_v9_optimized.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/fix_agent_prompts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/hierarchical_coordinator_autonomous.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/clean_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_autonomous_learner_WITH_FIFTH_DGM.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/complete_system_audit.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_restored.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_fifth_dgm_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_woah_algorithms_enhanced.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/egeria_multi_mode_system.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/fix_context_flow.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ollama_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/integrate_all_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_original_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/multi_model_consensus.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_web_deployer_old.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/master_chat_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/configure_facebook_webhook.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/test_knowledge_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_22llm_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/master_chat_orchestrator_v6_biologics.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/dgm_supervisor_woah.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/test_fifth_dgm_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_19llm_PRODUCTION_WITH_HEALTH.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/master_chat_orchestrator_v9_gpu_optimized.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_22llm_SEQUENTIAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/context_manager.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_consciousness_bridge_WITH_FIFTH_DGM.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/mamma_kidd_auth.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_22llm_SEQUENTIAL_OPTIMIZED_ORDER.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/optimized_timeouts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/INTEGRATION_IMPLEMENTATION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/cloudflare_domain_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_4llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/master_chat_orchestrator_v7_dynamic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/master_chat_orchestrator_v7_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_19llm_CONSCIOUS.backup_20251013_083103.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/hardware_optimization_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_facebook_DGM.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_agents_ollama.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_woah_algorithms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/egeria_web_ui_v3_consciousness.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_web_deployer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/add_dynamic_context.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/autonomous_learner_topic_source.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_22llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/phase7_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_consciousness_poster.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ai_server_11llm_OPTIMIZED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/services/ms_jarvis_contract_builder.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/facebook_messenger_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/verify_and_document_system.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_main_gateway.error_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ai/ai_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ai/ai_server_simple.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ai_server_19llm_CONSCIOUS.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_facebook_poster.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_gateway_v4.3.pre_manifest.backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_facebook_poster_temp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/web_chat_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/llm_consensus_19_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/swagger_chat_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_egeria_facebook_autopost.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_consciousness_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/backup_chroma_mountainshares_knowledge.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_production_chat_BEFORE_GIS.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_autonomous_learner.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/audit_attrs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/integrate_i_container_to_schedulers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_swagger_gateway_PROD.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_gis_enhanced_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_i_containers_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/egeria_active_heartbeat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/master_unified_consciousness_scheduler_ENRICHED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/restored_documents.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/integrate_i_container_interests.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/egeria_web_ui_fixed_simple.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_location_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ai_server_20llm_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/i_container_interest_algorithm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/add_messenger_to_gateway.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/llm_consensus_22_OPTIMIZED_ORDER.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_main_gateway.proxy_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/set_intelligent_accuracy_scores.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/patch_agent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/integrate_full_neural_architecture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/performance_optimization_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/master_chat_orchestrator_v8_spiritual_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_swarm_intelligence.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/registration_biometric_production_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_facebook_autonomous_social.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/seed_spatial_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/REFERENCE_windows_swarm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/enhance_agent_prompts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/bridge_autonomous_to_i_container_dgm_woah.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/quantum_insight_llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/add_identity_context.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ai_server_20llm_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/web_connectivity_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_gateway_v4.3.BEFORE_69DGM_INTEGRATION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_gateway_v4.3.20251124.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/master_chat_orchestrator_v9_dgm_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/egeria_web_ui_plain_authentic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_main_gateway.py.corrupted37_backup_1762223499.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/gpu_accelerated_rag_fixed.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ultimate_web_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/create_ueid_identity_layer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/master_chat_orchestrator_v9_optimized.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/fix_agent_prompts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_fifth_dgm_orchestrator.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/hierarchical_coordinator_autonomous.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/egeria_autonomous_inquiry_active.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/clean_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/egeria_safe_self_correction.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_showcase_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_autonomous_learner_WITH_FIFTH_DGM.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_authentic_multi_llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/bridge_autonomous_to_i_container_dgm_woah.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/complete_system_audit.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ai_server_restored.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_fifth_dgm_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/woah_optimizer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_full_neurobio_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_woah_algorithms_enhanced.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/facebook_voice_orchestrator_egeria.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/backup_chroma_autonomous_learning.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/egeria_multi_mode_system.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/fix_context_flow.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ollama_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_silent_geo_tracker.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/integrate_all_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ai_server_original_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/multi_model_consensus.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_complete_knowledge_ingestion.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/truth_filter_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_web_deployer_old.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/master_chat_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/configure_facebook_webhook.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/test_knowledge_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/create_dual_consciousness_i_containers.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/judge_pipeline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/inject_egeria_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_facebook_poster_8040.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/registration_service_clean.backup_1762220206.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ai_server_22llm_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/facebook_consciousness_daemon.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/immutable_core_enforcement.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/website_deployment_manager.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/master_chat_orchestrator_v6_biologics.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/ms_jarvis_unified_swagger_gateway_CLEAN.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/master_unified_consciousness_scheduler.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/main_brain.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/integration_layer/coherent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/integration_layer/unified_experience.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/integration_layer/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/woah_algorithms/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/i_container_2/reflection_system.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/i_container_2/metacognitive_awareness.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/i_container_1/ego_boundaries.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/i_container_1/self_recognition.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/i_container_1/identity_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/i_container_1/ego_boundaries/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/spiritual_root/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/prefrontal_cortex/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/pituitary_gland/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/subconscious/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/mother_carrie_protocols/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/spiritual_maternal_integration/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/heteroglobulin_transport/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/neurobiologicalbrain/consciousness_containers/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/ms_jarvis_i_containers_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/integration_layer/coherent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/integration_layer/unified_experience.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/recovered-services/neurobiological_brain/i_containers/service/integration_layer/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/jarviscryptopolicy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/adversarial_results_20260321_191552.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/signal/_spectral_py.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/signal/_signaltools.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/signal/_ltisys.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/signal/tests/test_ltisys.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/signal/tests/test_filter_design.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/spatial/transform/_rigid_transform_xp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/spatial/transform/_rigid_transform.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/spatial/transform/_rotation_xp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/spatial/transform/tests/test_rotation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/spatial/transform/tests/test_rigid_transform.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/spatial/transform/tests/test_rotation_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/spatial/transform/_rotation_spline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/spatial/transform/_rotation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/_decomp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/_decomp_cossin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/_decomp_ldl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/interpolative.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/_expm_frechet.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/_solvers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/_matfuncs_inv_ssq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/tests/test_decomp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/tests/test_special_matrices.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/tests/test_basic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/tests/test_decomp_cossin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/tests/test_matfuncs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/tests/test_lapack.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/_decomp_qr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/_decomp_svd.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/linalg/_matfuncs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/_lib/deprecation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/_lib/cobyqa/framework.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/_lib/cobyqa/subsolvers/optim.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/_lib/pyprima/cobyla/update.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/_lib/pyprima/common/linalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/_lib/tests/test_array_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/fft/tests/test_real_transforms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/fft/tests/test_basic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/fft/tests/test_fftlog.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/odr/_odrpack.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/stats/_covariance.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/stats/_qmc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/stats/_multivariate.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/stats/tests/test_multivariate.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/stats/tests/test_hypotests.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/stats/_distn_infrastructure.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/special/tests/test_spfun_stats.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/special/tests/test_loggamma.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/special/tests/test_basic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/special/_add_newdocs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/integrate/_bvp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/integrate/_ivp/radau.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/integrate/_ivp/bdf.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/_remove_redundancy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/_trustregion_constr/tests/test_nested_minimize.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/_minpack_py.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/_optimize.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/_slsqp_py.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/_nonlin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/tests/test_linprog.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/tests/test_least_squares.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/tests/test_quadratic_assignment.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/tests/test_slsqp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/tests/test_nonlin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/tests/test_cobyla.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/tests/test_linear_assignment.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/_differentiable_functions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/_linprog_rs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/optimize/_lsq/trf_linear.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/construct.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/linalg/_onenormest.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/linalg/_special_sparse_arrays.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/linalg/_isolve/tests/test_iterative.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/linalg/_dsolve/tests/test_linsolve.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/linalg/tests/test_onenormest.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/linalg/tests/test_expm_multiply.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/linalg/tests/test_interface.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/linalg/_eigen/lobpcg/lobpcg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/linalg/_eigen/lobpcg/tests/test_lobpcg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/linalg/_eigen/tests/test_svds.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/linalg/_eigen/arpack/arpack.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/csgraph/tests/test_matching.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/tests/test_array_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/tests/test_construct.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/_construct.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/sparse/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/interpolate/_bsplines.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/interpolate/tests/test_fitpack.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/scipy/ndimage/tests/test_filters.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/code_llama/tokenization_code_llama.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/timm_wrapper/modeling_timm_wrapper.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/cohere/tokenization_cohere.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/auto/configuration_auto.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/textnet/modeling_textnet.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/florence2/modular_florence2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/florence2/processing_florence2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/hgnet_v2/modeling_hgnet_v2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/hgnet_v2/modular_hgnet_v2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/nystromformer/modeling_nystromformer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/qwen2_audio/processing_qwen2_audio.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/ibert/modeling_ibert.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/ibert/quant_modules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/paligemma/processing_paligemma.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/data2vec/modular_data2vec_audio.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/data2vec/modeling_data2vec_audio.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/gemma3/modular_gemma3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/gemma3/modeling_gemma3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/speecht5/modeling_speecht5.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/mimi/configuration_mimi.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/janus/processing_janus.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/hubert/modeling_hubert.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/whisper/generation_whisper.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/deepseek_v3/configuration_deepseek_v3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/efficientloftr/modeling_efficientloftr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/smolvlm/video_processing_smolvlm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/vits/modeling_vits.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/nemotron_h/modular_nemotron_h.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/nemotron_h/modeling_nemotron_h.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/qwen3_omni_moe/modeling_qwen3_omni_moe.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/glm4_moe_lite/configuration_glm4_moe_lite.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/glm4_moe_lite/modular_glm4_moe_lite.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/exaone4/modeling_exaone4.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/exaone4/modular_exaone4.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/wavlm/modeling_wavlm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/clvp/configuration_clvp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/unispeech/modeling_unispeech.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/sew_d/modeling_sew_d.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/evolla/modeling_evolla.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/evolla/modular_evolla.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/wav2vec2_conformer/modeling_wav2vec2_conformer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/wav2vec2_bert/modeling_wav2vec2_bert.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/qwen2_5_omni/processing_qwen2_5_omni.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/qwen2_5_omni/modular_qwen2_5_omni.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/qwen2_5_omni/modeling_qwen2_5_omni.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/sew/modeling_sew.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/glm_moe_dsa/modular_glm_moe_dsa.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/glm_moe_dsa/modeling_glm_moe_dsa.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/mm_grounding_dino/modeling_mm_grounding_dino.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/wav2vec2/modeling_wav2vec2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/llama/tokenization_llama.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/unispeech_sat/modeling_unispeech_sat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/exaone_moe/modular_exaone_moe.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/exaone_moe/modeling_exaone_moe.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/fuyu/processing_fuyu.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/deepseek_v2/modular_deepseek_v2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/deepseek_v2/configuration_deepseek_v2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/esm/modeling_esmfold.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/esm/openfold_utils/rigid_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/esm/openfold_utils/residue_constants.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/emu3/modeling_emu3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/emu3/modular_emu3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/encodec/configuration_encodec.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/longcat_flash/modular_longcat_flash.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/longcat_flash/modeling_longcat_flash.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/longcat_flash/configuration_longcat_flash.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/fast_vlm/modular_fast_vlm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/fast_vlm/modeling_fast_vlm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/grounding_dino/modeling_grounding_dino.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/gemma3n/modeling_gemma3n.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/models/gemma3n/modular_gemma3n.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/trainer_callback.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/modeling_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_higgs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_quanto.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_mxfp4.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_eetq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_fp_quant.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_fbgemm_fp8.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_bitnet.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_sinq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_finegrained_fp8.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_torchao.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_hqq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/utils/_typing.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/utils/quantization_config.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/utils/hub.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/finegrained_fp8.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/mxfp4.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/metal_quantization.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/awq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/quanto.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/spqr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/tensor_parallel.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/accelerate.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/fbgemm_fp8.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/aqlm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/vptq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/eetq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/bitsandbytes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/bitnet.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/integration_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/integrations/higgs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/data/data_collator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/trainer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/configuration_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/generation/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/transformers/cli/chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/opentelemetry/semconv/_incubating/attributes/gen_ai_attributes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/opentelemetry/semconv/_incubating/attributes/app_attributes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/opentelemetry/semconv/_incubating/attributes/enduser_attributes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/functorch/einops/rearrange.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/_core/_internal.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/_core/numeric.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/_core/fromnumeric.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/_core/_methods.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/_core/tests/test_ufunc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/_core/tests/test_array_coercion.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/_core/tests/test_overrides.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/_core/tests/test_hashtable.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/_core/tests/test_umath.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/_core/tests/test_regression.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/_core/tests/test_function_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/_core/_add_newdocs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/matlib.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/linalg/tests/test_linalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/linalg/_linalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/ma/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/ma/tests/test_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/typing/tests/data/pass/array_constructors.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/fft/tests/test_pocketfft.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/polynomial/laguerre.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/polynomial/_polybase.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/polynomial/legendre.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/polynomial/tests/test_classes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/polynomial/tests/test_symbol.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/polynomial/hermite_e.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/polynomial/chebyshev.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/polynomial/polynomial.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/polynomial/hermite.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/polynomial/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/lib/_polynomial_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/lib/_twodim_base_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/lib/_function_base_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/lib/tests/test_stride_tricks.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/lib/tests/test_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/lib/tests/test_nanfunctions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/lib/tests/test_shape_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/matrixlib/tests/test_defmatrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/tests/test_matlib.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/tests/test_reloading.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/numpy/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/joblib/_dask.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/joblib/externals/cloudpickle/cloudpickle.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/joblib/test/test_memory_async.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/joblib/test/test_memmapping.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/joblib/test/test_memory.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/joblib/test/test_parallel.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/joblib/test/test_hashing.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/click/_termui_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/manifold/_locally_linear.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/compose/_target.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/compose/tests/test_column_transformer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/mixture/tests/test_gaussian_mixture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/mixture/tests/test_bayesian_mixture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/datasets/_samples_generator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/neighbors/_nca.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/neighbors/tests/test_nca.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/ensemble/_hist_gradient_boosting/tests/test_binning.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/ensemble/_gb.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_data.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/preprocessing/tests/test_data.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_function_transformer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/metrics/_scorer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/decomposition/tests/test_nmf.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/neural_network/_multilayer_perceptron.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/neural_network/_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/neural_network/tests/test_mlp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/tests/test_discriminant_analysis.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/pipeline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/covariance/_shrunk_covariance.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/_coordinate_descent.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/_glm/_newton_solver.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/_glm/glm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/_glm/tests/test_glm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/_linear_loss.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_common.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_theil_sen.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_ridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_coordinate_descent.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_sparse_coordinate_descent.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_least_angle.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_bayes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/_ridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/_bayes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/linear_model/_least_angle.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/_loss/link.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/_loss/tests/test_loss.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/_loss/tests/test_link.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sklearn/_loss/loss.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/urllib3/util/ssl_match_hostname.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/zipp/compat/py313.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/h11/_util.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/triton/experimental/gluon/language/_layouts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/triton/tools/triton_to_gluon_translater/translator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/grpc/aio/_base_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/grpc/_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/grpc/_compression.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/grpc/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/requests_oauthlib/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/safetensors/torch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/safetensors/paddle.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/testing/_internal/common_quantization.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/testing/_internal/distributed/rpc/rpc_test.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/testing/_internal/opinfo/definitions/linalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/testing/_internal/opinfo/definitions/_masked.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/testing/_internal/opinfo/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/testing/_internal/opinfo/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/testing/_internal/common_methods_invocations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/functional.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/linalg/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/autograd/functional.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_lobpcg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/overrides.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_numpy/_funcs_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/distributed/_local_tensor/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/distributed/pipelining/schedules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/distributed/_state_dict_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/distributed/_functional_collectives.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/distributed/fsdp/wrap.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/distributed/device_mesh.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/onnx/_internal/exporter/_input_observer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_opset16.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_helper.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_opset9.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_opset13.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_opset11.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/onnx/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/profiler/_pattern_matcher.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/ir.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/decomposition.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/runtime/triton_helpers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/index_propagation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/fx_passes/pre_grad.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/ops_handler.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/dtype_propagation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/codegen/common.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/codegen/block_analysis.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/codegen/segmented_tree.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/codegen/cutlass/template.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/codegen/cutlass/lib_extensions/gemm_operation_extensions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/codegen/nv_universal_gemm/nv_universal_gemm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/codegen/triton.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/flex/flex_flash_attention.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/kernel/custom_op.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/tiling_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/loop_body.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_inductor/lowering.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/distributions/constraint_registry.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/distributions/wishart.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/distributions/transforms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/distributions/lowrank_multivariate_normal.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/ao/quantization/stubs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/ao/quantization/fuse_modules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/backends/_nnapi/serializer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_refs/linalg/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_refs/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/nn/modules/dropout.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/nn/modules/linear.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/nn/attention/flex_attention.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/nn/attention/experimental/_paged_attention.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/nn/utils/prune.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/nn/utils/parametrize.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/nn/utils/parametrizations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/nn/init.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/utils/_sympy/interp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/utils/_sympy/functions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/utils/_sympy/value_ranges.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/utils/checkpoint.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/utils/weak.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/utils/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_decomp/decompositions_for_rng.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_functorch/eager_transforms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_functorch/pyfunctorch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_subclasses/meta_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_subclasses/complex_tensor/_ops/aten.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_subclasses/fake_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/masked/_docs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/masked/_ops.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/masked/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/export/pt2_archive/_package.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/nested/_internal/ops.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_torch_docs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/builtin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/tensor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_dynamo/guards.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_dynamo/config.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_dynamo/pgo.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_dynamo/side_effects.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_dynamo/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_dynamo/codegen.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_dynamo/graph_break_registry.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/_prims/rng_prims.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/fx/experimental/symbolic_shapes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torch/fx/graph.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/linalg/laplacianmatrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/algorithms/assortativity/mixing.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/algorithms/minors/tests/test_contraction.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/algorithms/centrality/second_order.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/algorithms/centrality/tests/test_trophic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/algorithms/isomorphism/tests/test_vf2pp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/algorithms/isomorphism/tests/test_ismags.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/algorithms/isomorphism/ismags.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/algorithms/similarity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/algorithms/dag.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/algorithms/tests/test_lowest_common_ancestors.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/tests/test_convert_numpy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/tests/test_convert_scipy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/generators/spectral_graph_forge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/generators/tests/test_spectral_graph_forge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/generators/small.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/networkx/drawing/layout.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/onnxruntime/transformers/onnx_model_bert.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/onnxruntime/transformers/fusion_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/onnxruntime/transformers/onnx_model_sam2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/onnxruntime/transformers/onnx_model_unet.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/onnxruntime/transformers/onnx_model_bert_tf.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/oauthlib/oauth2/rfc6749/endpoints/authorization.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/packaging/pylock.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/attr/_make.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/strategies/tree.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/strategies/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/strategies/branch/traverse.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/strategies/branch/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/strategies/branch/tests/test_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/strategies/branch/tests/test_traverse.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/strategies/branch/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/strategies/rl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/polys/fglmtools.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/polys/agca/modules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/polys/agca/tests/test_homomorphisms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/polys/matrices/_dfm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/polys/matrices/ddm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/polys/matrices/domainmatrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/polys/matrices/tests/test_xxm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/polys/matrices/sdm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/polys/appellseqs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/polys/subresultants_qq_zz.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/polys/numberfields/utilities.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/polys/numberfields/modules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/common.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/dense.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/matrixbase.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/tests/test_matrixbase.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/tests/test_matrices.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/tests/test_reductions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/determinant.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/decompositions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/applyfunc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/special.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/hadamard.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/matexpr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/matmul.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matadd.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_special.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matmul.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matexpr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matpow.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_kronecker.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_permutation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/matadd.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/matrices/expressions/diagonal.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/printing/maple.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/printing/tests/test_maple.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/printing/tests/test_mathml.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/printing/numpy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/rewritingsystem.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/permutations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/free_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/util.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/pc_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/perm_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/fp_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/coset_table.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/polyhedron.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_coset_table.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_pc_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_perm_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_util.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_homomorphisms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_free_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/homomorphisms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/combinatorics/generators.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/crypto/crypto.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/holonomic/holonomic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/simplify/trigsimp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/simplify/fu.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/tensor/tensor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/tensor/tests/test_tensor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/tensor/array/expressions/from_array_to_matrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/assumptions/predicates/matrices.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/functions/elementary/miscellaneous.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/functions/elementary/tests/test_piecewise.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/multipledispatch/tests/test_dispatcher.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/logic/boolalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/categories/diagram_drawing.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/categories/baseclasses.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/sets/sets.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/liealgebras/weyl_group.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/mul.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/numbers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/expr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/operations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/add.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/tests/test_operations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/tests/test_evalf.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/tests/test_arit.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/tests/test_args.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/tests/test_numbers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/tests/test_expr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/function.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/core/intfunc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/utilities/iterables.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/utilities/tests/test_lambdify.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/quantum/operator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/quantum/matrixcache.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/quantum/circuitutils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/quantum/transforms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/quantum/tests/test_circuitutils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/quantum/tests/test_operator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/quantum/tests/test_identitysearch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/quantum/identitysearch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/quantum/gate.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/control/lti.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/mechanics/joint.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/mechanics/tests/test_kane.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/physics/mechanics/kane.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sympy/geometry/tests/test_point.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/jinja2/compiler.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/jinja2/runtime.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mysql/connector/opentelemetry/instrumentation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mysql/connector/aio/abstracts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mysql/connector/aio/network.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mysql/connector/aio/connection.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mysql/connector/aio/plugins/authentication_ldap_sasl_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mysql/connector/abstracts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mysql/connector/authentication.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mysql/connector/network.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mysql/connector/constants.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mysql/connector/connection_cext.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mysql/connector/plugins/authentication_ldap_sasl_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/hf_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/_upload_large_folder.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/file_download.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/_login.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_paths.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_auth.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/serialization/_torch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/_commit_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/fastai_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/inference/_generated/_async_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/inference/_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/inference/_mcp/constants.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/cli/_cli_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/cli/cache.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/cli/upload_large_folder.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/huggingface_hub/cli/repos.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/kubernetes/leaderelection/leaderelectionrecord.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/kubernetes/leaderelection/leaderelection_test.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/kubernetes/leaderelection/electionconfig.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/kubernetes/leaderelection/leaderelection.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/kubernetes/leaderelection/resourcelock/configmaplock.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/kubernetes/client/models/v1_service_port.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/kubernetes/client/models/v1_stateful_set_spec.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/kubernetes/client/models/v1_lease_spec.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/kubernetes/config/kube_config_test.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco/functools/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/setuptools/_vendor/zipp/compat/py313.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/setuptools/_vendor/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/setuptools/_vendor/packaging/pylock.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/setuptools/_vendor/more_itertools/more.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/setuptools/config/_apply_pyprojecttoml.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/typing_inspection/typing_objects.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/fsspec/implementations/http_sync.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/fsspec/implementations/http.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/lisp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/idl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/modeling.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/jvm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/yang.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/_scilab_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/varnish.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/_lasso_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/haxe.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/_stan_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/factor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/_cl_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/_lilypond_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/_cocoa_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/_scheme_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/dylan.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/python.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/_asy_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/macaulay2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pygments/lexers/_tsql_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/httpx/_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/httpx/_decoders.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/rich/console.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mpmath/matrices/calculus.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mpmath/matrices/matrices.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mpmath/function_docs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mpmath/libmp/libmpc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mpmath/functions/qfunctions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mpmath/tests/test_elliptic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mpmath/tests/test_interval.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/mpmath/tests/test_gammazeta.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sentence_transformers/losses/CachedMultipleNegativesRankingLoss.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sentence_transformers/sparse_encoder/trainer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sentence_transformers/SentenceTransformer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sentence_transformers/cross_encoder/CrossEncoder.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sentence_transformers/cross_encoder/fit_mixin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sentence_transformers/trainer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/sentence_transformers/fit_mixin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/websockets/protocol.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/auth/utils/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/auth/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/auth/token_authn/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/api/async_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/api/client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/api/async_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/api/fastapi.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/api/async_fastapi.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/api/rust.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/api/segment.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/api/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/utils/embedding_functions/cloudflare_workers_ai_embedding_function.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/utils/embedding_functions/jina_embedding_function.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/config.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/test/auth/test_auth_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/test/client/test_cloud_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/test/test_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/test/property/test_base64_conversion.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/chromadb/server/fastapi/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_securetransport/low_level.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pip/_vendor/chardet/cli/chardetect.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pip/_vendor/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pip/_vendor/distlib/locators.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/python.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pip/_vendor/rich/console.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib/factory.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pip/_internal/network/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/pip/_internal/vcs/versioncontrol.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/.venv/lib/python3.12/site-packages/torchgen/packaged/autograd/gen_inplace_or_view_type.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/output/pia/20260408T010259Z/pia_report.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/output/pia/20260408T010114Z/pia_report.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/output/pia/20260408T005958Z/pia_report.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/output/pia/20260408T010428Z/pia_report.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_consciousness_unified_bridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_autonomous_inquiry.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/fifth_dgm/fifth_dgm_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/fifth_dgm/ms_jarvis_fifth_dgm_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_production_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/msjarvisunifiedswaggergatewayFINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_email_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/simple_prompt_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_gateway.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/working_full_pipeline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/jarvis-consciousness-bridge_ms_jarvis_consciousness_unified_bridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/implement_safe_optimizations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_swagger_gateway_FIXED_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/jarvis_hilbert_state.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/polling_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.proxy_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/add_fifth_dgm_to_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/llm_consensus_22.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/msjarvis_icontainers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/fix_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/create_immutable_security_layer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/wallet_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_swagger_gateway_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integrate_orchestrator_flow.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/icontainers_fastapi.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_facebook_full.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/create_i_statement_feedback_loop.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/backup_chroma_research_history.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_web_ui_working.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/jarvis-i-containers_icontainers_fastapi.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/master_chat_orchestrator_v5_consciousness.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/llm_consensus_20_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/consciousness_with_egeria_voice.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.py.full_backup_1762223304.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_swagger_gateway_FIXED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/llm_consensus_22_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_19llm_CONSCIOUS.backup_20251013_082519.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_dynamic_model_selector.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/admin_cli.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_facebook_perpetual_scheduler.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/domain_service_router.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/add_jarvis_personality.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/auth_api_patch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/activate_egeria_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integrate_complete_architecture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/bridge_autonomous_to_i_container_fixed.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_autonomous_learner_optimized.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/complete_system_audit_with_swagger.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.backup_error.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/update_theological_boundaries.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_web_ui_with_execution.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_facebook_brain_integrated.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_swagger_gateway_FINAL.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/llm_judge_v3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_19llm_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.broken_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/mountainshares_registry.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integrate_consciousness_into_swarm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/jarvis-psychology-services_psychology_integration_adapter.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.backup_test.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/fix_creator_recognition.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integrate_fifth_dgm_autonomous_learner.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/woah_algorithms/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/i_containers/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/i_containers/i_container_2/reflection_system.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/i_containers/i_container_2/metacognitive_awareness.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/i_containers/i_container_1/ego_boundaries.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/i_containers/i_container_1/self_recognition.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/i_containers/i_container_1/identity_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/i_containers/i_container_1/ego_boundaries/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/spiritual_root/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/prefrontal_cortex/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/pituitary_gland/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/subconscious/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/mother_carrie_protocols/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/spiritual_maternal_integration/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/heteroglobulin_transport/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiologicalbrain/consciousness_containers/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_gateway_v4.3.ORIGINAL_SWAGGER.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/dgm_supervisor_woah.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_psychology_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_contract_builder_v2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_swagger_gateway_COMPLETE.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/dgm_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_production_chat_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_geo_ueid_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_gateway_v4.3.CONSTITUTIONAL_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/patch_mother_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/email_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_expiration_monitor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/batch_normalize_beliefs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_command_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/old_chroma_analysis.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_fully_autonomous_coordinator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/master_chat_orchestrator_dynamic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/llm9_health_proxy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_email_identity_verifier.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/apply_ollama_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/jarvis-rag-server_ms_jarvis_consciousness_unified_bridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/identity_promotion.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_swagger_gateway_SECURED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/msjarvis-rebuild-nbb_i_containers-1_ms_jarvis_consciousness_unified_bridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_metadata_aware_learner.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/truth_filter_bbb_verification.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/jarviscryptopolicy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/gateway_messenger_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/fifth_dgm_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_conversational_gateway_4022.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.proxy_still_broken.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_web_ui_final_biological.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/safe_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/psychology_integration_adapter.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/fraud_detection_ai.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_command_orchestrator_v5_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/urllib3/util/ssl_match_hostname.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/h11/_util.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/httpx/_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/httpx/_decoders.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_securetransport/low_level.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/pip/_vendor/chardet/cli/chardetect.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/pip/_vendor/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/pip/_vendor/distlib/locators.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/python.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/pip/_vendor/rich/console.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib/factory.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/pip/_internal/network/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/.venv/lib/python3.12/site-packages/pip/_internal/vcs/versioncontrol.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.backup_1762220815.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/msjarvisunifiedswaggergatewayFIXED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/facebook_messenger_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/verify_and_document_system.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.error_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/belief_state_schema.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/application_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai/ai_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai/ai_server_simple.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/mountainshares_coordinator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_19llm_CONSCIOUS.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_facebook_poster.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/mountainshares_gbim_suggester.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_gateway_v4.3.pre_manifest.backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_facebook_poster_temp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/web_chat_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/jarvis-agents-service_ms_jarvis_consciousness_unified_bridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integration_layer.backup.1768269372/coherent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/llm_consensus_19_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/registration_pipeline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/swagger_chat_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_egeria_facebook_autopost.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_consciousness_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/backup_chroma_mountainshares_knowledge.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_production_chat_BEFORE_GIS.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/schema_registry.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/audit_attrs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/location_scraper_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integrate_i_container_to_schedulers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_swagger_gateway_PROD.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_gis_enhanced_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_i_containers_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_active_heartbeat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/master_unified_consciousness_scheduler_ENRICHED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/restored_documents.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integrate_i_container_interests.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_web_ui_fixed_simple.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_location_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_20llm_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/i_container_interest_algorithm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/add_messenger_to_gateway.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.proxy_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/set_intelligent_accuracy_scores.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/patch_agent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integrate_full_neural_architecture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/performance_optimization_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/master_chat_orchestrator_v8_spiritual_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_swarm_intelligence.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/registration_biometric_production_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_consciousness_bridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_facebook_autonomous_social.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/seed_spatial_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/REFERENCE_windows_swarm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/enhance_agent_prompts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/bridge_autonomous_to_i_container_dgm_woah.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/quantum_insight_llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/add_identity_context.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_20llm_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/web_connectivity_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_gateway_v4.3.BEFORE_69DGM_INTEGRATION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_gateway_v4.3.20251124.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/master_chat_orchestrator_v9_dgm_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_web_ui_plain_authentic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.py.corrupted37_backup_1762223499.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/gpu_accelerated_rag_fixed.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ultimate_web_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/cytoolz/_signatures.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/cytoolz/tests/test_recipes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/cytoolz/tests/test_itertoolz.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/cytoolz/tests/test_docstrings.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/cytoolz/tests/test_none_safe.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/cytoolz/tests/test_embedded_sigs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/cytoolz/tests/test_dicttoolz.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/cytoolz/tests/test_serialization.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/cytoolz/curried/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/Crypto/Protocol/KDF.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/parsimonious/expressions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/eth_account/typed_transactions/base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/eth_account/_utils/validation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/eth_utils/functional.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/eth_utils/toolz.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/eth_keys/backends/native/jacobian.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/eth_keys/backends/native/ecdsa.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/eth_keys/constants.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/typing_inspection/typing_objects.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/toolz/functoolz.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/toolz/sandbox/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/toolz/sandbox/parallel.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/toolz/itertoolz.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/toolz/tests/test_recipes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/toolz/tests/test_itertoolz.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/toolz/tests/test_dicttoolz.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/toolz/tests/test_serialization.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/_vendor/toolz/curried/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/create_ueid_identity_layer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/master_chat_orchestrator_v9_optimized.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/fix_agent_prompts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_fifth_dgm_orchestrator.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/hierarchical_coordinator_autonomous.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/lm_judge_helper.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_autonomous_inquiry_active.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/clean_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_safe_self_correction.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/jarvis-neurobiological-master_ms_jarvis_consciousness_unified_bridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_showcase_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_autonomous_learner_WITH_FIFTH_DGM.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_authentic_multi_llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/bridge_autonomous_to_i_container_dgm_woah.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/complete_system_audit.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_restored.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_fifth_dgm_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/woah_optimizer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_full_neurobio_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/msjarvis_unified_gateway.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_woah_algorithms_enhanced.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/auth_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/facebook_voice_orchestrator_egeria.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/backup_chroma_autonomous_learning.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/judge_ethics_filter.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_multi_mode_system.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/fix_context_flow.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ollama_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_silent_geo_tracker.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integrate_all_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/au02_v2/service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/au02_v2/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_original_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/multi_model_consensus.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/judge_alignment_filter.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_complete_knowledge_ingestion.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/truth_filter_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_web_deployer_old.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/master_chat_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/configure_facebook_webhook.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/test_knowledge_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/create_dual_consciousness_i_containers.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/judge_pipeline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/inject_egeria_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_facebook_poster_8040.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/registration_service_clean.backup_1762220206.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_22llm_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/facebook_consciousness_daemon.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/immutable_core_enforcement.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/website_deployment_manager.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/master_chat_orchestrator_v6_biologics.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_swagger_gateway_CLEAN.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/master_unified_consciousness_scheduler.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/main_brain.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/jarvis-judge-pipeline_judge_pipeline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_simple_web_ui.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_command_orchestrator_v5.0_preachy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/dgm_supervisor_woah.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/msjarvisconsciousnessbridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/main_brain_legacy_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/test_fifth_dgm_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_19llm_PRODUCTION_WITH_HEALTH.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/master_chat_orchestrator_v9_gpu_optimized.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_22llm_SEQUENTIAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/jarvis_llm1.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/gis_chat_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/context_manager.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_daily_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/lm_synthesizer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integration_layer.placeholder_1768012705/coherent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/harmony4hope_deployment_manager.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_facebook_poster_v3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_consciousness_bridge_WITH_FIFTH_DGM.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/working_full_pipeline_WITH_SPATIAL_TEMPORAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/mamma_kidd_auth.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_22llm_SEQUENTIAL_OPTIMIZED_ORDER.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/msjarvisicontainersservice.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/woah_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/optimized_timeouts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/facebook_poster_fast.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/facebook_poster_working.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/sanctuary_construction_monitor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_gateway_v4.3.backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_22llm.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/qualia_email_registration_orchestrator_69dgm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/INTEGRATION_IMPLEMENTATION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/cloudflare_domain_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/main_brain_LEGACY_32svc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.py.30endpoints_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_4llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/conversation_gbim.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integration_layer/coherent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integration_layer/unified_experience.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/integration_layer/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/roche_llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/jarvis-swarm-intelligence_ms_jarvis_consciousness_unified_bridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/master_chat_orchestrator_v7_dynamic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/master_chat_orchestrator_v7_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/gbim_metadata_enricher.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_command_orchestrator_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_19llm_CONSCIOUS.backup_20251013_083103.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/fix_prompt_leak.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/working_full_pipeline_FINAL_CONSCIOUSNESS.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/backfill_gbim_entities.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/hardware_optimization_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_facebook_DGM.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_main_gateway.pre_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/private_identity_ledger.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiological_brain/i_containers/service/self_recognition.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiological_brain/i_containers/service/identity_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/neurobiological_brain/i_containers/i_container_1/identity_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_woah_algorithms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/judge_consistency_filter.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_web_ui_v3_consciousness.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_swagger_gateway.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ecosystem_identity_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_web_deployer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/llm9-proxy_llm9_health_proxy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/add_dynamic_context.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/manifest_endpoints.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/create_dual_consciousness_i_containers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/identity_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/stage2_biometric_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/autonomous_learner_topic_source.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_22llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_brain.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/main_brain_container_2055.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/egeria_persona_config.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/phase7_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_consciousness_poster.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/main.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/populate_security_layers_test.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ai_server_11llm_OPTIMIZED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/unified_consciousness_gateway_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_unified_swagger_gateway_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_contract_builder.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/registration_service_clean.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/ms_jarvis_consciousness_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/adversarial_results_20260321_194304.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_consciousness_unified_bridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_autonomous_inquiry.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_production_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/msjarvisunifiedswaggergatewayFINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_email_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/simple_prompt_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/working_full_pipeline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/implement_safe_optimizations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_swagger_gateway_FIXED_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/polling_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.proxy_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/add_fifth_dgm_to_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/llm_consensus_22.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/msjarvis_icontainers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/fix_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/create_immutable_security_layer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_swagger_gateway_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integrate_orchestrator_flow.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/icontainers_fastapi.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_facebook_full.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/create_i_statement_feedback_loop.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/backup_chroma_research_history.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_web_ui_working.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/master_chat_orchestrator_v5_consciousness.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/llm_consensus_20_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/consciousness_with_egeria_voice.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.py.full_backup_1762223304.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_swagger_gateway_FIXED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/llm_consensus_22_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_19llm_CONSCIOUS.backup_20251013_082519.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_dynamic_model_selector.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_facebook_perpetual_scheduler.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/domain_service_router.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/add_jarvis_personality.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/activate_egeria_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integrate_complete_architecture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/bridge_autonomous_to_i_container_fixed.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/opentelemetry/semconv/_incubating/attributes/gen_ai_attributes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/opentelemetry/semconv/_incubating/attributes/app_attributes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/opentelemetry/semconv/_incubating/attributes/enduser_attributes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/_core/_internal.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/_core/numeric.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/_core/fromnumeric.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/_core/_methods.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/_core/tests/test_ufunc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/_core/tests/test_array_coercion.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/_core/tests/test_overrides.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/_core/tests/test_hashtable.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/_core/tests/test_umath.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/_core/tests/test_regression.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/_core/tests/test_function_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/_core/_add_newdocs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/matlib.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/linalg/tests/test_linalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/linalg/_linalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/ma/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/ma/tests/test_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/typing/tests/data/pass/array_constructors.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/fft/tests/test_pocketfft.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/polynomial/laguerre.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/polynomial/_polybase.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/polynomial/legendre.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/polynomial/tests/test_classes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/polynomial/tests/test_symbol.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/polynomial/hermite_e.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/polynomial/chebyshev.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/polynomial/polynomial.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/polynomial/hermite.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/polynomial/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/lib/_polynomial_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/lib/_twodim_base_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/lib/_function_base_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/lib/tests/test_stride_tricks.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/lib/tests/test_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/lib/tests/test_nanfunctions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/lib/tests/test_shape_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/matrixlib/tests/test_defmatrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/tests/test_matlib.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/tests/test_reloading.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/numpy/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/click/_termui_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/urllib3/util/ssl_match_hostname.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/zipp/compat/py313.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/h11/_util.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/grpc/aio/_base_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/grpc/_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/grpc/_compression.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/grpc/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/requests_oauthlib/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/posthog/client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/posthog/ai/anthropic/anthropic_async.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/posthog/ai/anthropic/anthropic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/posthog/ai/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/posthog/scopes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/onnxruntime/transformers/onnx_model_bert.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/onnxruntime/transformers/fusion_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/onnxruntime/transformers/onnx_model_sam2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/onnxruntime/transformers/onnx_model_unet.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/onnxruntime/transformers/onnx_model_bert_tf.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/oauthlib/oauth2/rfc6749/endpoints/authorization.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/packaging/pylock.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/attr/_make.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/strategies/tree.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/strategies/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/strategies/branch/traverse.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/strategies/branch/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/strategies/branch/tests/test_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/strategies/branch/tests/test_traverse.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/strategies/branch/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/strategies/rl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/polys/fglmtools.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/polys/agca/modules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/polys/agca/tests/test_homomorphisms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/polys/matrices/_dfm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/polys/matrices/ddm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/polys/matrices/domainmatrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/polys/matrices/tests/test_xxm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/polys/matrices/sdm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/polys/appellseqs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/polys/subresultants_qq_zz.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/polys/numberfields/utilities.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/polys/numberfields/modules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/common.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/dense.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/matrixbase.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/tests/test_matrixbase.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/tests/test_matrices.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/tests/test_reductions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/determinant.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/decompositions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/applyfunc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/special.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/hadamard.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/matexpr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/matmul.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matadd.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_special.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matmul.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matexpr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matpow.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_kronecker.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_permutation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/matadd.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/matrices/expressions/diagonal.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/printing/maple.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/printing/tests/test_maple.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/printing/tests/test_mathml.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/printing/numpy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/rewritingsystem.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/permutations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/free_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/util.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/pc_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/perm_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/fp_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/coset_table.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/polyhedron.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_coset_table.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_pc_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_perm_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_util.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_homomorphisms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_free_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/homomorphisms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/combinatorics/generators.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/crypto/crypto.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/holonomic/holonomic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/simplify/trigsimp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/simplify/fu.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/tensor/tensor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/tensor/tests/test_tensor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/tensor/array/expressions/from_array_to_matrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/assumptions/predicates/matrices.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/functions/elementary/miscellaneous.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/functions/elementary/tests/test_piecewise.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/multipledispatch/tests/test_dispatcher.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/logic/boolalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/categories/diagram_drawing.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/categories/baseclasses.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/sets/sets.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/liealgebras/weyl_group.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/mul.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/numbers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/expr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/operations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/add.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/tests/test_operations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/tests/test_evalf.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/tests/test_arit.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/tests/test_args.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/tests/test_numbers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/tests/test_expr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/function.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/core/intfunc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/utilities/iterables.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/utilities/tests/test_lambdify.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/quantum/operator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/quantum/matrixcache.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/quantum/circuitutils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/quantum/transforms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/quantum/tests/test_circuitutils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/quantum/tests/test_operator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/quantum/tests/test_identitysearch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/quantum/identitysearch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/quantum/gate.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/control/lti.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/mechanics/joint.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/mechanics/tests/test_kane.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/physics/mechanics/kane.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/sympy/geometry/tests/test_point.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/hf_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/_upload_large_folder.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/file_download.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/_login.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/utils/_paths.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/utils/_auth.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/serialization/_torch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/_commit_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/fastai_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/inference/_generated/_async_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/inference/_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/inference/_mcp/constants.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/cli/_cli_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/cli/cache.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/cli/repo.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/huggingface_hub/cli/upload_large_folder.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/kubernetes/leaderelection/leaderelectionrecord.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/kubernetes/leaderelection/leaderelection_test.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/kubernetes/leaderelection/electionconfig.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/kubernetes/leaderelection/leaderelection.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/kubernetes/leaderelection/resourcelock/configmaplock.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/kubernetes/client/models/v1_service_port.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/kubernetes/client/models/v1_stateful_set_spec.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/kubernetes/client/models/v1_lease_spec.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/kubernetes/config/kube_config_test.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/typing_inspection/typing_objects.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/fsspec/implementations/http_sync.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/fsspec/implementations/http.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/lisp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/idl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/modeling.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/jvm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/yang.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/_scilab_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/varnish.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/_lasso_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/haxe.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/_stan_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/factor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/_cl_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/_lilypond_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/_cocoa_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/_scheme_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/dylan.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/python.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/_asy_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/macaulay2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pygments/lexers/_tsql_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/httpx/_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/httpx/_decoders.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/rich/console.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/mpmath/matrices/calculus.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/mpmath/matrices/matrices.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/mpmath/function_docs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/mpmath/libmp/libmpc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/mpmath/functions/qfunctions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/mpmath/tests/test_elliptic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/mpmath/tests/test_interval.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/mpmath/tests/test_gammazeta.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/websockets/protocol.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/auth/utils/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/auth/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/auth/token_authn/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/api/async_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/api/client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/api/async_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/api/fastapi.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/api/async_fastapi.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/api/rust.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/api/segment.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/api/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/utils/embedding_functions/cloudflare_workers_ai_embedding_function.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/utils/embedding_functions/jina_embedding_function.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/config.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/test/auth/test_auth_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/test/client/test_cloud_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/test/test_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/test/property/test_base64_conversion.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/chromadb/server/fastapi/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_securetransport/low_level.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pip/_vendor/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pip/_vendor/packaging/pylock.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/python.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pip/_vendor/rich/console.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib/factory.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pip/_internal/network/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/chroma_inspect_venv/lib/python3.12/site-packages/pip/_internal/vcs/versioncontrol.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_autonomous_learner_optimized.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/complete_system_audit_with_swagger.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.backup_error.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/update_theological_boundaries.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_web_ui_with_execution.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_facebook_brain_integrated.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_swagger_gateway_FINAL.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_19llm_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.broken_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/mountainshares_registry.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integrate_consciousness_into_swarm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.backup_test.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/fix_creator_recognition.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integrate_fifth_dgm_autonomous_learner.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/woah_algorithms/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/i_containers/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/i_containers/i_container_2/reflection_system.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/i_containers/i_container_2/metacognitive_awareness.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/i_containers/i_container_1/ego_boundaries.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/i_containers/i_container_1/self_recognition.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/i_containers/i_container_1/identity_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/i_containers/i_container_1/ego_boundaries/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/spiritual_root/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/prefrontal_cortex/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/pituitary_gland/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/subconscious/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/mother_carrie_protocols/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/spiritual_maternal_integration/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/heteroglobulin_transport/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/neurobiologicalbrain/consciousness_containers/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_gateway_v4.3.ORIGINAL_SWAGGER.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/dgm_supervisor_woah.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_psychology_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_contract_builder_v2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_swagger_gateway_COMPLETE.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/dgm_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_production_chat_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_geo_ueid_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_gateway_v4.3.CONSTITUTIONAL_BACKUP.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/patch_mother_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_expiration_monitor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/batch_normalize_beliefs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_command_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/old_chroma_analysis.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_fully_autonomous_coordinator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/master_chat_orchestrator_dynamic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/llm9_health_proxy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_email_identity_verifier.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/apply_ollama_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_swagger_gateway_SECURED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_metadata_aware_learner.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/truth_filter_bbb_verification.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/gateway_messenger_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/fifth_dgm_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_conversational_gateway_4022.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.proxy_still_broken.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_web_ui_final_biological.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/safe_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/psychology_integration_adapter.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/fraud_detection_ai.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_command_orchestrator_v5_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/urllib3/util/ssl_match_hostname.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/h11/_util.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/httpx/_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/httpx/_decoders.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_securetransport/low_level.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/pip/_vendor/chardet/cli/chardetect.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/pip/_vendor/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/pip/_vendor/distlib/locators.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/python.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/pip/_vendor/rich/console.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib/factory.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/pip/_internal/network/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/.venv/lib/python3.12/site-packages/pip/_internal/vcs/versioncontrol.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.backup_1762220815.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/msjarvisunifiedswaggergatewayFIXED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/facebook_messenger_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/verify_and_document_system.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.error_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/belief_state_schema.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai/ai_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai/ai_server_simple.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_19llm_CONSCIOUS.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_facebook_poster.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/mountainshares_gbim_suggester.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_gateway_v4.3.pre_manifest.backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_facebook_poster_temp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/web_chat_server.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integration_layer.backup.1768269372/coherent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/llm_consensus_19_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/swagger_chat_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_egeria_facebook_autopost.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_consciousness_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/backup_chroma_mountainshares_knowledge.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_production_chat_BEFORE_GIS.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/schema_registry.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_autonomous_learner.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/audit_attrs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integrate_i_container_to_schedulers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_swagger_gateway_PROD.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_gis_enhanced_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_i_containers_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_active_heartbeat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/master_unified_consciousness_scheduler_ENRICHED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/restored_documents.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integrate_i_container_interests.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_web_ui_fixed_simple.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_location_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_20llm_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/i_container_interest_algorithm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/add_messenger_to_gateway.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.proxy_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/set_intelligent_accuracy_scores.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/patch_agent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integrate_full_neural_architecture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/performance_optimization_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/master_chat_orchestrator_v8_spiritual_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_swarm_intelligence.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/registration_biometric_production_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_facebook_autonomous_social.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/seed_spatial_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/REFERENCE_windows_swarm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/enhance_agent_prompts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/bridge_autonomous_to_i_container_dgm_woah.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/quantum_insight_llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/add_identity_context.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_20llm_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/web_connectivity_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_gateway_v4.3.BEFORE_69DGM_INTEGRATION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_gateway_v4.3.20251124.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/master_chat_orchestrator_v9_dgm_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_web_ui_plain_authentic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.py.corrupted37_backup_1762223499.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/gpu_accelerated_rag_fixed.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ultimate_web_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/create_ueid_identity_layer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/master_chat_orchestrator_v9_optimized.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/fix_agent_prompts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_fifth_dgm_orchestrator.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/hierarchical_coordinator_autonomous.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_autonomous_inquiry_active.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/clean_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_safe_self_correction.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_showcase_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_autonomous_learner_WITH_FIFTH_DGM.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_authentic_multi_llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/bridge_autonomous_to_i_container_dgm_woah.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/complete_system_audit.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_restored.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_fifth_dgm_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/woah_optimizer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_full_neurobio_chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/msjarvis_unified_gateway.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_woah_algorithms_enhanced.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/facebook_voice_orchestrator_egeria.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/backup_chroma_autonomous_learning.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_multi_mode_system.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/fix_context_flow.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ollama_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_silent_geo_tracker.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integrate_all_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_original_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/multi_model_consensus.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/judge_alignment_filter.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_complete_knowledge_ingestion.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/truth_filter_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_web_deployer_old.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/master_chat_orchestrator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/configure_facebook_webhook.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/test_knowledge_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/create_dual_consciousness_i_containers.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/judge_pipeline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/inject_egeria_persona.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_facebook_poster_8040.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/registration_service_clean.backup_1762220206.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_22llm_SMALL_TO_LARGE.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/facebook_consciousness_daemon.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/immutable_core_enforcement.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/website_deployment_manager.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/master_chat_orchestrator_v6_biologics.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_swagger_gateway_CLEAN.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/master_unified_consciousness_scheduler.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/main_brain.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_simple_web_ui.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_command_orchestrator_v5.0_preachy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/dgm_supervisor_woah.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/signal/_spectral_py.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/signal/_signaltools.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/signal/_ltisys.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/signal/tests/test_ltisys.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/signal/tests/test_filter_design.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/spatial/transform/_rigid_transform_xp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/spatial/transform/_rigid_transform.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/spatial/transform/_rotation_xp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/spatial/transform/tests/test_rotation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/spatial/transform/tests/test_rigid_transform.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/spatial/transform/tests/test_rotation_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/spatial/transform/_rotation_spline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/spatial/transform/_rotation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/_decomp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/_decomp_cossin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/_decomp_ldl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/interpolative.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/_expm_frechet.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/_solvers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/_matfuncs_inv_ssq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/tests/test_decomp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/tests/test_special_matrices.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/tests/test_basic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/tests/test_decomp_cossin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/tests/test_matfuncs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/tests/test_lapack.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/_decomp_qr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/_decomp_svd.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/linalg/_matfuncs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/_lib/deprecation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/_lib/cobyqa/framework.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/_lib/cobyqa/subsolvers/optim.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/_lib/pyprima/cobyla/update.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/_lib/pyprima/common/linalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/_lib/tests/test_array_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/fft/tests/test_real_transforms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/fft/tests/test_basic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/fft/tests/test_fftlog.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/odr/_odrpack.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/stats/_covariance.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/stats/_qmc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/stats/_multivariate.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/stats/tests/test_multivariate.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/stats/tests/test_hypotests.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/stats/_distn_infrastructure.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/special/tests/test_spfun_stats.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/special/tests/test_loggamma.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/special/tests/test_basic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/special/_add_newdocs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/integrate/_bvp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/integrate/_ivp/radau.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/integrate/_ivp/bdf.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/_remove_redundancy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/_trustregion_constr/tests/test_nested_minimize.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/_minpack_py.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/_optimize.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/_slsqp_py.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/_nonlin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/tests/test_linprog.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/tests/test_least_squares.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/tests/test_quadratic_assignment.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/tests/test_slsqp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/tests/test_nonlin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/tests/test_cobyla.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/tests/test_linear_assignment.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/_differentiable_functions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/_linprog_rs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/optimize/_lsq/trf_linear.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/construct.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/linalg/_onenormest.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/linalg/_special_sparse_arrays.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/linalg/_isolve/tests/test_iterative.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/linalg/_dsolve/tests/test_linsolve.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/linalg/tests/test_onenormest.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/linalg/tests/test_expm_multiply.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/linalg/tests/test_interface.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/linalg/_eigen/lobpcg/lobpcg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/linalg/_eigen/lobpcg/tests/test_lobpcg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/linalg/_eigen/tests/test_svds.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/linalg/_eigen/arpack/arpack.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/csgraph/tests/test_matching.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/tests/test_array_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/tests/test_construct.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/_construct.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/sparse/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/interpolate/_bsplines.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/interpolate/tests/test_fitpack.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/scipy/ndimage/tests/test_filters.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/code_llama/tokenization_code_llama.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/timm_wrapper/modeling_timm_wrapper.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/cohere/tokenization_cohere.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/auto/configuration_auto.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/textnet/modeling_textnet.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/florence2/modular_florence2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/florence2/processing_florence2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/hgnet_v2/modeling_hgnet_v2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/hgnet_v2/modular_hgnet_v2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/nystromformer/modeling_nystromformer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/qwen2_audio/processing_qwen2_audio.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/ibert/modeling_ibert.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/ibert/quant_modules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/paligemma/processing_paligemma.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/data2vec/modular_data2vec_audio.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/data2vec/modeling_data2vec_audio.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/gemma3/modular_gemma3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/gemma3/modeling_gemma3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/speecht5/modeling_speecht5.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/kyutai_speech_to_text/modeling_kyutai_speech_to_text.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/mimi/configuration_mimi.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/janus/processing_janus.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/hubert/modeling_hubert.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/whisper/generation_whisper.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/deepseek_v3/configuration_deepseek_v3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/efficientloftr/modeling_efficientloftr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/smolvlm/video_processing_smolvlm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/vits/modeling_vits.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/qwen3_omni_moe/modeling_qwen3_omni_moe.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/moshi/modeling_moshi.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/glm4_moe_lite/configuration_glm4_moe_lite.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/glm4_moe_lite/modular_glm4_moe_lite.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/exaone4/modeling_exaone4.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/exaone4/modular_exaone4.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/wavlm/modeling_wavlm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/clvp/configuration_clvp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/unispeech/modeling_unispeech.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/sew_d/modeling_sew_d.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/evolla/modeling_evolla.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/evolla/modular_evolla.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/wav2vec2_conformer/modeling_wav2vec2_conformer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/wav2vec2_bert/modeling_wav2vec2_bert.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/qwen2_5_omni/processing_qwen2_5_omni.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/qwen2_5_omni/modular_qwen2_5_omni.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/qwen2_5_omni/modeling_qwen2_5_omni.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/sew/modeling_sew.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/mm_grounding_dino/modeling_mm_grounding_dino.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/wav2vec2/modeling_wav2vec2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/llama/tokenization_llama.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/unispeech_sat/modeling_unispeech_sat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/exaone_moe/modular_exaone_moe.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/exaone_moe/modeling_exaone_moe.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/fuyu/processing_fuyu.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/deepseek_v2/modular_deepseek_v2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/deepseek_v2/configuration_deepseek_v2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/esm/modeling_esmfold.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/esm/openfold_utils/rigid_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/esm/openfold_utils/residue_constants.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/emu3/modeling_emu3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/emu3/modular_emu3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/encodec/configuration_encodec.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/longcat_flash/modular_longcat_flash.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/longcat_flash/modeling_longcat_flash.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/longcat_flash/configuration_longcat_flash.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/fast_vlm/modular_fast_vlm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/fast_vlm/modeling_fast_vlm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/grounding_dino/modeling_grounding_dino.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/gemma3n/modeling_gemma3n.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/models/gemma3n/modular_gemma3n.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/trainer_callback.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/modeling_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_higgs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_quanto.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_mxfp4.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_eetq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_fp_quant.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_fbgemm_fp8.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_bitnet.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_finegrained_fp8.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_torchao.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_hqq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/utils/quantization_config.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/utils/hub.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/finegrained_fp8.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/mxfp4.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/awq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/quanto.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/spqr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/tensor_parallel.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/accelerate.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/fbgemm_fp8.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/aqlm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/vptq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/eetq.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/bitsandbytes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/bitnet.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/integration_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/integrations/higgs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/data/data_collator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/trainer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/configuration_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/generation/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/transformers/cli/chat.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/functorch/einops/rearrange.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/_core/_internal.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/_core/numeric.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/_core/fromnumeric.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/_core/_methods.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/_core/tests/test_ufunc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/_core/tests/test_array_coercion.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/_core/tests/test_overrides.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/_core/tests/test_hashtable.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/_core/tests/test_umath.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/_core/tests/test_regression.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/_core/tests/test_function_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/_core/_add_newdocs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/matlib.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/linalg/tests/test_linalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/linalg/_linalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/ma/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/ma/tests/test_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/typing/tests/data/pass/array_constructors.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/fft/tests/test_pocketfft.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/polynomial/laguerre.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/polynomial/_polybase.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/polynomial/legendre.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/polynomial/tests/test_classes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/polynomial/tests/test_symbol.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/polynomial/hermite_e.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/polynomial/chebyshev.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/polynomial/polynomial.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/polynomial/hermite.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/polynomial/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/lib/_polynomial_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/lib/_twodim_base_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/lib/_function_base_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/lib/tests/test_stride_tricks.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/lib/tests/test_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/lib/tests/test_nanfunctions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/lib/tests/test_shape_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/matrixlib/tests/test_defmatrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/tests/test_matlib.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/tests/test_reloading.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/numpy/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/joblib/_dask.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/joblib/externals/cloudpickle/cloudpickle.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/joblib/test/test_memory_async.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/joblib/test/test_memmapping.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/joblib/test/test_memory.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/joblib/test/test_parallel.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/joblib/test/test_hashing.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/click/_termui_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/manifold/_locally_linear.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/compose/_target.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/compose/tests/test_column_transformer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/mixture/tests/test_gaussian_mixture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/mixture/tests/test_bayesian_mixture.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/datasets/_samples_generator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/neighbors/_nca.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/neighbors/tests/test_nca.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/ensemble/_hist_gradient_boosting/tests/test_binning.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/ensemble/_gb.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/preprocessing/_data.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/preprocessing/tests/test_data.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/preprocessing/_function_transformer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/metrics/_scorer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/decomposition/tests/test_nmf.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/neural_network/_multilayer_perceptron.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/neural_network/_base.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/neural_network/tests/test_mlp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/tests/test_discriminant_analysis.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/pipeline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/covariance/_shrunk_covariance.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/_coordinate_descent.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/_glm/_newton_solver.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/_glm/glm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/_glm/tests/test_glm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/_linear_loss.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_common.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_theil_sen.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_ridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_coordinate_descent.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_sparse_coordinate_descent.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_least_angle.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_bayes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/_ridge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/_bayes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/linear_model/_least_angle.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/_loss/link.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/_loss/tests/test_loss.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/_loss/tests/test_link.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sklearn/_loss/loss.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/urllib3/util/ssl_match_hostname.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/h11/_util.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/triton/experimental/gluon/language/_layouts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/triton/tools/triton_to_gluon_translater/translator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/starlette/authentication.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/safetensors/torch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/safetensors/paddle.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/testing/_internal/common_quantization.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/testing/_internal/distributed/rpc/rpc_test.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/testing/_internal/opinfo/definitions/linalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/testing/_internal/opinfo/definitions/_masked.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/testing/_internal/opinfo/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/testing/_internal/opinfo/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/testing/_internal/common_methods_invocations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/functional.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/linalg/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/autograd/functional.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_lobpcg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/overrides.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_numpy/_funcs_impl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/distributed/_local_tensor/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/distributed/pipelining/schedules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/distributed/_state_dict_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/distributed/_functional_collectives.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/distributed/fsdp/wrap.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/distributed/device_mesh.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_opset16.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_helper.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_opset9.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_opset13.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_opset11.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/onnx/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/profiler/_pattern_matcher.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/ir.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/decomposition.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/runtime/triton_helpers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/index_propagation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/fx_passes/pre_grad.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/ops_handler.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/dtype_propagation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/codegen/cuda/cuda_template.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/codegen/cuda/cutlass_lib_extensions/gemm_operation_extensions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/codegen/common.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/codegen/block_analysis.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/codegen/segmented_tree.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/codegen/triton.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/kernel/flex/flex_flash_attention.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/tiling_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/loop_body.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_inductor/lowering.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/distributions/constraint_registry.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/distributions/wishart.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/distributions/transforms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/distributions/lowrank_multivariate_normal.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/ao/quantization/stubs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/ao/quantization/fuse_modules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/backends/_nnapi/serializer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_refs/linalg/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_refs/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/nn/modules/module.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/nn/modules/dropout.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/nn/modules/linear.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/nn/attention/flex_attention.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/nn/attention/experimental/_paged_attention.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/nn/utils/prune.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/nn/utils/parametrize.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/nn/utils/parametrizations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/nn/init.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/utils/_sympy/interp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/utils/_sympy/functions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/utils/_sympy/value_ranges.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/utils/checkpoint.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/utils/weak.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/utils/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_decomp/decompositions_for_rng.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_functorch/eager_transforms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_functorch/pyfunctorch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_subclasses/meta_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_subclasses/complex_tensor/_ops/aten.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_subclasses/fake_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/masked/_docs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/masked/_ops.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/masked/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/export/pt2_archive/_package.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/nested/_internal/ops.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_torch_docs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_dynamo/variables/builtin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_dynamo/guards.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_dynamo/config.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_dynamo/pgo.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_dynamo/side_effects.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_dynamo/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_dynamo/codegen.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_dynamo/graph_break_registry.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/_prims/rng_prims.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/fx/experimental/symbolic_shapes.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/fx/graph.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torch/hub.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/linalg/laplacianmatrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/algorithms/assortativity/mixing.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/algorithms/minors/tests/test_contraction.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/algorithms/centrality/second_order.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/algorithms/centrality/tests/test_trophic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/algorithms/isomorphism/tests/test_vf2pp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/algorithms/isomorphism/tests/test_ismags.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/algorithms/isomorphism/ismags.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/algorithms/similarity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/algorithms/dag.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/algorithms/tests/test_lowest_common_ancestors.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/tests/test_convert_numpy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/tests/test_convert_scipy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/generators/spectral_graph_forge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/generators/tests/test_spectral_graph_forge.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/generators/small.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/networkx/drawing/layout.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/packaging/pylock.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/strategies/tree.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/strategies/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/strategies/branch/traverse.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/strategies/branch/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/strategies/branch/tests/test_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/strategies/branch/tests/test_traverse.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/strategies/branch/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/strategies/rl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/polys/fglmtools.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/polys/agca/modules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/polys/agca/tests/test_homomorphisms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/polys/matrices/_dfm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/polys/matrices/ddm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/polys/matrices/domainmatrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/polys/matrices/tests/test_xxm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/polys/matrices/sdm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/polys/appellseqs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/polys/subresultants_qq_zz.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/polys/numberfields/utilities.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/polys/numberfields/modules.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/common.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/dense.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/matrixbase.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/tests/test_matrixbase.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/tests/test_matrices.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/tests/test_reductions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/determinant.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/decompositions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/applyfunc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/special.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/hadamard.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/matexpr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/matmul.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matadd.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_special.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matmul.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matexpr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matpow.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_kronecker.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_permutation.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/matadd.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/matrices/expressions/diagonal.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/printing/maple.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/printing/tests/test_maple.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/printing/tests/test_mathml.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/printing/numpy.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/rewritingsystem.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/permutations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/free_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/util.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/pc_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/perm_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/fp_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/coset_table.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/polyhedron.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_coset_table.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_pc_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_perm_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_util.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_homomorphisms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_free_groups.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/homomorphisms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/combinatorics/generators.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/crypto/crypto.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/holonomic/holonomic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/simplify/trigsimp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/simplify/fu.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/tensor/tensor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/tensor/tests/test_tensor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/tensor/array/expressions/from_array_to_matrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/assumptions/predicates/matrices.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/functions/elementary/miscellaneous.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/functions/elementary/tests/test_piecewise.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/multipledispatch/tests/test_dispatcher.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/logic/boolalg.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/categories/diagram_drawing.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/categories/baseclasses.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/sets/sets.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/liealgebras/weyl_group.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/mul.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/numbers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/expr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/operations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/add.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/tests/test_operations.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/tests/test_evalf.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/tests/test_arit.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/tests/test_args.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/tests/test_numbers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/tests/test_expr.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/function.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/core/intfunc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/utilities/iterables.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/utilities/tests/test_lambdify.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/quantum/operator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/quantum/matrixcache.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/quantum/circuitutils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/quantum/transforms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/quantum/tests/test_circuitutils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/quantum/tests/test_operator.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/quantum/tests/test_identitysearch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/quantum/identitysearch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/quantum/gate.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/control/lti.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/mechanics/joint.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/mechanics/tests/test_kane.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/physics/mechanics/kane.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sympy/geometry/tests/test_point.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/jinja2/compiler.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/jinja2/runtime.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/hf_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/_upload_large_folder.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/file_download.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/_login.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/utils/_paths.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/utils/_auth.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/serialization/_torch.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/_commit_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/fastai_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/inference/_generated/_async_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/inference/_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/inference/_mcp/constants.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/cli/_cli_utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/cli/cache.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/cli/repo.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/huggingface_hub/cli/upload_large_folder.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco/functools/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/setuptools/_vendor/zipp/compat/py313.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/setuptools/_vendor/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/setuptools/_vendor/packaging/pylock.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/setuptools/_vendor/more_itertools/more.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/setuptools/config/_apply_pyprojecttoml.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/typing_inspection/typing_objects.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/fsspec/implementations/http_sync.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/fsspec/implementations/http.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/lisp.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/idl.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/modeling.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/jvm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/yang.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/_scilab_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/varnish.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/_lasso_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/haxe.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/_stan_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/factor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/_cl_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/_lilypond_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/_cocoa_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/_scheme_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/dylan.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/python.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/_asy_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/macaulay2.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pygments/lexers/_tsql_builtins.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/httpx/_client.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/httpx/_decoders.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/rich/console.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/mpmath/matrices/calculus.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/mpmath/matrices/matrices.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/mpmath/function_docs.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/mpmath/libmp/libmpc.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/mpmath/functions/qfunctions.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/mpmath/tests/test_elliptic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/mpmath/tests/test_interval.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/mpmath/tests/test_gammazeta.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sentence_transformers/sparse_encoder/trainer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sentence_transformers/SentenceTransformer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sentence_transformers/cross_encoder/CrossEncoder.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sentence_transformers/cross_encoder/fit_mixin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sentence_transformers/trainer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/sentence_transformers/fit_mixin.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/websockets/protocol.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_securetransport/low_level.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pip/_vendor/chardet/cli/chardetect.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pip/_vendor/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pip/_vendor/distlib/locators.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/python.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pip/_vendor/rich/console.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib/factory.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pip/_internal/network/utils.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/pip/_internal/vcs/versioncontrol.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/venv/lib/python3.12/site-packages/torchgen/packaged/autograd/gen_inplace_or_view_type.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/main_brain_legacy_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/test_fifth_dgm_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_19llm_PRODUCTION_WITH_HEALTH.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/master_chat_orchestrator_v9_gpu_optimized.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_22llm_SEQUENTIAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/jarvis_llm1.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/gis_chat_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/context_manager.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_daily_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integration_layer.placeholder_1768012705/coherent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/harmony4hope_deployment_manager.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_facebook_poster_v3.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_consciousness_bridge_WITH_FIFTH_DGM.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/working_full_pipeline_WITH_SPATIAL_TEMPORAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/mamma_kidd_auth.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_22llm_SEQUENTIAL_OPTIMIZED_ORDER.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/msjarvisicontainersservice.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/optimized_timeouts.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/facebook_poster_fast.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/facebook_poster_working.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/sanctuary_construction_monitor.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_gateway_v4.3.backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_22llm.psychology_patched.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/qualia_email_registration_orchestrator_69dgm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/INTEGRATION_IMPLEMENTATION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/cloudflare_domain_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.py.30endpoints_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_4llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integration_layer/coherent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integration_layer/unified_experience.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/integration_layer/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/roche_llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/master_chat_orchestrator_v7_dynamic.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/master_chat_orchestrator_v7_complete.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_command_orchestrator_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_19llm_CONSCIOUS.backup_20251013_083103.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/fix_prompt_leak.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/working_full_pipeline_FINAL_CONSCIOUSNESS.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/hardware_optimization_analyzer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_facebook_DGM.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_main_gateway.pre_fix.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_woah_algorithms.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_web_ui_v3_consciousness.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_swagger_gateway.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_web_deployer.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/add_dynamic_context.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/manifest_endpoints.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/create_dual_consciousness_i_containers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/stage2_biometric_backup.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/autonomous_learner_topic_source.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_22llm.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_brain.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/egeria_persona_config.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/phase7_integration.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_consciousness_poster.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/main.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/populate_security_layers_test.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ai_server_11llm_OPTIMIZED.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/unified_consciousness_gateway_PRODUCTION.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_unified_swagger_gateway_FINAL.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_contract_builder.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/registration_service_clean.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services-nvme1-recovered/ms_jarvis_consciousness_final.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/adversarial_results_20260321_180611.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/process-20260312-133923.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-093633.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-104022.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-103028.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-132835.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-103121.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-101809.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-102223.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-101955.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-090709.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-091335.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/process-20260312-133712.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-133316.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-091335.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-103028.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-092008.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-090530.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-101955.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-133712.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-132835.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-094232.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-095250.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-133135.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-103315.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-133135.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-095250.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-094453.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/process-20260312-133316.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/latest-process.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-093633.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-092709.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-094453.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/process-20260312-134002.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-104022.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-100232.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-101809.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-103501.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-092442.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-102223.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-133316.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-090709.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-094232.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-103501.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/process-20260312-132835.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-090530.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-100232.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-133923.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-134002.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-133712.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-104352.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-104352.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-092442.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/process-20260312-133135.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-092008.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-092709.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-134002.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-094835.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/openapi-20260312-103315.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-133923.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-103121.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-i-containers-logs/root-20260312-094835.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/tmp-aaacpe-patch/main_brain.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/tools/pia/pia_cycle.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/lm_judge_helper.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/itest-consciousness-bridge-logs/latest-process.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/auth_api.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/tests/test_identity_services.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/judge_pipeline.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/adversarial_results_20260321_180608.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/adversarial_results_20260321_195445.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/adversarial_results_20260321_180556.json
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/scripts/sprint5_chromadb_backfill.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/scripts/seed_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/scripts/oi38_seed_collections.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/scripts/sprint3_adversarial_tests.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/logs/ch40_closeout/main_brain.py.pre_otel_cleanup.snapshot.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/logs/ch40_closeout/ms_jarvis_unified_gateway.snapshot.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/self_recognition.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/woah_algorithms/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/i_container_2/reflection_system.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/i_container_2/metacognitive_awareness.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/i_container_1/ego_boundaries.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/i_container_1/identity_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/i_containers/i_container_1/ego_boundaries/core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/spiritual_root/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/prefrontal_cortex/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/pituitary_gland/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/subconscious/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/mother_carrie_protocols/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/spiritual_maternal_integration/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/heteroglobulin_transport/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/neurobiologicalbrain/consciousness_containers/service/dynamic_port_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/ms_jarvis_i_containers_service.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/i_containers.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/integration_layer/coherent_identity.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/integration_layer/unified_experience.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/service/integration_layer/__init__.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/i_container_1/self_recognition.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/neurobiological_brain/i_containers/i_container_1/identity_core.py
+/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/test_services.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/signal/_spectral_py.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/signal/_signaltools.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/signal/_ltisys.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/signal/tests/test_ltisys.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/signal/tests/test_filter_design.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/spatial/transform/_rigid_transform_xp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/spatial/transform/_rigid_transform.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/spatial/transform/_rotation_xp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/spatial/transform/tests/test_rotation.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/spatial/transform/tests/test_rigid_transform.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/spatial/transform/tests/test_rotation_groups.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/spatial/transform/_rotation_spline.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/spatial/transform/_rotation.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/_decomp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/_decomp_cossin.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/_decomp_ldl.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/interpolative.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/_expm_frechet.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/_solvers.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/_matfuncs_inv_ssq.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/tests/test_decomp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/tests/test_special_matrices.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/tests/test_basic.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/tests/test_decomp_cossin.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/tests/test_matfuncs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/tests/test_lapack.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/_decomp_qr.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/_decomp_svd.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/linalg/_matfuncs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/_lib/deprecation.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/_lib/cobyqa/framework.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/_lib/cobyqa/subsolvers/optim.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/_lib/pyprima/cobyla/update.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/_lib/pyprima/common/linalg.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/_lib/tests/test_array_api.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/fft/tests/test_real_transforms.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/fft/tests/test_basic.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/fft/tests/test_fftlog.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/odr/_odrpack.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/stats/_covariance.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/stats/_qmc.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/stats/_multivariate.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/stats/tests/test_multivariate.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/stats/tests/test_hypotests.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/stats/_distn_infrastructure.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/special/tests/test_spfun_stats.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/special/tests/test_loggamma.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/special/tests/test_basic.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/special/_add_newdocs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/integrate/_bvp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/integrate/_ivp/radau.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/integrate/_ivp/bdf.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/_remove_redundancy.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/_trustregion_constr/tests/test_nested_minimize.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/_minpack_py.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/_optimize.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/_slsqp_py.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/_nonlin.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/tests/test_linprog.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/tests/test_least_squares.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/tests/test_quadratic_assignment.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/tests/test_slsqp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/tests/test_nonlin.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/tests/test_cobyla.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/tests/test_linear_assignment.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/_differentiable_functions.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/_linprog_rs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/optimize/_lsq/trf_linear.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/construct.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/linalg/_onenormest.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/linalg/_special_sparse_arrays.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/linalg/_isolve/tests/test_iterative.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/linalg/_dsolve/tests/test_linsolve.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/linalg/tests/test_onenormest.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/linalg/tests/test_expm_multiply.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/linalg/tests/test_interface.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/linalg/_eigen/lobpcg/lobpcg.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/linalg/_eigen/lobpcg/tests/test_lobpcg.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/linalg/_eigen/tests/test_svds.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/linalg/_eigen/arpack/arpack.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/csgraph/tests/test_matching.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/tests/test_array_api.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/tests/test_construct.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/_construct.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/sparse/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/interpolate/_bsplines.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/interpolate/tests/test_fitpack.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/scipy/ndimage/tests/test_filters.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/code_llama/tokenization_code_llama.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/timm_wrapper/modeling_timm_wrapper.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/cohere/tokenization_cohere.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/auto/configuration_auto.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/textnet/modeling_textnet.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/florence2/modular_florence2.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/florence2/processing_florence2.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/hgnet_v2/modeling_hgnet_v2.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/hgnet_v2/modular_hgnet_v2.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/nystromformer/modeling_nystromformer.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/qwen2_audio/processing_qwen2_audio.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/ibert/modeling_ibert.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/ibert/quant_modules.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/paligemma/processing_paligemma.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/data2vec/modular_data2vec_audio.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/data2vec/modeling_data2vec_audio.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/gemma3/modular_gemma3.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/gemma3/modeling_gemma3.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/speecht5/modeling_speecht5.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/mimi/configuration_mimi.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/janus/processing_janus.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/hubert/modeling_hubert.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/whisper/generation_whisper.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/deepseek_v3/configuration_deepseek_v3.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/efficientloftr/modeling_efficientloftr.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/smolvlm/video_processing_smolvlm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/vits/modeling_vits.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/nemotron_h/modular_nemotron_h.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/nemotron_h/modeling_nemotron_h.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/qwen3_omni_moe/modeling_qwen3_omni_moe.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/glm4_moe_lite/configuration_glm4_moe_lite.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/glm4_moe_lite/modular_glm4_moe_lite.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/exaone4/modeling_exaone4.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/exaone4/modular_exaone4.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/wavlm/modeling_wavlm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/clvp/configuration_clvp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/unispeech/modeling_unispeech.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/sew_d/modeling_sew_d.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/evolla/modeling_evolla.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/evolla/modular_evolla.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/wav2vec2_conformer/modeling_wav2vec2_conformer.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/wav2vec2_bert/modeling_wav2vec2_bert.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/qwen2_5_omni/processing_qwen2_5_omni.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/qwen2_5_omni/modular_qwen2_5_omni.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/qwen2_5_omni/modeling_qwen2_5_omni.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/sew/modeling_sew.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/glm_moe_dsa/modular_glm_moe_dsa.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/glm_moe_dsa/modeling_glm_moe_dsa.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/mm_grounding_dino/modeling_mm_grounding_dino.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/wav2vec2/modeling_wav2vec2.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/llama/tokenization_llama.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/unispeech_sat/modeling_unispeech_sat.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/exaone_moe/modular_exaone_moe.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/exaone_moe/modeling_exaone_moe.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/fuyu/processing_fuyu.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/deepseek_v2/modular_deepseek_v2.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/deepseek_v2/configuration_deepseek_v2.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/esm/modeling_esmfold.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/esm/openfold_utils/rigid_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/esm/openfold_utils/residue_constants.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/emu3/modeling_emu3.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/emu3/modular_emu3.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/encodec/configuration_encodec.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/longcat_flash/modular_longcat_flash.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/longcat_flash/modeling_longcat_flash.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/longcat_flash/configuration_longcat_flash.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/fast_vlm/modular_fast_vlm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/fast_vlm/modeling_fast_vlm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/grounding_dino/modeling_grounding_dino.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/gemma3n/modeling_gemma3n.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/models/gemma3n/modular_gemma3n.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/trainer_callback.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/modeling_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_higgs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_quanto.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_mxfp4.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_eetq.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_fp_quant.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_fbgemm_fp8.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_bitnet.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_sinq.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_finegrained_fp8.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_torchao.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/quantizers/quantizer_hqq.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/utils/_typing.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/utils/quantization_config.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/utils/hub.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/finegrained_fp8.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/mxfp4.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/metal_quantization.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/awq.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/quanto.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/spqr.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/tensor_parallel.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/accelerate.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/fbgemm_fp8.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/aqlm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/vptq.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/eetq.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/bitsandbytes.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/bitnet.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/integration_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/integrations/higgs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/data/data_collator.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/trainer.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/configuration_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/generation/utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/transformers/cli/chat.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/opentelemetry/semconv/_incubating/attributes/gen_ai_attributes.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/opentelemetry/semconv/_incubating/attributes/app_attributes.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/opentelemetry/semconv/_incubating/attributes/enduser_attributes.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/greenlet/tests/leakcheck.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/functorch/einops/rearrange.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/_core/_internal.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/_core/numeric.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/_core/fromnumeric.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/_core/_methods.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/_core/tests/test_ufunc.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/_core/tests/test_array_coercion.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/_core/tests/test_overrides.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/_core/tests/test_hashtable.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/_core/tests/test_umath.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/_core/tests/test_regression.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/_core/tests/test_function_base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/_core/_add_newdocs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/matlib.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/linalg/tests/test_linalg.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/linalg/_linalg.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/ma/core.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/ma/tests/test_core.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/typing/tests/data/pass/array_constructors.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/fft/tests/test_pocketfft.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/polynomial/laguerre.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/polynomial/_polybase.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/polynomial/legendre.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/polynomial/tests/test_classes.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/polynomial/tests/test_symbol.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/polynomial/hermite_e.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/polynomial/chebyshev.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/polynomial/polynomial.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/polynomial/hermite.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/polynomial/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/lib/_polynomial_impl.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/lib/_twodim_base_impl.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/lib/_function_base_impl.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/lib/tests/test_stride_tricks.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/lib/tests/test_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/lib/tests/test_nanfunctions.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/lib/tests/test_shape_base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/matrixlib/tests/test_defmatrix.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/tests/test_matlib.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/tests/test_reloading.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/numpy/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/joblib/_dask.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/joblib/externals/cloudpickle/cloudpickle.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/joblib/test/test_memory_async.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/joblib/test/test_memmapping.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/joblib/test/test_memory.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/joblib/test/test_parallel.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/joblib/test/test_hashing.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/requests_toolbelt/adapters/appengine.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/requests_toolbelt/threaded/pool.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/click/_termui_impl.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/manifold/_locally_linear.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/compose/_target.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/compose/tests/test_column_transformer.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/mixture/tests/test_gaussian_mixture.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/mixture/tests/test_bayesian_mixture.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/datasets/_samples_generator.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/neighbors/_nca.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/neighbors/tests/test_nca.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/ensemble/_hist_gradient_boosting/tests/test_binning.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/ensemble/_gb.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/preprocessing/_data.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/preprocessing/tests/test_data.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/preprocessing/_function_transformer.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/metrics/_scorer.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/decomposition/tests/test_nmf.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/neural_network/_multilayer_perceptron.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/neural_network/_base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/neural_network/tests/test_mlp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/tests/test_discriminant_analysis.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/pipeline.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/covariance/_shrunk_covariance.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/_coordinate_descent.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/_glm/_newton_solver.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/_glm/glm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/_glm/tests/test_glm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/_linear_loss.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_common.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_theil_sen.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_ridge.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_coordinate_descent.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_sparse_coordinate_descent.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_least_angle.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/tests/test_bayes.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/_ridge.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/_bayes.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/linear_model/_least_angle.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/_loss/link.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/_loss/tests/test_loss.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/_loss/tests/test_link.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sklearn/_loss/loss.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/urllib3/util/ssl_match_hostname.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/zipp/compat/py313.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/h11/_util.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/triton/experimental/gluon/language/_layouts.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/triton/tools/triton_to_gluon_translater/translator.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/PIL/Image.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/grpc/aio/_base_server.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/grpc/_server.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/grpc/_compression.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/grpc/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/requests_oauthlib/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/bs4/element.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/bs4/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/safetensors/torch.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/safetensors/paddle.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/testing/_internal/common_quantization.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/testing/_internal/distributed/rpc/rpc_test.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/testing/_internal/opinfo/definitions/linalg.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/testing/_internal/opinfo/definitions/_masked.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/testing/_internal/opinfo/core.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/testing/_internal/opinfo/utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/testing/_internal/common_methods_invocations.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/functional.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/linalg/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/autograd/functional.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_lobpcg.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/overrides.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_numpy/_funcs_impl.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/distributed/_local_tensor/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/distributed/pipelining/schedules.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/distributed/_state_dict_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/distributed/_functional_collectives.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/distributed/fsdp/wrap.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/distributed/device_mesh.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_opset16.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_helper.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_opset9.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_opset13.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/symbolic_opset11.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/onnx/_internal/torchscript_exporter/utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/onnx/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/profiler/_pattern_matcher.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/ir.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/decomposition.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/runtime/triton_helpers.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/index_propagation.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/fx_passes/pre_grad.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/ops_handler.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/dtype_propagation.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/codegen/cuda/cuda_template.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/codegen/cuda/cutlass_lib_extensions/gemm_operation_extensions.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/codegen/common.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/codegen/block_analysis.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/codegen/segmented_tree.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/codegen/triton.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/kernel/flex/flex_flash_attention.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/tiling_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/compile_fx.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/loop_body.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_inductor/lowering.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/distributions/constraint_registry.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/distributions/wishart.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/distributions/transforms.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/distributions/lowrank_multivariate_normal.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/ao/quantization/stubs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/ao/quantization/fuse_modules.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/backends/_nnapi/serializer.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_refs/linalg/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_refs/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/nn/modules/module.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/nn/modules/dropout.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/nn/modules/linear.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/nn/attention/flex_attention.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/nn/attention/experimental/_paged_attention.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/nn/utils/prune.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/nn/utils/parametrize.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/nn/utils/parametrizations.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/nn/init.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/utils/_sympy/interp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/utils/_sympy/functions.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/utils/_sympy/value_ranges.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/utils/checkpoint.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/utils/weak.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/utils/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_decomp/decompositions_for_rng.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_functorch/eager_transforms.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_functorch/pyfunctorch.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_subclasses/fake_tensor.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_subclasses/meta_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_subclasses/complex_tensor/_ops/aten.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_subclasses/fake_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/masked/_docs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/masked/_ops.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/masked/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/export/pt2_archive/_package.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/nested/_internal/ops.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_torch_docs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_dynamo/variables/builtin.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_dynamo/trace_rules.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_dynamo/guards.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_dynamo/config.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_dynamo/pgo.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_dynamo/side_effects.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_dynamo/utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_dynamo/codegen.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_dynamo/graph_break_registry.json
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/_prims/rng_prims.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/fx/experimental/symbolic_shapes.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/fx/graph.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torch/hub.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/fasteners/lock.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/cryptography/hazmat/bindings/openssl/_conditional.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/cryptography/hazmat/bindings/openssl/binding.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/cryptography/hazmat/primitives/serialization/ssh.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/cryptography/hazmat/primitives/serialization/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/conftest.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/apply/test_frame_apply.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/arithmetic/test_object.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/arithmetic/test_numeric.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/generic/test_generic.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/io/test_stata.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/io/parser/test_converters.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/indexes/test_setops.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/indexes/test_datetimelike.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/indexes/test_old_base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/indexes/test_any_index.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/indexes/multi/test_equivalence.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/indexes/multi/test_analytics.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/frame/test_arithmetic.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/tools/test_to_numeric.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/arrays/boolean/test_ops.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/dtypes/test_dtypes.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/reshape/merge/test_join.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/reshape/merge/test_merge.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/reshape/concat/test_concat.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/scalar/timestamp/test_constructors.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/scalar/test_nat.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/scalar/timedelta/test_constructors.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/scalar/timedelta/test_timedelta.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/extension/base/groupby.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/indexing/test_loc.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/indexing/multiindex/test_setitem.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/indexing/multiindex/test_slice.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/indexing/test_iloc.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/series/test_cumulative.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/series/test_logical_ops.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/series/methods/test_reindex.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/tests/groupby/test_apply.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/core/indexes/multi.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/core/indexes/base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/core/indexes/range.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/core/generic.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/core/_numba/executor.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/core/shared_docs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/core/arrays/sparse/array.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/core/reshape/merge.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pandas/core/groupby/groupby.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/linalg/laplacianmatrix.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/algorithms/assortativity/mixing.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/algorithms/minors/tests/test_contraction.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/algorithms/centrality/second_order.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/algorithms/centrality/tests/test_trophic.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/algorithms/isomorphism/tests/test_vf2pp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/algorithms/isomorphism/tests/test_ismags.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/algorithms/isomorphism/ismags.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/algorithms/similarity.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/algorithms/dag.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/algorithms/tests/test_lowest_common_ancestors.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/tests/test_convert_numpy.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/tests/test_convert_scipy.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/generators/spectral_graph_forge.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/generators/tests/test_spectral_graph_forge.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/generators/small.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/networkx/drawing/layout.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/onnxruntime/transformers/onnx_model_bert.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/onnxruntime/transformers/fusion_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/onnxruntime/transformers/onnx_model_sam2.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/onnxruntime/transformers/onnx_model_unet.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/onnxruntime/transformers/onnx_model_bert_tf.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/oauthlib/oauth2/rfc6749/endpoints/authorization.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/redis/auth/token_manager.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/redis/auth/idp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/testing/requirements.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/testing/suite/test_reflection.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/testing/suite/test_select.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/ext/horizontal_shard.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/ext/automap.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/ext/baked.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/session.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/scoping.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/ext/declarative/extensions.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/_orm_constructors.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/util.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/events.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/interfaces.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/dependency.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/mapper.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/properties.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/bulk_persistence.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_api.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/strategies.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/relationships.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/loading.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/scoping.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/strategy_options.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/identity.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/dynamic.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/writeonly.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/orm/exc.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/dialects/oracle/base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/dialects/oracle/provision.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/dialects/oracle/dictionary.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/pg_catalog.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/dialects/mysql/base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/dialects/mssql/pyodbc.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/dialects/mssql/base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/dialects/mssql/information_schema.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/util/_collections.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/util/deprecations.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/sql/util.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/sql/traversals.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/sql/compiler.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/sql/base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/sql/selectable.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/engine/interfaces.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/engine/reflection.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sqlalchemy/engine/result.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/packaging/pylock.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/attr/_make.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/strategies/tree.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/strategies/core.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/strategies/branch/traverse.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/strategies/branch/core.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/strategies/branch/tests/test_core.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/strategies/branch/tests/test_traverse.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/strategies/branch/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/strategies/rl.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/polys/fglmtools.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/polys/agca/modules.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/polys/agca/tests/test_homomorphisms.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/polys/matrices/_dfm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/polys/matrices/ddm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/polys/matrices/domainmatrix.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/polys/matrices/tests/test_xxm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/polys/matrices/sdm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/polys/appellseqs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/polys/subresultants_qq_zz.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/polys/numberfields/utilities.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/polys/numberfields/modules.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/common.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/dense.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/matrixbase.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/tests/test_matrixbase.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/tests/test_matrices.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/tests/test_reductions.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/determinant.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/decompositions.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/applyfunc.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/special.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/hadamard.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/matexpr.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/matmul.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matadd.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_special.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matmul.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matexpr.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_matpow.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_kronecker.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/tests/test_permutation.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/matadd.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/matrices/expressions/diagonal.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/printing/maple.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/printing/tests/test_maple.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/printing/tests/test_mathml.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/printing/numpy.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/rewritingsystem.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/permutations.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/free_groups.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/util.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/pc_groups.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/perm_groups.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/fp_groups.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/coset_table.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/polyhedron.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_coset_table.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_pc_groups.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_perm_groups.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_util.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_homomorphisms.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/tests/test_free_groups.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/homomorphisms.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/combinatorics/generators.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/crypto/crypto.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/holonomic/holonomic.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/simplify/trigsimp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/simplify/fu.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/tensor/tensor.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/tensor/tests/test_tensor.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/tensor/array/expressions/from_array_to_matrix.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/assumptions/predicates/matrices.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/functions/elementary/miscellaneous.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/functions/elementary/tests/test_piecewise.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/multipledispatch/tests/test_dispatcher.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/logic/boolalg.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/categories/diagram_drawing.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/categories/baseclasses.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/sets/sets.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/liealgebras/weyl_group.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/mul.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/numbers.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/expr.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/operations.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/add.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/tests/test_operations.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/tests/test_evalf.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/tests/test_arit.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/tests/test_args.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/tests/test_numbers.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/tests/test_expr.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/function.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/core/intfunc.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/utilities/iterables.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/utilities/tests/test_lambdify.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/quantum/operator.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/quantum/matrixcache.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/quantum/circuitutils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/quantum/transforms.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/quantum/tests/test_circuitutils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/quantum/tests/test_operator.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/quantum/tests/test_identitysearch.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/quantum/identitysearch.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/quantum/gate.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/control/lti.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/mechanics/joint.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/mechanics/tests/test_kane.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/physics/mechanics/kane.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sympy/geometry/tests/test_point.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langchain_core/runnables/passthrough.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langchain_core/runnables/base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langchain_core/messages/system.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langchain_core/messages/human.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langchain_core/messages/base.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langchain_core/prompts/chat.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langchain_core/prompts/few_shot.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pdfminer/psparser.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pdfminer/pdfinterp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pdfminer/pdfdocument.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/jinja2/compiler.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/jinja2/runtime.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/hf_api.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/_upload_large_folder.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/file_download.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/_login.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/utils/_paths.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/utils/_auth.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/serialization/_torch.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/_commit_api.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/fastai_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/inference/_generated/_async_client.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/inference/_client.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/inference/_mcp/constants.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/cli/_cli_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/cli/cache.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/cli/upload_large_folder.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/huggingface_hub/cli/repos.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/kubernetes/leaderelection/leaderelectionrecord.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/kubernetes/leaderelection/leaderelection_test.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/kubernetes/leaderelection/electionconfig.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/kubernetes/leaderelection/leaderelection.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/kubernetes/leaderelection/resourcelock/configmaplock.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/kubernetes/client/models/v1_service_port.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/kubernetes/client/models/v1_stateful_set_spec.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/kubernetes/client/models/v1_lease_spec.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/kubernetes/config/kube_config_test.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/shapely/ops.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/shapely/tests/legacy/test_split.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/shapely/tests/legacy/test_affinity.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/geopandas/io/file.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/geopandas/geodataframe.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/geopandas/tools/overlay.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/geopandas/tests/test_overlay.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/geopandas/tests/test_op_output_types.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/geopandas/tests/test_crs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/geopandas/tests/test_geodataframe.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/geopandas/tests/test_extension_array.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco/functools/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/setuptools/_vendor/zipp/compat/py313.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/setuptools/_vendor/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/setuptools/_vendor/packaging/pylock.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/setuptools/_vendor/more_itertools/more.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/setuptools/config/_apply_pyprojecttoml.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/typing_inspection/typing_objects.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/fsspec/implementations/http_sync.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/fsspec/implementations/http.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/lisp.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/idl.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/modeling.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/jvm.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/yang.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/_scilab_builtins.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/varnish.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/_lasso_builtins.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/haxe.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/_stan_builtins.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/factor.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/_cl_builtins.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/_lilypond_builtins.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/_cocoa_builtins.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/_scheme_builtins.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/dylan.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/python.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/_asy_builtins.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/macaulay2.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pygments/lexers/_tsql_builtins.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/httpx/_client.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/httpx/_decoders.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/rich/console.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/mpmath/matrices/calculus.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/mpmath/matrices/matrices.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/mpmath/function_docs.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/mpmath/libmp/libmpc.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/mpmath/functions/qfunctions.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/mpmath/tests/test_elliptic.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/mpmath/tests/test_interval.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/mpmath/tests/test_gammazeta.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pypdfium2/_helpers/bitmap.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pypdfium2/_helpers/page.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pypdfium2/_helpers/pageobjects.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sentence_transformers/losses/CachedMultipleNegativesRankingLoss.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sentence_transformers/sparse_encoder/trainer.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sentence_transformers/SentenceTransformer.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sentence_transformers/cross_encoder/CrossEncoder.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sentence_transformers/cross_encoder/fit_mixin.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sentence_transformers/trainer.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/sentence_transformers/fit_mixin.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langsmith/testing/_internal.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langsmith/wrappers/_openai.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langsmith/wrappers/_anthropic.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langsmith/evaluation/_runner.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langsmith/integrations/claude_agent_sdk/_client.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/langsmith/_expect.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/websockets/protocol.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/auth/utils/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/auth/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/auth/token_authn/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/api/async_api.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/api/client.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/api/async_client.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/api/fastapi.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/api/async_fastapi.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/api/rust.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/api/segment.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/api/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/utils/embedding_functions/cloudflare_workers_ai_embedding_function.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/utils/embedding_functions/jina_embedding_function.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/config.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/test/auth/test_auth_utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/test/client/test_cloud_client.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/test/test_client.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/test/property/test_base64_conversion.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/chromadb/server/fastapi/__init__.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_securetransport/low_level.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pip/_vendor/packaging/specifiers.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pip/_vendor/packaging/pylock.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/python.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pip/_vendor/rich/console.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib/factory.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pip/_internal/network/utils.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/pip/_internal/vcs/versioncontrol.py
+/home/cakidd/msjarvis-rebuild-working/ingest-venv/lib/python3.12/site-packages/torchgen/packaged/autograd/gen_inplace_or_view_type.py
+(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/ms-allis-frontend$ 
 
