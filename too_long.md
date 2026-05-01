@@ -1,2165 +1,2006 @@
-crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild/services$ # === STEP A: Confirm whether main_brain.py is bind-mounted or baked ===
-docker inspect jarvis-main-brain \
-  --format '{{range .Mounts}}{{.Source}} → {{.Destination}}{{"\n"}}{{end}}'
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/main_brain.py → /app/services/main_brain.py
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/registration_service.py → /app/services/registration_service.py
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/uei_service.py → /app/services/uei_service.py
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/secrets/jarvisapikey.txt → /run/secrets/jarvisapikey
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/data → /app/data
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/application_service.py → /app/services/application_service.py
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/auth_router.py → /app/services/auth_router.py
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/token_service.py → /app/services/token_service.py
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/routes → /app/services/routes
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/email_service.py → /app/services/email_service.py
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/identity_service.py → /app/services/identity_service.py
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/registration_pipeline.py → /app/services/registration_pipeline.py
-/mnt/nvme1/docker/volumes/msjarvis-rebuild_chroma_onnx_cache/_data → /root/.cache/chroma
-/home/cakidd/msjarvis-rebuild-working/msjarvis-rebuild/services/create_immutable_security_layer.py → /app/services/create_immutable_security_layer.py
+(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild/services$ cat ~/msjarvis-rebuild-working/ms-allis-frontend/app/portal/page.tsx
+// app/portal/page.tsx
+"use client";
 
-(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild/services$ # === STEP B: Find the actual persona/system prompt block in main_brain.py ===
-grep -n "system\|persona\|You are\|Ms\.\|user_id\|carrie_kidd\|name\|identity" \
-  ~/msjarvis-rebuild-working/msjarvis-rebuild/services/main_brain.py | head -50
-2:Ms. Jarvis ULTIMATE - All 32 Services Integrated
-67:logger = logging.getLogger(__name__)
-112:# WV cities, towns, and regional names
-153:    County name alone is NOT enough — requires a second signal to
-192:    # "county" suffix required when matching county names — prevents
-227:                lbl = feat.get("label") or feat.get("name") or feat.get("geodb_id", "")
-240:async def get_aaacpe_context(message: str, user_id: str) -> dict:
-246:        elif user_id in ("cakidd", "carrie_kidd") and any(word in msg for word in ["janney", "heritage", "family", "trail"]):
-270:    user_id: str = "cakidd"
-286:    user_id: str = "cakidd"
-298:def get_service_endpoint(service_name: str, operation: str = "process") -> str:
-324:    return endpoints.get(service_name, "/process")
-381:app = FastAPI(lifespan=lifespan, title="Ms. Jarvis ULTIMATE", version="1.0.0")
-405:        "user_id": request.user_id
-561:            user_id=request.user_id,
-606:                    "user_id": "auto_system",
-622:async def _store_contract_memory(question: str, answer: str, rag_snippets: str, user_id: str):
-625:    Builds Ms. Egeria's memory of which contracts are asked about most.
-651:            collections = {c["name"]: c["id"] for c in cols_r.json()}
-688:                        "user_id":          user_id,
-703:# All Ms. Jarvis Services
-811:async def check_service_health(service_name: str, url: str) -> bool:
-819:            check_url = _health_url_overrides.get(service_name)
-830:    if service_name in _health_cache:
-831:        result, cached_at = _health_cache[service_name]
-836:        check_url = _health_url_overrides.get(service_name)
-849:        logger.debug(f"Health check failed for {service_name}: {e}")
-852:    _health_cache[service_name] = (result, now)
-855:async def query_service(service_name: str, url: str, message: str, user_id: str) -> Optional[Dict]:
-862:            "agents_service": {"query": message, "user_id": user_id},
-866:            "consciousness_bridge": {"message": message, "user_id": user_id},
-880:        request_data = request_formats.get(service_name, {"message": message, "user_id": user_id})
-884:                f"{url}{get_service_endpoint(service_name)}",
-890:                logger.info(f"✅ {service_name}: Responded")
-902:                    "service": service_name,
-907:        logger.warning(f"⚠️  {service_name}: {str(e)[:50]}")
-913:    """Ultimate Ms. Jarvis - Uses ALL available services"""
-934:    for service_name, url in SERVICES.items():
-935:        is_available = await check_service_health(service_name, url)
-937:            available_services[service_name] = url
-938:            logger.info(f"  ✅ {service_name}")
-940:            logger.debug(f"  ⏸️  {service_name} offline")
-965:                        "user_id": "default"
-1022:                    for col_name, col_result in rag_data.get("collections", {}).items():
-1026:                                source = hit.get("metadata", {}).get("source", col_name)
-1063:                        name = r.get("name", "")
-1070:                        snippet = f"{name} | {rtype} | {county} County | Phone: {phone}"
-1125:            f"CONVERSATION HISTORY (use this to recall prior context, user name, location, etc.):\n"
-1132:IMPORTANT: You are Ms. Egeria Allis, the MountainShares AI assistant built by Harmony for Hope Inc. You MUST base your answer ONLY on the verified data above.
-1133:- For questions about MountainShares contracts, tokenomics, governance, or system architecture: answer using the ADDITIONAL VERIFIED DOCUMENTS section — explain what the contract does, its parameters, and its role in the ecosystem.
-(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild/services$ # === STEP C: See what user_id does inside the prompt assembly ===
-grep -n "user_id\|username\|user_name\|display_name\|greeting\|Mamma\|caller" \
-  ~/msjarvis-rebuild-working/msjarvis-rebuild/services/main_brain.py | head -30
-240:async def get_aaacpe_context(message: str, user_id: str) -> dict:
-246:        elif user_id in ("cakidd", "carrie_kidd") and any(word in msg for word in ["janney", "heritage", "family", "trail"]):
-270:    user_id: str = "cakidd"
-286:    user_id: str = "cakidd"
-405:        "user_id": request.user_id
-561:            user_id=request.user_id,
-606:                    "user_id": "auto_system",
-622:async def _store_contract_memory(question: str, answer: str, rag_snippets: str, user_id: str):
-688:                        "user_id":          user_id,
-855:async def query_service(service_name: str, url: str, message: str, user_id: str) -> Optional[Dict]:
-862:            "agents_service": {"query": message, "user_id": user_id},
-866:            "consciousness_bridge": {"message": message, "user_id": user_id},
-880:        request_data = request_formats.get(service_name, {"message": message, "user_id": user_id})
-965:                        "user_id": "default"
-1042:    # Skip RAG for short greetings/vague queries — prevents irrelevant doc injection
-1213:        aaacpe_context = await get_aaacpe_context(request.message, request.user_id)
-1234:                    json={"message": request.message, "user_id": request.user_id, "require_dual_awareness": True}
-1424:                        json={"message": _full_prompt, "user_id": request.user_id},
-1463:                        "metadata": {"user_id": request.user_id},
-1480:                    params={"input": request.message, "text": request.message, "kwargs": {"user_id": request.user_id}}
-1496:                    json={"content": request.message, "user_id": request.user_id}
-1588:                        "user_id": request.user_id,
-1930:                user_id=request.user_id,
-(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild/services$ # === STEP D: Check if Next.js /api/chat route file exists at all ===
-find ~/msjarvis-rebuild-working/ms-allis-frontend/app -name "route.ts" -o -name "route.tsx" | xargs ls -la 2>/dev/null
-ls ~/msjarvis-rebuild-working/ms-allis-frontend/app/api/ 2>/dev/null || echo "NO /api/ DIRECTORY"
-total 41232
-drwxrwxrwx 49 cakidd cakidd   217088 Apr 30 21:12  .
-drwxrwxr-x 41 cakidd cakidd    32768 Apr 30 20:26  ..
--rw-rw-r--  1 cakidd cakidd     2836 Apr 30 14:12  20LLM_DEPLOYMENT_SUMMARY.md
--rw-rw-r--  1 cakidd cakidd     1914 Apr 30 14:12  AaaCPE_Appalachian_Dialect_Knowledge.txt
--rwxrwxr-x  1 cakidd cakidd     1645 Apr 30 14:12  aaacpe_initial_ingest.py
--rw-rw-r--  1 cakidd cakidd     5354 Apr 30 14:12  aaacpe_rag_service.py
--rw-rw-r--  1 cakidd cakidd      224 Nov 10 11:38  aaacpe_scraper.log
--rw-rw-r--  1 cakidd cakidd    22868 Apr 30 14:12  aaacpe_scraper_service.py
--rw-rw-r--  1 cakidd cakidd     1768 Apr 30 14:12  aacpe_ingest_community.py
--rw-rw-r--  1 cakidd cakidd     1392 Apr 30 14:12  aacpe_prepare_metadata.py
--rw-rw-r--  1 cakidd cakidd     1918 Apr 30 14:12  aapcappe_ingest.py
--rw-rw-r--  1 cakidd cakidd     7423 Apr 30 14:12  academic_research_gateway_8062_cors.py
--rw-rw-r--  1 cakidd cakidd    30459 Dec  2 03:26  academic_research_gateway_8062.log
--rw-rw-r--  1 cakidd cakidd     6294 Apr 30 14:12  academic_research_gateway_8062.py
--rw-rw-r--  1 cakidd cakidd     2845 Apr 30 14:12  academic_whitebox_api.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:40  activate_dgm_4012.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:10  activate_dgm_9485.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:10  activate_dgm_enhanced_9329.log
--rwxrwxr-x  1 cakidd cakidd    15358 Apr 30 14:12  activate_sanctuary_cherubim_guards.sh
--rwxrwxr-x  1 cakidd cakidd     4991 Apr 30 14:12  ADD_ALL_INTEGRATIONS.sh
--rw-rw-r--  1 cakidd cakidd      701 Nov 18 11:10  add_background_storage_9618.log
--rwxrwxr-x  1 cakidd cakidd      956 Apr 30 14:12  add_chat_route.sh
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:10  add_conversation_storage_9024.log
--rwxrwxr-x  1 cakidd cakidd     1447 Apr 30 14:12  ADD_DELETE_ENDPOINT.sh
--rw-rw-r--  1 cakidd cakidd      399 Nov 18 11:10  add_fifth_dgm_to_chat_9176.log
--rw-rw-r--  1 cakidd cakidd     2961 Apr 30 14:12  add_full_brain_class.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     9177 Apr 30 14:12  ADDITIONAL_SERVICES_FINAL.py
--rw-rw-r--  1 cakidd cakidd       78 Nov 18 11:10  add_jarvis_personality_9995.log
--rwxrwxr-x  1 cakidd cakidd     3153 Apr 30 14:12  ADD_MEMORY_TO_8050.sh
--rwxrwxr-x  1 cakidd cakidd     4277 Apr 30 14:12  ADD_METADATA_FILTERING.sh
--rwxrwxr-x  1 cakidd cakidd     2524 Apr 30 14:12  add_proactive_cleanup_working.sh
--rwxrwxr-x  1 cakidd cakidd     4775 Apr 30 14:12  ADD_RAG_METADATA_FILTERING.sh
--rwxrwxr-x  1 cakidd cakidd     3334 Apr 30 14:12  ADD_RAG_RETRIEVAL_8050.sh
--rwxrwxr-x  1 cakidd cakidd     4173 Apr 30 14:12  ADD_STORE_ENDPOINT.sh
--rw-rw-r--  1 cakidd cakidd       70 Nov 18 11:10  add_swagger_to_rag_9351.log
--rw-rw-r--  1 cakidd cakidd     1502 Apr 30 14:12  add_to_consciousness_engine.txt
--rw-rw-r--  1 cakidd cakidd      613 Apr 30 14:12  add_to_startup.sh
--rw-rw-r--  1 cakidd cakidd       61 Nov 18 11:10  add_web_research_storage_9052.log
--rw-rw-r--  1 cakidd cakidd     6933 Apr 30 14:12  admin_cli.py
--rw-rw-r--  1 cakidd cakidd     6519 Apr 30 14:12  ADVANCED_MODULES_ROADMAP.md
--rw-rw-r--  1 cakidd cakidd     4743 Apr 30 14:12  advanced_service_dashboard.py
--rwxrwxr-x  1 cakidd cakidd      841 Apr 30 14:12  agent_llm_batch_all.sh
--rwxrwxr-x  1 cakidd cakidd      739 Apr 30 14:12  agent_llm_batch.sh
--rw-rw-r--  1 cakidd cakidd      374 Apr 30 14:12  agents_main.py
--rwxrwxr-x  1 cakidd cakidd     9296 Apr 30 14:12  AGI_EVALUATION_SUITE.sh
--rw-rw-r--  1 cakidd cakidd    29072 Nov 16 16:09  agi_test_results_20251012_220734.log
--rwxrwxr-x  1 cakidd cakidd     2163 Apr 30 14:12  agi_test.sh
--rwxrwxr-x  1 cakidd cakidd     6595 Apr 30 14:12  AGI_TEST_SUITE.sh
--rwxrwxr-x  1 cakidd cakidd     4301 Apr 30 14:12  AGI_TEST_V2.sh
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  ai
--rw-rw-r--  1 cakidd cakidd      138 Dec  6 21:02  ai_ai_server_11llm_OPTIMIZED.current.log
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  ai-server
--rw-rw-r--  1 cakidd cakidd     3816 Dec  8 00:31  ai_server_11llm_OPTIMIZED.current.log
--rw-rw-r--  1 cakidd cakidd       22 Nov 16 16:10  ai_server_19llm_CONSCIOUS.log
--rw-rw-r--  1 cakidd cakidd      390 Nov 16 16:09  ai_server_19llm_PRODUCTION.log
--rw-rw-r--  1 cakidd cakidd      390 Nov 10 11:38  ai_server_19llm_PRODUCTION_WITH_HEALTH.log
--rw-rw-r--  1 cakidd cakidd      383 Nov 16 16:09  ai_server_20llm_FINAL.log
--rw-rw-r--  1 cakidd cakidd     5355 Apr 30 14:12  ai_server_20llm_FINAL.py,
--rw-rw-r--  1 cakidd cakidd    22993 Dec  6 22:18  ai_server_20llm_PRODUCTION.current.log
--rw-rw-r--  1 cakidd cakidd      390 Nov 10 11:38  ai_server_20llm_PRODUCTION.log
--rw-rw-r--  1 cakidd cakidd    18341 Apr 30 14:12  ai_server_20llm_PRODUCTION.py
--rw-rw-r--  1 cakidd cakidd     4556 Apr 30 14:12  ai_server_20llm_PRODUCTION.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    14365 Apr 30 14:12  ai_server_20llm_PRODUCTION.py.pre_expert_responses
--rw-rw-r--  1 cakidd cakidd    79409 Dec 11 00:05  ai_server_22llm.current.log
--rw-rw-r--  1 cakidd cakidd      232 Nov 16 16:09  ai_server_22llm_FIXED.log
--rw-rw-r--  1 cakidd cakidd      440 Nov 10 11:38  ai_server_22llm.psychology_patched_FIXED.log
--rw-rw-r--  1 cakidd cakidd      444 Apr 30 14:12  ai_server_22llm.psychology_patched_FIXED.py
--rw-rw-r--  1 cakidd cakidd    16944 Apr 30 14:12  ai_server_22llm.psychology_patched.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    14549 Apr 30 14:12  ai_server_22llm.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    21080 Apr 30 14:12  ai_server_22llm.py.pre_judge_integration
--rw-rw-r--  1 cakidd cakidd    11802 Dec  5 23:13  ai_server_22llm.py.pre-semaphore
--rw-rw-r--  1 cakidd cakidd     1984 Apr 30 14:12  ai_server_integrated.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    11979 Apr 30 14:12  ai_server.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     3887 Apr 30 14:12  ai_teams_config.py
--rw-rw-r--  1 cakidd cakidd      516 Apr 30 14:12  alerting_config.json
--rw-rw-r--  1 cakidd cakidd      100 Apr 30 14:12  alertingconfig.json
-drwxrwxr-x  2 cakidd cakidd     4096 Jan  5 02:02  alert_venv
--rw-rw-r--  1 cakidd cakidd    62568 Apr 30 14:12  all_actual_services.txt
--rw-rw-r--  1 cakidd cakidd    20905 Apr 30 14:12  all_build_dirs.txt
--rw-rw-r--  1 cakidd cakidd    66558 Apr 30 14:12  all_service_ports.txt
--rw-rw-r--  1 cakidd cakidd   124014 Apr 30 14:12  all_services_compose_blocks_dynamic.txt
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  all_services_compose_blocks.txt
--rwxrwxr-x  1 cakidd cakidd     1271 Apr 30 14:12  analyze_advanced_modules.sh
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  apk-list.txt
--rwxrwxr-x  1 cakidd cakidd     1723 Apr 30 14:12  app.js
--rw-rw-r--  1 cakidd cakidd     8584 Apr 30 14:12  application_service.py
--rw-rw-r--  1 cakidd cakidd   157395 Apr 30 14:12  apt-list.txt
--rw-rw-r--  1 cakidd cakidd     2687 Apr 30 14:12  ARCHITECTURE_OPTIONS.md
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  archived-dockerfiles
--rw-rw-r--  1 cakidd cakidd     3087 Apr 30 14:12  async_polling_architecture.py
--rw-rw-r--  1 cakidd cakidd     1549 Apr 30 14:12  attention_multimodal_fuser.py
--rw-rw-r--  1 cakidd cakidd     4999 Apr 30 14:12  attention_pipeline.py
--rw-rw-r--  1 cakidd cakidd     1681 Apr 30 14:12  attention_priority_scheduler.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  au02_v2
--rwxrwxr-x  1 cakidd cakidd     2753 Apr 30 14:12  audit_all_services_complete.sh
--rwxrwxr-x  1 cakidd cakidd     2551 Apr 30 14:12  audit_all_services.sh
--rwxrwxr-x  1 cakidd cakidd     4521 Apr 30 14:12  audit_docker_services.sh
--rw-rw-r--  1 cakidd cakidd      223 Apr 30 14:12  audit_performance.sh
--rwxrwxr-x  1 cakidd cakidd     1847 Apr 30 14:12  audit_service_connectivity.sh
--rw-rw-r--  1 cakidd cakidd    10372 Apr 30 14:12  auth_api_patch.py
--rw-rw-r--  1 cakidd cakidd    10447 Apr 30 14:12  auth_api.py
--rw-rw-r--  1 cakidd cakidd    26031 Apr 30 14:12  auth_router.py
--rw-rw-r--  1 cakidd cakidd     2035 Apr 30 14:12  auto_fix_gateway.py
--rw-rw-r--  1 cakidd cakidd     1956 Apr 30 14:12  auto_fix_gateway.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd     1375 Apr 30 14:12  auto_memory_service_probe.sh
--rw-rw-r--  1 cakidd cakidd      133 Dec  7 21:42  autonomous_learner.current.log
--rw-rw-r--  1 cakidd cakidd     3120 Apr 30 14:12  autonomous_learner_gisgeodb_wrapper.py
--rw-rw-r--  1 cakidd cakidd     2268 Nov 16 16:09  autonomous_learner.log
--rw-rw-r--  1 cakidd cakidd     1320 Apr 30 14:12  autonomous_learner_topic_source.py
--rw-rw-r--  1 cakidd cakidd    13822 Nov 18 21:06  auto_rag_builder_9715.log
--rw-rw-r--  1 cakidd cakidd     1563 Apr 30 14:12  auto_rag_builder.py
--rwxrwxr-x  1 cakidd cakidd     1991 Apr 30 14:12  auto_stop_after_monongalia.sh
--rw-rw-r--  1 cakidd cakidd     8341 Nov 10 11:38  auto_stop.log
--rw-rw-r--  1 cakidd cakidd     1561 Apr 30 14:12  available_models.txt
--rw-rw-r--  1 cakidd cakidd   155366 Apr 30 14:12  backup_chroma_autonomous_learning.json
--rw-rw-r--  1 cakidd cakidd   249250 Apr 30 14:12  backup_chroma_mountainshares_knowledge.json
--rw-rw-r--  1 cakidd cakidd     5974 Apr 30 14:12  backup_chroma_research_history.json
--rwxrwxr-x  1 cakidd cakidd     3593 Apr 30 14:12  batch_copy_docs.sh
--rwxrwxr-x  1 cakidd cakidd     2140 Apr 30 14:12  bbb_ethics_proxy.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  bbb_output_filter
--rw-rw-r--  1 cakidd cakidd       63 Apr 30 14:12  bbb_requirements.txt
--rw-rw-r--  1 cakidd cakidd      997 Apr 30 14:12  bbb_validator.py
--rw-rw-r--  1 cakidd cakidd     5039 Apr 30 14:12  belief_state_schema.py
--rw-rw-r--  1 cakidd cakidd     5532 Apr 30 14:12  benefits_chat.py
--rw-rw-r--  1 cakidd cakidd      132 Nov 10 11:38  blood_brain_barrier.log
--rw-rw-r--  1 cakidd cakidd      208 Apr 30 14:12  brain.js
--rw-rw-r--  1 cakidd cakidd    21479 Apr 30 14:12  brain_orchestrator.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  bridge
--rw-rw-r--  1 cakidd cakidd      159 Nov 16 16:09  bridge1.log
--rw-rw-r--  1 cakidd cakidd     8522 Apr 30 14:12  bridge_autonomous_to_i_container_dgm_woah.py
--rw-rw-r--  1 cakidd cakidd     5066 Apr 30 14:12  bridge_autonomous_to_i_container_fixed.py
--rw-rw-r--  1 cakidd cakidd      150 Nov 22 21:55 'bridgecrossdgm100*.log'
--rw-rw-r--  1 cakidd cakidd      147 Nov 22 21:46 'bridgecrossdgm*.log'
--rw-rw-r--  1 cakidd cakidd     5351 Apr 30 14:12  bridge_openapi.json
--rw-rw-r--  1 cakidd cakidd      707 Apr 30 14:12  build_autonomous.sh
--rwxrwxr-x  1 cakidd cakidd     3484 Apr 30 14:12  build_compose.sh
--rw-rw-r--  1 cakidd cakidd    29693 Apr 30 14:12  build_dir_audit.txt
--rwxrwxr-x  1 cakidd cakidd    11484 Apr 30 14:12  BUILD_EGERIA_WEB_UI.sh
--rw-rw-r--  1 cakidd cakidd     1570 Apr 30 14:12  chat_endpoint_universal.py
--rw-rw-r--  1 cakidd cakidd     7652 Apr 30 14:12  chat_interface.html
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  chat_response.json
--rw-rw-r--  1 cakidd cakidd      595 Apr 30 14:12  chat_server.py
--rwxrwxr-x  1 cakidd cakidd      861 Apr 30 14:12  chat_with_jarvis.sh
--rwxrwxr-x  1 cakidd cakidd      712 Apr 30 14:12  check_agent_prompts.sh
--rwxrwxr-x  1 cakidd cakidd     3034 Apr 30 14:12  CHECK_AND_BUILD_MEMORY.sh
--rwxrwxr-x  1 cakidd cakidd     1620 Apr 30 14:12  CHECK_AND_FIX_PORT.sh
--rwxrwxr-x  1 cakidd cakidd     2317 Apr 30 14:12  check_mamma_kidd_protocol.sh
--rwxrwxr-x  1 cakidd cakidd     4138 Apr 30 14:12  check_msjarvis_status.sh
--rwxrwxr-x  1 cakidd cakidd     1155 Apr 30 14:12  CHECK_MS_JARVIS_STATUS.sh
--rwxrwxr-x  1 cakidd cakidd     2072 Apr 30 14:12  check_permissions.sh
-drwxrwxr-x  5 cakidd cakidd     4096 Apr 25 12:47  chroma
--rw-rw-r--  1 cakidd cakidd      490 Apr 16 20:18  chroma_client.py
-drwxrwxr-x  2 cakidd cakidd     4096 Jan 11 23:02  .chromadb
-drwxrwxr-x  2 cakidd cakidd     4096 Feb 16 10:08  chromadb
-drwxrwxr-x  2 cakidd cakidd     4096 Feb  4 16:49  chromadbrag1
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:13  chromadb_rag_helper_9034.log
--rw-rw-r--  1 cakidd cakidd      979 Apr 30 14:12  chromadb_rag_helper.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      577 Apr 30 14:12  chromadb_rest_bridge.py
--rw-rw-r--  1 cakidd cakidd     4753 Apr 30 14:12  chromadb_v2_to_gis_sync.py
--rw-rw-r--  1 cakidd cakidd     4683 Apr 30 14:12  chromadb_v2_to_gis_sync.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     1021 Apr 30 14:12  chroma_python_test.py
--rw-rw-r--  1 cakidd cakidd     2688 Apr 30 14:12  chroma_test.py
--rw-rw-r--  1 cakidd cakidd     5763 Apr 30 14:12  chunked_ingest_gbim_to_chroma.py
--rw-rw-r--  1 cakidd cakidd      511 Apr 30 14:12  clean_and_dedupe_services.sh
--rw-rw-r--  1 cakidd cakidd     2307 Apr 30 14:12  clean_integration.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    13245 Apr 30 14:12  clean_service_candidates.txt
--rw-rw-r--  1 cakidd cakidd     1555 Apr 30 14:12  cleanup_manifest.txt
--rwxrwxr-x  1 cakidd cakidd     1321 Apr 30 14:12  CLEANUP_OLLAMA.sh
--rwxrwxr-x  1 cakidd cakidd     1152 Apr 30 14:12  cloudflare_auth_helper.sh
--rwxrwxr-x  1 cakidd cakidd    11574 Apr 30 14:12  COLLECT_ALL_DOCS_FOR_NOTEBOOKLM.sh
--rw-rw-r--  1 cakidd cakidd     1600 Apr 30 14:12  COLLECTIVE_INTEGRATION_PLAN.md
--rw-rw-r--  1 cakidd cakidd      159 Nov 10 11:38  commandorchestrator.log
--rw-rw-r--  1 cakidd cakidd     2867 Apr 16 20:18  community_stake_registry.py
--rwxrwxr-x  1 cakidd cakidd     4370 Apr 30 14:12  COMPARE_4_VS_22.sh
--rw-rw-r--  1 cakidd cakidd     5967 Apr 30 14:12  COMPLETE_DISCOVERY_REPORT.md
--rwxrwxr-x  1 cakidd cakidd     4859 Apr 30 14:12  COMPLETE_PORT_MAP.sh
--rw-rw-r--  1 cakidd cakidd     7028 Nov 16 16:10  complete_port_scan_20251011_181138.log
--rwxrwxr-x  1 cakidd cakidd     6898 Apr 30 14:12  COMPLETE_PORT_SCAN.sh
--rw-rw-r--  1 cakidd cakidd     6928 Apr 30 14:12  COMPLETE_SESSION_ACCOMPLISHMENTS.md
--rwxrwxr-x  1 cakidd cakidd     2092 Apr 30 14:12  COMPLETE_START_SYSTEM.sh
--rw-rw-r--  1 cakidd cakidd     8802 Apr 30 14:12  complete_system_audit_with_swagger.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     5390 Apr 30 14:12  COMPLETE_SYSTEM_STATUS.md
--rw-rw-r--  1 cakidd cakidd     6829 Apr 30 14:12  COMPLETE_SYSTEM_SUMMARY.md
--rw-rw-r--  1 cakidd cakidd      519 Nov 16 16:09  comprehensive_gisgeodb_audit_FIXED.log
--rw-rw-r--  1 cakidd cakidd     4270 Nov 16 16:09  COMPREHENSIVE_PORT_AUDIT_20251009_234234.txt
--rwxrwxr-x  1 cakidd cakidd     4862 Apr 30 14:12  comprehensive_port_audit.sh
--rw-rw-r--  1 cakidd cakidd      107 Nov 18 11:13  comprehensive_storage_fix_9979.log
--rwxrwxr-x  1 cakidd cakidd     7182 Apr 30 14:12  COMPREHENSIVE_SYSTEM_TEST.sh
--rw-rw-r--  1 cakidd cakidd     2008 Apr 30 14:12  comprehensive_url_fix.py.PORT8000_BACKUP
--rw-rw-r--  1 cakidd cakidd     2008 Apr 30 14:12  comprehensive_url_fix.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    10477 Apr 30 14:12  confidence_decay_loop.py
--rw-rw-r--  1 cakidd cakidd      134 Apr 16 20:18  config_spiritual.py
--rw-rw-r--  1 cakidd cakidd     5651 Apr 30 14:12  configure_facebook_webhook.py
--rwxrwxr-x  1 cakidd cakidd      923 Apr 30 14:12  connect_full_brain.sh
--rwxrwxr-x  1 cakidd cakidd    11444 Apr 30 14:12  connect_holy_spirit_to_existing_email.sh
--rw-rw-r--  1 cakidd cakidd     2121 Apr 30 14:12  connection_pooling.py
--rw-rw-r--  1 cakidd cakidd     6097 Apr 30 14:12  CONSCIOUSNESS_ARCHITECTURE_EXPLAINED.md
--rw-rw-r--  1 cakidd cakidd      338 Nov 17 08:11  consciousness_bridge_enhanced.log
--rw-rw-r--  1 cakidd cakidd      248 Nov 17 08:11  consciousness_bridge_judges.log
--rw-rw-r--  1 cakidd cakidd      159 Nov 10 11:38  consciousnessbridge.log
--rw-rw-r--  1 cakidd cakidd      315 Dec  1 20:40  consciousness_coordinator.log
--rw-rw-r--  1 cakidd cakidd     2184 Apr 30 14:12  consciousness_coordinator.psychology_patched.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     2053 Apr 30 14:12  consciousness_coordinator.py.BACKUP
--rw-rw-r--  1 cakidd cakidd     2185 Apr 30 14:12  consciousness_coordinator.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     1290 Nov 16 16:09  CONSCIOUSNESS_FINAL.log
--rw-rw-r--  1 cakidd cakidd    19354 Nov 23 15:41  consciousness_poster.log
--rw-rw-r--  1 cakidd cakidd      203 Dec 13 13:10  consciousness_poster_output.log
--rw-rw-r--  1 cakidd cakidd     3999 Apr 30 14:12  consciousness_with_egeria_voice.py
--rw-rw-r--  1 cakidd cakidd    19476 Nov 16 16:09  consensus.log
--rw-rw-r--  1 cakidd cakidd     8860 Nov 16 16:09  consensus_service.log
--rw-rw-r--  1 cakidd cakidd     2527 Apr 30 14:12  consolidate_to_chroma_db.py
--rw-rw-r--  1 cakidd cakidd      581 Apr 30 14:12  constitutional_api_fixed.py
--rw-rw-r--  1 cakidd cakidd    14741 Apr 30 14:12  constitutional_api.py
--rw-rw-r--  1 cakidd cakidd     5314 Apr 30 14:12  constitutional_api.py.pre_usc
--rw-rw-r--  1 cakidd cakidd    11455 Apr 30 14:12  constitutional_api.py.pre_versions
--rw-rw-r--  1 cakidd cakidd     3891 Apr 30 14:12  constitutional_guardian.py
--rw-rw-r--  1 cakidd cakidd    11314 Apr 30 14:12  constitutional_principles.json
--rw-rw-r--  1 cakidd cakidd      508 Apr 30 14:12  constitutional_principles.json.mcp_backup
--rw-rw-r--  1 cakidd cakidd      497 Apr 30 14:12  CONSTITUTIONAL_SCHEDULER_ENTRY.txt
--rw-rw-r--  1 cakidd cakidd     1259 Apr 30 14:12  CONSTITUTIONAL_SYSTEM_MANIFEST.md
--rw-rw-r--  1 cakidd cakidd      157 Nov 16 16:10  contractbuilder.log
--rw-rw-r--  1 cakidd cakidd      157 Nov 16 16:09  contractbuilderv2.log
--rw-rw-r--  1 cakidd cakidd     7533 Apr 16 20:18  conversation_gbim.py
--rw-rw-r--  1 cakidd cakidd     3030 Apr 30 14:12  conversation_memory_endpoints.py
--rwxrwxr-x  1 cakidd cakidd     1159 Apr 30 14:12  copy_all_missing_services.sh
--rwxrwxr-x  1 cakidd cakidd      655 Apr 30 14:12  copy_architecture_docs.sh
--rwxrwxr-x  1 cakidd cakidd     1704 Apr 30 14:12  copy_complete_brain_structure.sh
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  core
--rw-rw-r--  1 cakidd cakidd     4115 Apr 30 14:12  cpu_optimization.py
--rwxrwxr-x  1 cakidd cakidd     4371 Apr 30 14:12  create_adapter_wrappers.sh
--rw-rw-r--  1 cakidd cakidd     7568 Apr 30 14:12  create_immutable_security_layer.py
--rwxrwxr-x  1 cakidd cakidd    11584 Apr 30 14:12  create_mamma_kidd_auth.sh
--rw-rw-r--  1 cakidd cakidd     2407 Nov 18 11:13  create_perpetual_storage_layer_9837.log
--rwxrwxr-x  1 cakidd cakidd    14360 Apr 30 14:12  create_sanctuary_monitor.sh
--rwxrwxr-x  1 cakidd cakidd    10429 Apr 30 14:12  CREATE_ULTIMATE_JARVIS.sh
--rw-rw-r--  1 cakidd cakidd      645 Apr 30 14:12  CRITICAL_FIXES_NEEDED.md
--rwxrwxr-x  1 cakidd cakidd      649 Apr 30 14:12  cron_health_check.sh
--rw-rw-r--  1 cakidd cakidd     1896 Apr 16 20:18  crypto_client.py
--rw-rw-r--  1 cakidd cakidd     1535 Apr 30 14:12  CURRENT_STATUS.md
--rw-rw-r--  1 cakidd cakidd     3128 Apr 21 09:58  dao_governance.py
-drwxr-xr-x  2 root   root       4096 Apr 28 21:29  data
--rw-rw-r--  1 cakidd cakidd     3852 Apr 30 14:12  data_inventory_endpoint.py
--rwxrwxr-x  1 cakidd cakidd      737 Apr 30 14:12  dedup_compose.sh
--rwxrwxr-x  1 cakidd cakidd     1447 Apr 30 14:12  deep_dive_modules.sh
--rwxrwxr-x  1 cakidd cakidd     1671 Apr 30 14:12  deep_excavation.sh
--rwxrwxr-x  1 cakidd cakidd     2009 Apr 30 14:12  deep_module_search.sh
--rwxrwxr-x  1 cakidd cakidd     7748 Apr 30 14:12  DEPLOY_22LLM_COLLECTIVE.sh
--rw-rw-r--  1 cakidd cakidd      618 Apr 30 14:12  DEPLOYMENT_ORDER.txt
--rw-rw-r--  1 cakidd cakidd     6927 Apr 30 14:12  DEPLOYMENT_STATUS_REPORT.md
--rwxrwxr-x  1 cakidd cakidd     2808 Apr 30 14:12  deploy_to_mountainshares.sh
--rwxrwxr-x  1 cakidd cakidd     2615 Apr 30 14:12  deploy_warm_persona_final.sh
--rw-rw-r--  1 cakidd cakidd    66558 Apr 30 14:12  designed_ports.txt
--rw-rw-r--  1 cakidd cakidd     5613 Apr 16 20:18  dgm_adoption_worker.py
--rw-rw-r--  1 cakidd cakidd      263 Dec  1 19:50  dgm_bridge.log
--rw-rw-r--  1 cakidd cakidd     5691 Apr 30 14:12  dgm_connectors_active.json
--rw-rw-r--  1 cakidd cakidd     7145 Apr 30 14:12  dgm_connectors_resolved.json
--rw-rw-r--  1 cakidd cakidd     8655 Apr 16 20:18  dgm_rag_integration_v2.py
--rw-rw-r--  1 cakidd cakidd       70 Apr 30 14:12  dgm_services_state.json
--rw-rw-r--  1 cakidd cakidd      146 Nov 18 11:25  dgm_supervisor_4012.log
--rw-rw-r--  1 cakidd cakidd     2719 Nov 10 11:38  dgm_supervisor.log
--rw-rw-r--  1 cakidd cakidd     1090 Nov 18 11:37  dgm_supervisor_woah_4012.log
--rw-rw-r--  1 cakidd cakidd      149 Nov 18 11:30  dgmsupervisorwoah_4012.log
--rw-rw-r--  1 cakidd cakidd    65074 Nov 18 21:06  dgm_supervisor_woah_9074.log
--rw-rw-r--  1 cakidd cakidd      198 Nov 18 11:37  dgm_supervisor_woah_fixed_4012.log
--rw-rw-r--  1 cakidd cakidd      198 Nov 18 11:13  dgm_supervisor_woah_fixed_9222.log
--rw-rw-r--  1 cakidd cakidd     9399 Apr 30 14:12  dgm_supervisor_woah_fixed.py
--rw-rw-r--  1 cakidd cakidd      198 Nov 16 16:09  dgm_supervisor_woah.log
--rw-rw-r--  1 cakidd cakidd      170 Nov 18 11:37  dgm_supervisor_woah_psychology_patched_4012.log
--rw-rw-r--  1 cakidd cakidd      187 Nov 18 11:13  dgm_supervisor_woah.psychology_patched_9617.log
--rw-rw-r--  1 cakidd cakidd    17326 Apr 30 14:12  dgm_supervisor_woah.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:37  dgm_supervisor_woah_simple_4012.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:13  dgm_supervisor_woah_simple_9105.log
--rw-rw-r--  1 cakidd cakidd      645 Nov 16 16:09  dgm_woah_simple.log
--rwxrwxr-x  1 cakidd cakidd      688 Apr 30 14:12  DIAGNOSE.sh
--rwxrwxr-x  1 cakidd cakidd      986 Apr 30 14:12  diagnostic_ms_jarvis.sh
--rw-rw-r--  1 cakidd cakidd   227648 Apr 30 14:12  dir_endpoints.txt
--rwxrwxr-x  1 cakidd cakidd     1169 Apr 30 14:12  docker_cleanup_and_optimize.sh
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  docker-compose.deduped.yml
--rw-rw-r--  1 cakidd cakidd      412 Apr 30 14:12  Dockerfile
--rw-rw-r--  1 cakidd cakidd      321 Mar 12 15:24  Dockerfile.69dgm_bridge
--rw-rw-r--  1 cakidd cakidd      284 Apr 21 09:58  Dockerfile.aaacpe_rag
--rw-rw-r--  1 cakidd cakidd      506 Apr 21 09:58  Dockerfile.aaacpe_scraper
--rw-rw-r--  1 cakidd cakidd      228 Mar 10 15:40  Dockerfile.agents
--rw-rw-r--  1 cakidd cakidd      405 Apr 30 14:12  Dockerfile.autonomous_complete
--rw-rw-r--  1 cakidd cakidd      779 Apr 30 16:18  Dockerfile.autonomous_learner
--rw-rw-r--  1 cakidd cakidd      571 Apr 30 14:12  Dockerfile.autonomous_learner_complete
--rw-rw-r--  1 cakidd cakidd     1012 Apr 30 14:12  Dockerfile.bbb
--rw-rw-r--  1 cakidd cakidd      213 Apr 30 14:12  Dockerfile-chroma-proxy
--rw-rw-r--  1 cakidd cakidd      439 Apr 30 14:12  Dockerfile.constitutional_guardian
--rw-rw-r--  1 cakidd cakidd      272 Apr 21 09:58  Dockerfile.crypto-policy
--rw-rw-r--  1 cakidd cakidd      240 Apr 30 14:12  Dockerfile.data_ingest
--rw-rw-r--  1 cakidd cakidd      207 Apr 30 14:12  Dockerfile.decay_escalation_consumer
--rw-rw-r--  1 cakidd cakidd      487 Apr 30 14:12  Dockerfile.eeg
--rw-rw-r--  1 cakidd cakidd      221 Apr 30 14:12  Dockerfile.email
--rw-rw-r--  1 cakidd cakidd      663 Mar 10 16:58  Dockerfile.fifth_dgm_real
--rw-rw-r--  1 cakidd cakidd      191 Apr 30 14:12  Dockerfile.fractal
--rw-rw-r--  1 cakidd cakidd      194 Apr 30 14:12  Dockerfile.gateway
--rw-rw-r--  1 cakidd cakidd      288 Apr 30 14:12  Dockerfile.gis_rag
--rw-rw-r--  1 cakidd cakidd      194 Apr 30 14:12  Dockerfile.hilbert
--rw-rw-r--  1 cakidd cakidd      526 Apr 15 16:11  Dockerfile.hilbert.pre-hilbert-image-20260415-161150
--rw-rw-r--  1 cakidd cakidd      341 Apr 24 18:55  Dockerfile.hippocampus
--rw-rw-r--  1 cakidd cakidd     1249 Apr 29 18:18  Dockerfile.icontainers
--rw-rw-r--  1 cakidd cakidd      281 Apr 30 14:12  Dockerfile.icontainers_fastapi
--rw-rw-r--  1 cakidd cakidd      267 Apr 30 14:12  Dockerfile.indexer
--rw-rw-r--  1 cakidd cakidd     1271 Apr 30 14:12  Dockerfile.judge
--rw-rw-r--  1 cakidd cakidd      217 Apr 30 14:12  Dockerfile-llm10-proxy
--rw-rw-r--  1 cakidd cakidd      217 Apr 30 14:12  Dockerfile-llm11-proxy
--rw-rw-r--  1 cakidd cakidd      217 Apr 30 14:12  Dockerfile-llm12-proxy
--rw-rw-r--  1 cakidd cakidd      217 Apr 30 14:12  Dockerfile-llm13-proxy
--rw-rw-r--  1 cakidd cakidd      217 Apr 30 14:12  Dockerfile-llm14-proxy
--rw-rw-r--  1 cakidd cakidd      229 Apr 30 14:12  Dockerfile-llm15-proxy
--rw-rw-r--  1 cakidd cakidd      217 Apr 30 14:12  Dockerfile-llm16-proxy
--rw-rw-r--  1 cakidd cakidd      229 Apr 30 14:12  Dockerfile-llm17-proxy
--rw-rw-r--  1 cakidd cakidd      217 Apr 30 14:12  Dockerfile-llm18-proxy
--rw-rw-r--  1 cakidd cakidd      229 Apr 30 14:12  Dockerfile-llm19-proxy
--rw-rw-r--  1 cakidd cakidd      215 Apr 30 14:12  Dockerfile-llm1-proxy
--rw-rw-r--  1 cakidd cakidd      217 Apr 30 14:12  Dockerfile-llm20-proxy
--rw-rw-r--  1 cakidd cakidd      229 Apr 30 14:12  Dockerfile-llm21-proxy
--rw-rw-r--  1 cakidd cakidd      217 Apr 30 14:12  Dockerfile-llm22-proxy
--rw-rw-r--  1 cakidd cakidd      215 Apr 30 14:12  Dockerfile-llm2-proxy
--rw-rw-r--  1 cakidd cakidd      214 Apr 30 14:12  Dockerfile-llm3-proxy
--rw-rw-r--  1 cakidd cakidd      225 Apr 30 14:12  Dockerfile-llm4-proxy
--rw-rw-r--  1 cakidd cakidd      214 Apr 30 14:12  Dockerfile-llm5-proxy
--rw-rw-r--  1 cakidd cakidd      214 Apr 30 14:12  Dockerfile-llm6-proxy
--rw-rw-r--  1 cakidd cakidd      225 Apr 30 14:12  Dockerfile-llm7-proxy
--rw-rw-r--  1 cakidd cakidd      225 Apr 30 14:12  Dockerfile-llm8-proxy
--rw-rw-r--  1 cakidd cakidd      225 Apr 30 14:12  Dockerfile-llm9-proxy
--rw-rw-r--  1 cakidd cakidd      441 Mar 26 13:44  Dockerfile.lm_synthesizer
--rw-rw-r--  1 cakidd cakidd      292 Apr 21 09:58  Dockerfile.local-resources
--rw-rw-r--  1 cakidd cakidd      260 Apr 21 09:58  Dockerfile.memory
--rw-rw-r--  1 cakidd cakidd      283 Mar 10 17:02  Dockerfile.mother_protocols
--rw-rw-r--  1 cakidd cakidd       48 Apr 30 14:12 'Dockerfile.nbb_*'
--rw-rw-r--  1 cakidd cakidd      515 Apr 30 14:12  Dockerfile.nbb_base
--rw-rw-r--  1 cakidd cakidd      166 Mar 10 16:38  Dockerfile.neuro
--rw-rw-r--  1 cakidd cakidd      182 Apr 30 14:12  Dockerfile.pia-sampler
--rw-rw-r--  1 cakidd cakidd      837 Apr 21 09:58  Dockerfile.policy
--rw-rw-r--  1 cakidd cakidd      210 Apr 30 14:12  Dockerfile.psychological_rag
--rw-rw-r--  1 cakidd cakidd      249 Apr 30 14:12  Dockerfile.psychology_services
--rw-rw-r--  1 cakidd cakidd      164 Mar 10 16:37  Dockerfile.qualia
--rw-rw-r--  1 cakidd cakidd      376 Apr 30 14:12  Dockerfile.rag
--rw-rw-r--  1 cakidd cakidd      254 Mar 26 14:34  Dockerfile.rag_server
--rw-rw-r--  1 cakidd cakidd      476 Apr 30 14:12  Dockerfile.roche_llm
--rw-rw-r--  1 cakidd cakidd      478 Apr 30 14:12  Dockerfile.roche_llm.disabled
--rw-rw-r--  1 cakidd cakidd      435 Apr 30 14:12  Dockerfile.semaphore
--rw-rw-r--  1 cakidd cakidd      284 Apr 30 14:12  Dockerfile.spiritual_rag
--rw-rw-r--  1 cakidd cakidd      214 Apr 21 11:33  Dockerfile.steward
--rw-rw-r--  1 cakidd cakidd      275 Mar 10 16:16  Dockerfile.swarm
--rw-rw-r--  1 cakidd cakidd      166 Mar 10 16:28  Dockerfile.temporal_consciousness
--rw-rw-r--  1 cakidd cakidd      611 Apr 30 14:12  Dockerfile.toroidal
--rw-rw-r--  1 cakidd cakidd      183 Apr 30 14:12  Dockerfile.webdeploy
--rw-rw-r--  1 cakidd cakidd      422 Apr 30 14:12  Dockerfile.web_research
--rw-rw-r--  1 cakidd cakidd      209 Apr 21 09:58  Dockerfile.woah
--rw-rw-r--  1 cakidd cakidd      509 Apr 30 14:12  Dockerfile.woah_algorithms
--rw-rw-r--  1 cakidd cakidd      153 Apr 30 14:12  .dockerignore
--rw-rw-r--  1 cakidd cakidd     4375 Apr 30 14:12  domain_service_router.py
--rwxrwxr-x  1 cakidd cakidd     7273 Apr 30 14:12  download_everything_appalachian.sh
--rwxrwxr-x  1 cakidd cakidd     1555 Apr 30 14:12  download_priority_counties.sh
--rw-rw-r--  1 cakidd cakidd   316964 Apr 30 14:12  dpkg-list.txt
--rw-rw-r--  1 cakidd cakidd      554 Nov 16 16:09  dump.rdb
--rw-rw-r--  1 cakidd cakidd     4771 Apr 30 14:12  dynamic_app.py
--rwxrwxr-x  1 cakidd cakidd     5302 Apr 30 14:12  dynamic_port_scheduler.py
--rw-rw-r--  1 cakidd cakidd     3674 Apr 30 14:12  dynamic_port_scheduler.py.BROKEN_REDIS
--rw-rw-r--  1 cakidd cakidd     5269 Apr 30 14:12  dynamic_port_service_enhanced.py
--rw-rw-r--  1 cakidd cakidd     8764 Nov 16 16:09  dynamic_port_service.log
--rw-rw-r--  1 cakidd cakidd     7055 Apr 30 14:12  dynamic_port_service.py
--rw-rw-r--  1 cakidd cakidd     5621 Apr 30 14:12  ecosystem_identity_service.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  eeg_shared
--rw-rw-r--  1 cakidd cakidd    16350 Dec  2 02:36  egeria_active_heartbeat.log
--rw-rw-r--  1 cakidd cakidd      530 Apr 30 14:12  EGERIA_AGI_TEST_RESULTS_SUMMARY.md
--rw-rw-r--  1 cakidd cakidd       22 Dec  1 23:51  egeria_autonomous_inquiry.log
--rw-rw-r--  1 cakidd cakidd      613 Apr 30 14:12  egeria_core_identity.txt
--rw-rw-r--  1 cakidd cakidd     4959 Apr 30 14:12  egeria_facebook_perpetual_scheduler.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     1137 Apr 30 14:12  EGERIA_IDENTITY.md
-drwxrwxr-x  3 cakidd cakidd     4096 Jan  3 13:31  egeriaknowledgebase
--rw-rw-r--  1 cakidd cakidd     2527 Apr 30 14:12  egeria_persona_config.json
--rw-rw-r--  1 cakidd cakidd       22 Dec  2 00:00  egeria_status_poller.log
--rw-rw-r--  1 cakidd cakidd     1080 Apr 30 14:12  egeria_system_prompt.txt
--rw-rw-r--  1 cakidd cakidd      910 Apr 30 14:12  egeria_true_identity.txt
--rw-rw-r--  1 cakidd cakidd      477 Nov 16 16:09  egeria_web_ui_FIXED.log
--rw-rw-r--  1 cakidd cakidd     1947 Apr 30 14:12  egeria_web_ui_fixed_simple.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     3718 Apr 30 14:12  egeria_web_ui_plain_authentic.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    11791 Apr 30 14:12  egeria_web_ui.py.old
--rw-rw-r--  1 cakidd cakidd    10699 Apr 30 14:12  egeria_web_ui.py.old-timeout-version
--rw-rw-r--  1 cakidd cakidd     3677 Apr 30 14:12  egeria_web_ui_with_execution.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     4861 Apr 30 14:12  egeria_web_ui_working.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:13  email_rag_integration_9163.log
--rw-rw-r--  1 cakidd cakidd      264 Apr 30 14:12  email_service.env
--rw-rw-r--  1 cakidd cakidd     1766 Apr 30 14:12  email_service.py
--rw-rw-r--  1 cakidd cakidd      980 Apr 30 14:12  email_strategy.txt
--rw-rw-r--  1 cakidd cakidd      638 Apr 30 14:12  embed_and_add.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      543 Apr 30 14:12  embed_and_query.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd      973 Apr 30 14:12  emergency_memory_cleanup.sh
--rwxrwxr-x  1 cakidd cakidd     2178 Apr 30 14:12  EMERGENCY_PROMPT_LEAK_FIX.sh
--rwxrwxr-x  1 cakidd cakidd     3341 Apr 30 14:12  enable_auto_web_search.sh
--rwxrwxr-x  1 cakidd cakidd    12875 Apr 30 14:12  enable_harmony4hope_website_access_CORRECTED.sh
--rwxrwxr-x  1 cakidd cakidd     9773 Apr 30 14:12  enable_holy_spirit_file_writing.sh
--rwxrwxr-x  1 cakidd cakidd    10563 Apr 30 14:12  enable_website_building_capabilities.sh
--rw-rw-r--  1 cakidd cakidd       62 Nov 18 11:13  enhance_rag_first_9987.log
--rw-rw-r--  1 cakidd cakidd     1394 Nov 18 11:13  enhance_rag_knowledge_9846.log
--rw-rw-r--  1 cakidd cakidd      171 Apr 30 13:05  .env
--rw-rw-r--  1 cakidd cakidd      302 Nov 16 16:09  .env.registration
--rw-rw-r--  1 cakidd cakidd      123 Nov 16 16:09  .env.stage2
--rw-rw-r--  1 cakidd cakidd      310 Nov 17 09:49  eternal_watchdog.log
--rw-rw-r--  1 cakidd cakidd      155 Nov 16 16:09  eternalwatchdog.log
--rwxrwxr-x  1 cakidd cakidd      483 Nov 16 22:52  eternal_watchdog.sh.disabled
--rw-rw-r--  1 cakidd cakidd      817 Apr 30 14:12  etl_from_csv_template.py
--rw-rw-r--  1 cakidd cakidd     3397 Apr 30 14:12  etl_from_manifest.py
--rw-rw-r--  1 cakidd cakidd     3453 Apr 30 14:12  etl_template_layer.py
--rw-rw-r--  1 cakidd cakidd    13249 Apr 30 14:12  _evaluate_for_i_container
--rwxrwxr-x  1 cakidd cakidd      960 Apr 30 14:12  examine_ai_server_complete.sh
--rwxrwxr-x  1 cakidd cakidd     2056 Apr 30 14:12  examine_app_brain_backendlib.sh
--rwxrwxr-x  1 cakidd cakidd     1455 Apr 30 14:12  examine_existing_code.sh
--rwxrwxr-x  1 cakidd cakidd      942 Apr 30 14:12  examine_extracted_services.sh
--rwxrwxr-x  1 cakidd cakidd     1927 Apr 30 14:12  examine_geospatial_agents.sh
--rwxrwxr-x  1 cakidd cakidd     1031 Apr 30 14:12  explore_16mb_directory.sh
--rwxrwxr-x  1 cakidd cakidd     1574 Apr 30 14:12  explore_both_systems.sh
--rwxrwxr-x  1 cakidd cakidd     2864 Apr 30 14:12  export_docs_for_notebook.sh
--rwxrwxr-x  1 cakidd cakidd     3731 Apr 30 14:12  extract_all_archives_deep_dive.sh
--rwxrwxr-x  1 cakidd cakidd     2239 Apr 30 14:12  extract_all_big_archives.sh
--rwxrwxr-x  1 cakidd cakidd     2068 Apr 30 14:12  extract_all_gis_comprehensive.sh
--rwxrwxr-x  1 cakidd cakidd     2320 Apr 30 14:12  extract_all_remaining_services.sh
--rwxrwxr-x  1 cakidd cakidd     1244 Apr 30 14:12  extract_and_search_archives.sh
--rwxrwxr-x  1 cakidd cakidd     1331 Apr 30 14:12  extract_complete_real.sh
--rw-rw-r--  1 cakidd cakidd   153755 Nov 16 16:09  extraction.log
--rw-rw-r--  1 cakidd cakidd     1925 Nov 16 16:09  extraction_output.log
--rwxrwxr-x  1 cakidd cakidd     1620 Apr 30 14:12  extract_service_tarballs.sh
--rwxrwxr-x  1 cakidd cakidd     1374 Apr 30 14:12  extract_user_jarvis_files.sh
--rw-rw-r--  1 cakidd cakidd   139974 Nov 16 16:09  facebook_4021.log
--rw-rw-r--  1 cakidd cakidd     2498 Apr 30 14:12  facebook_chat_unified.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     3383 Apr 30 14:12  facebook_daemon_polling.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      906 Nov 16 16:09  facebook_poster.log
--rwxrwxr-x  1 cakidd cakidd      736 Apr 30 14:12  facebook_post.sh
--rw-rw-r--  1 cakidd cakidd      290 Nov 23 15:39  facebook_token.env
--rw-rw-r--  1 cakidd cakidd     2478 Apr 30 14:12  FEATURE_ENHANCEMENTS.md
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  fifth_dgm
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:13  fifth_dgm_9949.log
--rw-rw-r--  1 cakidd cakidd      390 Apr 16 20:18  fifth_dgm_app.py
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:13  fifth_dgm_integration_9912.log
--rw-rw-r--  1 cakidd cakidd     4866 Apr 30 14:12  fifth_dgm_integration.py
--rw-rw-r--  1 cakidd cakidd      125 Dec  6 00:06  fifth_dgm.log
--rw-rw-r--  1 cakidd cakidd      459 Nov 18 11:13  fifth_dgm_main_9344.log
--rw-rw-r--  1 cakidd cakidd      315 Apr 30 14:12  fifth_dgm_main.py
--rw-rw-r--  1 cakidd cakidd      930 Apr 30 14:12  fifth_dgm.py
--rw-rw-r--  1 cakidd cakidd     1295 Apr 30 14:12  FIFTH_DGM_RESTORED.md
--rw-rw-r--  1 cakidd cakidd     8163 Apr 30 14:12  file_metadata_matching_algorithm.py
--rwxrwxr-x  1 cakidd cakidd     3499 Apr 30 14:12  FINAL_8_LAYER_STARTUP.sh
--rwxrwxr-x  1 cakidd cakidd     5317 Apr 30 14:12  final_cleanup_integration.sh
--rw-rw-r--  1 cakidd cakidd     6495 Apr 30 14:12  FINAL_DEPLOYMENT_SUMMARY.md
--rwxrwxr-x  1 cakidd cakidd     2068 Apr 30 14:12  FINAL_EMOTIONAL_BALANCE.sh
--rwxrwxr-x  1 cakidd cakidd      902 Apr 30 14:12  FINAL_FIX.sh
--rwxrwxr-x  1 cakidd cakidd     3523 Apr 30 14:12  finalize_integration.sh
--rw-rw-r--  1 cakidd cakidd     1264 Apr 30 14:12  final_model_optimization.py
--rwxrwxr-x  1 cakidd cakidd     2194 Apr 30 14:12  FINAL_PERSONA_FIX.sh
--rw-rw-r--  1 cakidd cakidd     4131 Apr 30 14:12  FINAL_RECOMMENDATION.md
--rw-rw-r--  1 cakidd cakidd     4661 Apr 30 14:12  FINAL_STATUS_SUMMARY.md
--rw-rw-r--  1 cakidd cakidd     7274 Nov 16 16:09  FINAL_SUCCESS.log
--rwxrwxr-x  1 cakidd cakidd     2819 Apr 30 14:12  final_synthesis_fix.sh
--rw-rw-r--  1 cakidd cakidd     8509 Apr 30 14:12  FINAL_SYSTEM_REPORT.md
--rw-rw-r--  1 cakidd cakidd      304 Nov 16 16:09  final_test.log
--rwxrwxr-x  1 cakidd cakidd     3079 Apr 30 14:12  final_validation_test.sh
--rw-rw-r--  1 cakidd cakidd     1879 Nov 16 16:09  FINAL_WITH_OSM.log
--rw-rw-r--  1 cakidd cakidd     6041 Nov 16 16:09  FINAL_WORKING.log
--rwxrwxr-x  1 cakidd cakidd     1072 Apr 30 14:12  find_actual_service_implementations.sh
--rwxrwxr-x  1 cakidd cakidd     1776 Apr 30 14:12  find_advanced_modules.sh
--rwxrwxr-x  1 cakidd cakidd     1905 Apr 30 14:12  find_complete_brain_structure.sh
--rwxrwxr-x  1 cakidd cakidd     2606 Apr 30 14:12  find_custom_services.sh
--rwxrwxr-x  1 cakidd cakidd     1909 Apr 30 14:12  find_dgm_service.sh
--rwxrwxr-x  1 cakidd cakidd     2644 Apr 30 14:12  find_web_and_deeper_python.sh
--rwxrwxr-x  1 cakidd cakidd     3995 Apr 30 14:12  fix_404_endpoints.sh
--rwxrwxr-x  1 cakidd cakidd     7141 Apr 30 14:12  fix_and_restart_msjarvis.sh
--rw-rw-r--  1 cakidd cakidd     1801 Apr 30 14:12  fix_autonomous_learner_endpoint.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd      603 Apr 30 14:12  fix_autonomous_research.sh
--rw-rw-r--  1 cakidd cakidd       63 Nov 18 11:13  fix_background_storage_9713.log
--rwxrwxr-x  1 cakidd cakidd     2812 Apr 30 14:12  fix_both_issues_final.sh
--rwxrwxr-x  1 cakidd cakidd     8583 Apr 30 14:12  FIX_BOTH_ISSUES.sh
--rwxrwxr-x  1 cakidd cakidd     1020 Apr 30 14:12  fix_chat_api.sh
--rw-rw-r--  1 cakidd cakidd      800 Apr 30 14:12  fix_chroma_url.py.PORT8000_BACKUP
--rw-rw-r--  1 cakidd cakidd      800 Apr 30 14:12  fix_chroma_url.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd     4052 Apr 30 14:12  FIX_CONSCIOUS_COLLECTIVE_AUTO.sh
--rwxrwxr-x  1 cakidd cakidd     4422 Apr 30 14:12  FIX_CONSCIOUSNESS_BRIDGE.sh
--rwxrwxr-x  1 cakidd cakidd     4215 Apr 30 14:12  FIX_CONSCIOUSNESS_INTEGRATION.sh
--rwxrwxr-x  1 cakidd cakidd     2198 Apr 30 14:12  fix_egeria_final.sh
--rwxrwxr-x  1 cakidd cakidd     1726 Apr 30 14:12  fix_egeria_persona.sh
--rwxrwxr-x  1 cakidd cakidd     3069 Apr 30 14:12  fix_egeria_pronouns.sh
--rw-rw-r--  1 cakidd cakidd      665 Apr 30 14:12  fix_egeria_warm_response.patch
--rwxrwxr-x  1 cakidd cakidd     3533 Apr 30 14:12  fix_email_service_env_loading.sh
--rwxrwxr-x  1 cakidd cakidd     4223 Apr 30 14:12  FIX_FAST_MODE.sh
--rw-rw-r--  1 cakidd cakidd      241 Nov 18 11:40  fix_gpu_and_retry_4016.log
--rwxrwxr-x  1 cakidd cakidd     3559 Apr 30 14:12  FIX_HEALTH_ENDPOINTS.sh
--rwxrwxr-x  1 cakidd cakidd     2408 Apr 30 14:12  fix_llm_bridges.sh
--rwxrwxr-x  1 cakidd cakidd     2161 Apr 30 14:12  FIX_MEMORY_STORAGE.sh
--rwxrwxr-x  1 cakidd cakidd     3358 Apr 30 14:12  FIX_MODEL_IDENTITY.sh
--rwxrwxr-x  1 cakidd cakidd     1908 Apr 30 14:12  fix_mother_carrie_principles.sh
--rw-rw-r--  1 cakidd cakidd      209 Nov 18 11:13  fix_multi_rag_chromadb_9340.log
--rwxrwxr-x  1 cakidd cakidd     3610 Apr 30 14:12  fix_ollama_connection.sh
--rwxrwxr-x  1 cakidd cakidd     1500 Apr 30 14:12  fix_persona_naming.sh
--rwxrwxr-x  1 cakidd cakidd    10342 Apr 30 14:12  fix_persona.sh
--rwxrwxr-x  1 cakidd cakidd     2424 Apr 30 14:12  fix_proactive_cleanup_correctly.sh
--rwxrwxr-x  1 cakidd cakidd     2404 Apr 30 14:12  FIX_RAG_FILTERING.sh
--rw-rw-r--  1 cakidd cakidd       52 Nov 18 11:13  fix_rag_store_9161.log
--rwxrwxr-x  1 cakidd cakidd     6906 Apr 30 14:12  fix_redis_and_continue.sh
--rw-rw-r--  1 cakidd cakidd       75 Nov 18 11:13  fix_storage_9169.log
--rwxrwxr-x  1 cakidd cakidd     2584 Apr 30 14:12  FIX_SYNTHESIS_PROMPT.sh
--rwxrwxr-x  1 cakidd cakidd     3660 Apr 30 14:12  FIX_TIMEOUT_ISSUE.sh
--rwxrwxr-x  1 cakidd cakidd     3270 Apr 30 14:12  FIX_TONE_AND_CONCISENESS.sh
--rwxrwxr-x  1 cakidd cakidd      673 Apr 30 14:12  FIX_ULTIMATE.sh
--rwxrwxr-x  1 cakidd cakidd     4547 Apr 30 14:12  FIX_UNIFIED_SELF.sh
--rwxrwxr-x  1 cakidd cakidd     1638 Apr 30 14:12  fix_web_persona.sh
--rw-rw-r--  1 cakidd cakidd      793 Apr 30 14:12  fix_woah_discovery.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      710 Apr 30 14:12  fractal_adapter.py
--rw-rw-r--  1 cakidd cakidd     1461 Apr 30 14:12  full_brain_architecture.md
--rw-rw-r--  1 cakidd cakidd      127 Dec  6 00:04  full_consciousness.log
--rw-rw-r--  1 cakidd cakidd      270 Apr 30 14:12  FULL_DEPLOYMENT_MANIFEST.txt
--rwxrwxr-x  1 cakidd cakidd     8801 Apr 30 14:12  FULL_INTEGRATION_WORKFLOW.sh
--rwxrwxr-x  1 cakidd cakidd     4284 Apr 30 14:12  FULL_PORT_AUDIT.sh
--rwxrwxr-x  1 cakidd cakidd     2170 Apr 30 14:12  FULL_PORT_SCAN.sh
--rwxrwxr-x  1 cakidd cakidd     2827 Apr 30 14:12  full_rebuild.sh
--rwxrwxr-x  1 cakidd cakidd     3755 Apr 30 14:12  FULL_SERVICE_AUDIT.sh
--rwxrwxr-x  1 cakidd cakidd     5588 Apr 30 14:12  full_system_audit.sh
--rwxrwxr-x  1 cakidd cakidd     5410 Apr 30 14:12  FULL_SYSTEM_AUDIT.sh
--rwxrwxr-x  1 cakidd cakidd    13271 Apr 30 14:12  full_system_health_check.sh
--rw-rw-r--  1 cakidd cakidd      354 Nov 17 01:45  gateway_300s.log
--rw-rw-r--  1 cakidd cakidd      342 Nov 17 01:08  gateway_4_layers.log
--rw-rw-r--  1 cakidd cakidd      530 Nov 16 16:09  gateway_9000.log
--rw-rw-r--  1 cakidd cakidd      383 Nov 17 01:56  gateway_complete_kb.log
--rw-rw-r--  1 cakidd cakidd      294 Nov 17 01:05  gateway_complete.log
--rw-rw-r--  1 cakidd cakidd      900 Nov 17 00:44  gateway_corrected_ports.log
--rw-rw-r--  1 cakidd cakidd      195 Nov 16 23:46  gateway_embeddings.log
--rw-rw-r--  1 cakidd cakidd      434 Nov 17 01:35  gateway_ensemble_fast.log
--rw-rw-r--  1 cakidd cakidd      642 Nov 16 23:51  gateway_final.log
--rw-rw-r--  1 cakidd cakidd     1374 Nov 17 07:57  gateway_fixed_ports.log
--rw-rw-r--  1 cakidd cakidd      619 Nov 16 23:57  gateway_fresh.log
--rw-rw-r--  1 cakidd cakidd      316 Nov 17 08:06  gateway_judge_integrated.log
--rw-rw-r--  1 cakidd cakidd      342 Nov 17 00:49  gateway_live.log
--rw-rw-r--  1 cakidd cakidd      154 Nov 16 16:09  gateway.log
--rwxrwxr-x  1 cakidd cakidd      267 Apr 30 14:12  gateway_mesh_context.sh
--rw-rw-r--  1 cakidd cakidd     2468 Apr 30 14:12  gateway_messenger_integration.py
--rw-rw-r--  1 cakidd cakidd     1076 Nov 17 01:30  gateway_rag_fixed.log
--rw-rw-r--  1 cakidd cakidd     1462 Nov 17 00:07  gateway_rebuild_venv.log
--rw-rw-r--  1 cakidd cakidd     2177 Nov 17 07:34  gateway_restart.log
--rw-rw-r--  1 cakidd cakidd      278 Nov 17 08:12  gateway_restored.log
--rw-rw-r--  1 cakidd cakidd      338 Nov 17 08:29  gateway_stable.log
--rw-rw-r--  1 cakidd cakidd      640 Nov 17 08:30  gateway_v2.log
--rw-rw-r--  1 cakidd cakidd     7004 Apr 30 14:12  gateway_wv_entanglement.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  gbim_benefit_indexer
--rw-rw-r--  1 cakidd cakidd     8953 Apr 30 14:12  gbim_benefit_indexer.py
--rw-rw-r--  1 cakidd cakidd     1149 Apr 30 14:12  gbim_chroma_fixed.py
--rw-rw-r--  1 cakidd cakidd     8306 Apr 30 14:12  gbim_coordinate_writer.py
--rw-rw-r--  1 cakidd cakidd      779 Apr 30 14:12  gbim_dashboard.py
--rw-rw-r--  1 cakidd cakidd      732 Apr 30 14:12  gbim_entangled_summary.py
--rw-rw-r--  1 cakidd cakidd      981 Apr 30 14:12  gbim_entanglement.py
--rw-rw-r--  1 cakidd cakidd     2290 Apr 30 14:12  gbim_explain.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  gbim_indexers
--rw-rw-r--  1 cakidd cakidd      322 Feb  5 11:19  gbim_ingest.log
--rw-rw-r--  1 cakidd cakidd    39917 Feb  6 07:31  gbim_ingest_safe.log
--rw-rw-r--  1 cakidd cakidd     9002 Apr 30 14:12  gbim_metadata_enricher.py
--rw-rw-r--  1 cakidd cakidd      596 Apr 30 14:12  gbim_metadata_loader.py
--rw-rw-r--  1 cakidd cakidd      931 Apr 30 14:12  gbim_msjarvis.py
-drwxrwxr-x  3 cakidd cakidd     4096 Apr 30 14:12  gbim_query_router
--rw-rw-r--  1 cakidd cakidd     7662 Apr 30 14:12  gbim_query_router.py
--rw-rw-r--  1 cakidd cakidd     1551 Apr 30 14:12  gbim_reingest_placeholder.py
--rw-rw-r--  1 cakidd cakidd     1239 Apr 30 14:12  gbim_v0_retrieval.py
--rw-rw-r--  1 cakidd cakidd     5044 Apr 30 14:12  gbim_verification_loop.py
--rw-rw-r--  1 cakidd cakidd      220 Nov 16 16:09  gdb_integration.log
--rw-rw-r--  1 cakidd cakidd     3432 Apr 30 14:12  gdb_integration_service.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  geo
--rw-rw-r--  1 cakidd cakidd      287 Apr 30 14:12  geobim_health_shim_8051.py
--rw-rw-r--  1 cakidd cakidd     3265 Apr 30 14:12  geobim_integrated.py
--rw-rw-r--  1 cakidd cakidd     1044 Apr 30 14:12  geobim_integrated.py.running_backup
--rw-rw-r--  1 cakidd cakidd     1243 Apr 30 14:12  geobim_mysql.py
--rw-rw-r--  1 cakidd cakidd      997 Apr 30 14:12  geobim_mysql_v2.py
--rw-rw-r--  1 cakidd cakidd    21919 Apr 30 14:12  geodb_export_plan_all.yaml
--rw-rw-r--  1 cakidd cakidd    21919 Apr 30 14:12  geodb_export_plan.yaml
--rw-rw-r--  1 cakidd cakidd    11723 Apr 30 14:12  geodb_geom_tables.tsv
--rw-rw-r--  1 cakidd cakidd     3850 Apr 30 14:12  geo_rag_debug_app.py
--rwxrwxr-x  1 cakidd cakidd     2108 Apr 30 14:12  get_cloudflare_zone_id.sh
--rw-rw-r--  1 cakidd cakidd     3429 Apr 30 14:12  gis_chat_integration.py
--rw-rw-r--  1 cakidd cakidd     1182 Apr 30 14:12  gis_command_module.py
-drwxrwxr-x  2 cakidd cakidd    20480 Apr 30 14:12  gis_dataset_services
--rw-rw-r--  1 cakidd cakidd      348 Apr 30 14:12  gis_download_plan.json
--rw-rw-r--  1 cakidd cakidd      334 Nov 16 16:09  gis_enhanced_chat.log
--rw-rw-r--  1 cakidd cakidd      873 Nov 16 16:09  gisgeodb_access_20251103_221750.log
--rw-rw-r--  1 cakidd cakidd     4739 Apr 30 14:12  gisgeodbdirectaccess.py
--rw-rw-r--  1 cakidd cakidd     1311 Nov 16 16:09  gisgeodb_fixed_20251103_221835.log
--rw-rw-r--  1 cakidd cakidd     2001 Apr 30 14:12  gisgeodb_learner_hook.py
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:13  gisgeodb_storage_9215.log
--rw-rw-r--  1 cakidd cakidd     1361 Apr 30 14:12  gisgeodb_storage.py
--rw-rw-r--  1 cakidd cakidd     3836 Nov 10 11:38  gis_query_service_fixed.log
--rw-rw-r--  1 cakidd cakidd     1354 Nov 16 16:09  gis_query_service.log
--rw-rw-r--  1 cakidd cakidd      257 Apr 30 14:12  .gitignore
--rw-rw-r--  1 cakidd cakidd      215 Nov 18 11:40  gpu_accelerated_rag_4016.log
--rw-rw-r--  1 cakidd cakidd      215 Nov 18 11:14  gpu_accelerated_rag_9090.log
--rw-rw-r--  1 cakidd cakidd      309 Nov 18 11:37  gpu_accelerated_rag_fixed_4016.log
--rw-rw-r--  1 cakidd cakidd      154 Nov 18 11:30  gpuacceleratedragfixed_4016.log
--rw-rw-r--  1 cakidd cakidd      309 Nov 18 11:14  gpu_accelerated_rag_fixed_9873.log
--rw-rw-r--  1 cakidd cakidd    14589 Apr 30 14:12  gpu_accelerated_rag_fixed.py
--rw-rw-r--  1 cakidd cakidd      152 Nov 18 11:09  gpu_jarvis_4001.log
--rw-rw-r--  1 cakidd cakidd     2212 Apr 30 14:12  GPU_OPTIMIZATION_GUIDE.md
--rw-rw-r--  1 cakidd cakidd      145 Nov 18 11:25  gpu_rag_4016.log
--rwxrwxr-x  1 cakidd cakidd     1679 Apr 30 14:12  GUARANTEED_8_LAYER_START.sh
--rw-rw-r--  1 cakidd cakidd      497 Nov 16 16:09  guards.log
--rw-rw-r--  1 cakidd cakidd    15818 Apr 30 14:12  hardware_optimization_analyzer.py
--rwxrwxr-x  1 cakidd cakidd     9318 Apr 30 14:12  harmony4hope_deployment_manager.py
--rw-rw-r--  1 cakidd cakidd     6444 Apr 30 14:12  health_access_gbim_bridge.py
--rw-rw-r--  1 cakidd cakidd      738 Apr 30 14:12  health_access_query.py
--rw-rw-r--  1 cakidd cakidd     1051 Apr 30 14:12  health_check_cache.py
--rwxrwxr-x  1 cakidd cakidd      338 Apr 30 14:12  health_check.sh
--rw-rw-r--  1 cakidd cakidd       12 Apr 30 14:12  hello.txt
--rw-rw-r--  1 cakidd cakidd     6509 Apr 30 14:12  hierarchical_coordinator_AUTONOMOUS.md
--rw-rw-r--  1 cakidd cakidd    17750 Apr 30 14:12  hierarchical_coordinator_autonomous.py
--rw-rw-r--  1 cakidd cakidd    17678 Apr 30 14:12  hierarchical_coordinator_autonomous.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     6666 Apr 30 14:12  hierarchical_coordinator_deep_mode.py
--rw-rw-r--  1 cakidd cakidd     6594 Apr 30 14:12  hierarchical_coordinator_deep_mode.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     5710 Apr 30 14:12  hierarchical_integration.py
--rw-rw-r--  1 cakidd cakidd     5640 Apr 30 14:12  hierarchical_integration.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     2068 Apr 30 14:12  hierarchical_method.txt
--rw-rw-r--  1 cakidd cakidd    51353 Nov 17 01:56  hilbert_5002_active.log
--rw-rw-r--  1 cakidd cakidd      220 Nov 17 00:15  hilbert_5002_final.log
--rw-rw-r--  1 cakidd cakidd      338 Nov 17 00:13  hilbert_5002_fixed.log
--rw-rw-r--  1 cakidd cakidd      215 Nov 17 00:12  hilbert_5002_restart.log
--rw-rw-r--  1 cakidd cakidd    53747 Dec  2 03:26  hilbert_8235.log
--rw-rw-r--  1 cakidd cakidd    22702 Nov 15 23:24  hilbert_quantum.log
--rw-rw-r--  1 cakidd cakidd      155 Nov 17 01:58  hilbert_restart.log
--rw-rw-r--  1 cakidd cakidd      128 Dec  1 19:08  hilbertspatialchat.log
--rw-rw-r--  1 cakidd cakidd    13038 Apr 30 14:12  hilbert_spatial_chat.py
--rw-rw-r--  1 cakidd cakidd     2172 Apr 30 14:12  host_bulk_loader.py
--rw-rw-r--  1 cakidd cakidd     7778 Apr 30 14:12  i_container_interest_algorithm.py
--rw-rw-r--  1 cakidd cakidd     5702 Apr 30 14:12  icontainers_fastapi.py
--rw-rw-r--  1 cakidd cakidd     1140 Apr 30 14:12  icontainers_fastapi.py.pre_adapter_1771176105
--rwxrwxr-x  1 cakidd cakidd     4476 Apr 30 14:12  IDENTIFY_SERVICES.sh
--rwxrwxr-x  1 cakidd cakidd     2163 Apr 30 14:12  identify_unknown_services.sh
--rw-rw-r--  1 cakidd cakidd     2866 Apr 30 14:12  identity_promotion.py
--rw-rw-r--  1 cakidd cakidd     4250 Apr 30 14:12  identity_service.py
--rw-rw-r--  1 cakidd cakidd     9900 Apr 30 14:12  immutable_core_enforcement.py
--rw-rw-r--  1 cakidd cakidd     8947 Apr 30 14:12  IMMUTABLE_MANIFEST.md
--rwxrwxr-x  1 cakidd cakidd    11513 Apr 30 14:12  implement_conversation_fixes.sh
--rwxrwxr-x  1 cakidd cakidd     8145 Apr 30 14:12  implement_enhancements.sh
--rwxrwxr-x  1 cakidd cakidd     1018 Apr 30 14:12  implement_gpu_optimization.sh
--rw-rw-r--  1 cakidd cakidd     4849 Apr 30 14:12  implement_judge_pituitary_fixed.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd     1216 Apr 30 14:12  implement_storage_optimization.sh
--rw-rw-r--  1 cakidd cakidd     1258 Apr 30 14:12  import_gbim_assets.py
--rw-rw-r--  1 cakidd cakidd     2861 Apr 30 14:12  import_gis_geodata_to_gbim.py
--rw-rw-r--  1 cakidd cakidd     1484 Apr 30 14:12  import_gisgeodata_to_gbim.py
--rwxrwxr-x  1 cakidd cakidd    10182 Apr 30 14:12  improve_jarvis.sh
--rw-rw-r--  1 cakidd cakidd     6467 Apr 30 14:12  index_all_extracted_gis.py
--rw-rw-r--  1 cakidd cakidd     3669 Apr 30 14:12  index.html
--rw-rw-r--  1 cakidd cakidd       93 Apr 30 14:12  index.js
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  infra_status.json
--rw-rw-r--  1 cakidd cakidd     1409 Apr 30 14:12  infrastructure_endpoints.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 13:31  ingest
--rw-rw-r--  1 cakidd cakidd      145 Apr 30 14:12  ingestcsvtogisgeodb.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  ingest_watcher
--rw-rw-r--  1 cakidd cakidd      688 Apr 30 14:12  __init__.py
--rw-rw-r--  1 cakidd cakidd     2012 Apr 30 14:12  inject_egeria_persona.py
--rw-rw-r--  1 cakidd cakidd     2114 Apr 30 14:12  inject_gisgeodb_into_learner.py
--rw-rw-r--  1 cakidd cakidd      531 Apr 30 14:12  inspect_geodb_collection.py
--rwxrwxr-x  1 cakidd cakidd     5289 Apr 30 14:12  INSPECT_JARVIS_INTERNALS.sh
--rwxrwxr-x  1 cakidd cakidd     1273 Apr 30 14:12  inspect_key_services.sh
--rwxrwxr-x  1 cakidd cakidd     9118 Apr 30 14:12  install_research_layer.sh
--rwxrwxr-x  1 cakidd cakidd     4523 Apr 30 14:12  INTEGRATE_8020_8050.sh
--rwxrwxr-x  1 cakidd cakidd     4490 Apr 30 14:12  integrate_advanced_modules.sh
--rw-rw-r--  1 cakidd cakidd     6891 Apr 30 14:12  integrate_all_services.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd     9666 Apr 30 14:12  integrate_brain_orchestrator.sh
--rwxrwxr-x  1 cakidd cakidd    18361 Apr 30 14:12  INTEGRATE_CONSCIOUSNESS.sh
--rwxrwxr-x  1 cakidd cakidd    13692 Apr 30 14:12  INTEGRATE_CONSCIOUSNESS_TO_DEEP_MODE.sh
--rwxrwxr-x  1 cakidd cakidd      858 Apr 30 14:12  integrate_discovered_services.sh
--rw-rw-r--  1 cakidd cakidd      347 Nov 18 11:14  integrate_fifth_dgm_autonomous_learner_9681.log
--rw-rw-r--  1 cakidd cakidd     2053 Apr 30 14:12  integrate_full_brain.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd     4608 Apr 30 14:12  integrate_mamma_kidd_protocol.sh
--rwxrwxr-x  1 cakidd cakidd     1852 Apr 30 14:12  integrate_mother_protocol.sh
--rwxrwxr-x  1 cakidd cakidd     3006 Apr 30 14:12  integrate_phase1.sh
--rwxrwxr-x  1 cakidd cakidd     5508 Apr 30 14:12  integrate_phase2.sh
--rwxrwxr-x  1 cakidd cakidd     5891 Apr 30 14:12  integrate_phase3.sh
--rwxrwxr-x  1 cakidd cakidd     4839 Apr 30 14:12  integrate_phase4_5.sh
--rwxrwxr-x  1 cakidd cakidd     3631 Apr 30 14:12  INTEGRATE_PROPERLY.sh
--rwxrwxr-x  1 cakidd cakidd    12770 Apr 30 14:12  integrate_rag.sh
--rw-rw-r--  1 cakidd cakidd     3712 Apr 30 14:12  INTEGRATION_HUB_SUCCESS.md
--rw-rw-r--  1 cakidd cakidd     2762 Apr 30 14:12  INTEGRATION_IMPLEMENTATION.py
--rw-rw-r--  1 cakidd cakidd     2692 Apr 30 14:12  INTEGRATION_IMPLEMENTATION.py.pre_dynamic_discovery
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 25 12:47  integration_layer
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  integration_layer.placeholder_1768012705
--rwxrwxr-x  1 cakidd cakidd     5321 Apr 30 14:12  INTEGRATION_PLAN.sh
--rw-rw-r--  1 cakidd cakidd     4050 Apr 30 14:12  interaction_logger.py
--rw-rw-r--  1 cakidd cakidd     6273 Apr 30 14:12  internet_tunnel_service.py
--rwxrwxr-x  1 cakidd cakidd      552 Apr 30 14:12  introduce_self.sh
--rw-rw-r--  1 cakidd cakidd     8784 Apr 30 14:12  introspective_record.py
--rw-rw-r--  1 cakidd cakidd     6620 Apr 30 14:12  introspective_verdict_bridge.py
--rwxrwxr-x  1 cakidd cakidd     1559 Apr 30 14:12  inventory_services.sh
--rwxrwxr-x  1 cakidd cakidd     4931 Apr 30 14:12  investigate_coordination.sh
--rw-rw-r--  1 cakidd cakidd      595 Apr 16 20:18  jarvis-69dgm-bridge_jarvis-fractal-consciousness_baseline.py
--rw-rw-r--  1 cakidd cakidd     5354 Apr 21 09:58  jarvis-aaacpe-rag_aaacpe_rag_service.py
--rw-rw-r--  1 cakidd cakidd     5613 Apr 16 20:18  jarvis-adoption-worker_dgm_adoption_worker.py
--rw-r--r--  1 cakidd cakidd     7064 Apr 16 20:18  jarvis-agents-service_ms_jarvis_consciousness_unified_bridge.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:14  jarvisarchiveapi_9200.log
--rw-rw-r--  1 cakidd cakidd     2702 Apr 30 14:12  jarvisarchiveapi.py
--rw-rw-r--  1 cakidd cakidd      763 Apr 30 14:12  jarvis_authentic_persona.txt
--rw-rw-r--  1 cakidd cakidd     9002 Apr 30 14:12  jarvis-consciousness-bridge_ms_jarvis_consciousness_unified_bridge.py
--rw-rw-r--  1 cakidd cakidd    15815 Apr 30 14:12  jarvis-constitutional-guardian_constitutional_api.py
--rw-rw-r--  1 cakidd cakidd     7581 Apr 21 09:58  jarviscryptopolicy.py
--rwxrwxr-x  1 cakidd cakidd     1039 Apr 30 14:12  JARVIS_DASHBOARD.sh
--rw-rw-r--  1 cakidd cakidd    18386 Apr 30 14:12  jarvis_data_ingest.py
--rw-rw-r--  1 cakidd cakidd     4278 Apr 30 14:12  jarvis_decay_escalation_consumer.py
--rw-rw-r--  1 cakidd cakidd     5658 Apr 21 09:58  jarvis_eeg_beta_5m.py
--rw-rw-r--  1 cakidd cakidd     2648 Apr 21 09:58  jarvis_eeg_delta_30s.py
--rw-rw-r--  1 cakidd cakidd     2945 Apr 21 09:58  jarvis_eeg_theta_60s.py
--rw-rw-r--  1 cakidd cakidd        0 Dec  1 19:51  jarvis_ensemble.log
--rw-rw-r--  1 cakidd cakidd     1194 Apr 30 14:12  jarvis_ensemble.py
--rw-r--r--  1 cakidd cakidd     9152 Apr 16 20:18  jarvis-fifth-dgm_service_discovery.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  jarvis_gis_rag
--rw-rw-r--  1 cakidd cakidd     7578 Apr 30 14:12  jarvis-gis-rag_gis_rag_service.py
--rwxrwxr-x  1 cakidd cakidd     3752 Apr 30 14:12  JARVIS_HEALTH_CHECK.sh
--rw-rw-r--  1 cakidd cakidd   147978 Nov 18 10:55  jarvis_health.log
--rw-rw-r--  1 cakidd cakidd     6403 Apr 30 14:12  jarvis_hilbert_state.py
--rw-rw-r--  1 cakidd cakidd     7346 Apr 24 18:55  jarvis-hippocampus_hippocampus_service.py
--rw-rw-r--  1 cakidd cakidd     5752 Apr 16 20:18  jarvis-i-containers_icontainers_fastapi.py
--rw-rw-r--  1 cakidd cakidd    20480 Apr 30 14:12  jarvis_identity.db
--rw-rw-r--  1 cakidd cakidd     9789 Apr 21 09:58  jarvis-judge-pipeline_judge_pipeline.py
--rw-rw-r--  1 cakidd cakidd    41703 Dec  2 03:26  jarvis_llm1.log
--rw-rw-r--  1 cakidd cakidd     6750 Apr 30 14:12  jarvis_llm1.py
--rw-rw-r--  1 cakidd cakidd     3457 Apr 16 20:18  jarvis-lm-synthesizer_lm_synthesizer.py
--rw-rw-r--  1 cakidd cakidd    15592 Apr 16 20:18  jarvis-local-resources_local_resources_resolver.py
--rw-rw-r--  1 cakidd cakidd     2371 Apr 30 14:12  jarvis_memory_pia.py
--rw-rw-r--  1 cakidd cakidd      520 Apr 16 20:18  jarvis-mother-protocols_mother_protocols.py
--rw-r--r--  1 cakidd cakidd     7064 Apr 16 20:18  jarvis-neurobiological-master_ms_jarvis_consciousness_unified_bridge.py
--rw-rw-r--  1 cakidd cakidd    13372 Apr 30 14:12  jarvis_pia_sampler.py
--rw-rw-r--  1 cakidd cakidd     4480 Apr 30 14:12  jarvis_pia_status.py
--rw-r--r--  1 cakidd cakidd     9636 Apr 16 20:18  jarvis-psychology-services_psychology_integration_adapter.py
--rw-rw-r--  1 cakidd cakidd     3573 Apr 16 20:18  jarvis-qualia-engine_ms_jarvis_qualia_engine.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  jarvis_rag_search
--rw-r--r--  1 cakidd cakidd     7064 Apr 16 20:18  jarvis-rag-server_ms_jarvis_consciousness_unified_bridge.py
--rw-rw-r--  1 cakidd cakidd     6630 Apr 30 14:12  jarvis-semaphore_msjarvis_semaphore.py
--rw-rw-r--  1 cakidd cakidd     6944 Apr 30 14:12  jarvis-spiritual-rag_spiritual_rag_domain.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  jarvis_steward
--rw-rw-r--  1 cakidd cakidd     6429 Apr 30 14:12  jarvis_steward.py
--rw-rw-r--  1 cakidd cakidd    11408 Apr 30 14:12  jarvis_stewardship_scheduler.py
--rw-r--r--  1 cakidd cakidd     7064 Apr 16 20:18  jarvis-swarm-intelligence_ms_jarvis_consciousness_unified_bridge.py
--rw-rw-r--  1 cakidd cakidd     2535 Apr 30 14:12  jarvis_synth_llm.py
--rw-r--r--  1 cakidd cakidd      547 Apr 16 20:18  jarvis-temporal-consciousness_temporal_consciousness.py
--rw-rw-r--  1 cakidd cakidd     3714 Apr 16 20:18  jarvis-toroidal_toroidal_service.py
--rw-r--r--  1 cakidd cakidd     9483 Apr 16 20:18  jarvis-woah_dgm_supervisor_woah_fixed.py
--rw-rw-r--  1 cakidd cakidd     5206 Apr 21 09:58  jarvis-wv-entangled-gateway_msjarvis_wv_entangled_gateway.py
--rw-rw-r--  1 cakidd cakidd     4792 Apr 30 14:12  judge_alignment_filter.py
--rw-rw-r--  1 cakidd cakidd     3206 Apr 30 14:12  judge_client.py
--rw-rw-r--  1 cakidd cakidd     3304 Apr 16 20:18  judge_consistency_engine.py
--rw-rw-r--  1 cakidd cakidd     3108 Apr 30 14:12  judge_consistency_filter.py
--rw-rw-r--  1 cakidd cakidd     4958 Apr 30 14:12  judge_ethics_filter.py
--rw-rw-r--  1 cakidd cakidd    16154 Apr 30 14:12  judge_pipeline.py
--rw-rw-r--  1 cakidd cakidd     2604 Apr 30 14:12  judge_pk.b64
--rw-rw-r--  1 cakidd cakidd     1952 Apr 22 17:46  judge_pk.bin
--rw-rw-r--  1 cakidd cakidd     4131 Apr 21 09:58  judgesigner.py
--rw-rw-r--  1 cakidd cakidd     4032 Apr 22 17:46  judge_sk.bin
--rwxrwxr-x  1 cakidd cakidd     1255 Apr 30 14:12  judge_to_pituitary_bridge.py
--rw-rw-r--  1 cakidd cakidd     7931 Apr 30 14:12  judge_truth_filter.py
--rw-rw-r--  1 cakidd cakidd   489472 Apr 30 14:12  knowledge_docs_attributes.geojson
--rw-rw-r--  1 cakidd cakidd     1946 Apr 30 14:12  knowledge_growth_endpoint.txt
--rwxrwxr-x  1 cakidd cakidd      657 Apr 30 14:12  launch_advanced.sh
--rwxrwxr-x  1 cakidd cakidd      836 Apr 30 14:12  launch_all_bridges.sh
--rwxrwxr-x  1 cakidd cakidd     1200 Apr 30 14:12  launch_dashboard_background.sh
--rwxrwxr-x  1 cakidd cakidd      928 Apr 30 14:12  launch_service.sh
--rwxrwxr-x  1 cakidd cakidd     1225 Apr 30 14:12  launch_web_services.sh
--rw-rw-r--  1 cakidd cakidd     2868 Apr 30 14:12  layer2_port9000_bridge.py
--rwxrwxr-x  1 cakidd cakidd     2805 Apr 30 14:12  leak_test.sh
--rw-rw-r--  1 cakidd cakidd      157 Nov 10 11:38  learner.log
--rw-rw-r--  1 cakidd cakidd     1182 Apr 30 14:12  link_gisgeodb_to_files.py
--rw-rw-r--  1 cakidd cakidd      415 Apr 30 14:12  list_geodb_collections.py
--rw-rw-r--  1 cakidd cakidd      116 Apr 30 14:12  live_ports.txt
--rw-rw-r--  1 cakidd cakidd     4484 Nov 16 16:09  llama_test.log
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  llm
--rw-rw-r--  1 cakidd cakidd     2497 Apr 16 20:18  llm10_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     2393 Apr 16 20:18  llm11_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     2346 Apr 16 20:18  llm12_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     1704 Apr 30 14:12  llm13_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     2582 Apr 16 20:18  llm14_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     1669 Apr 30 14:12  llm15_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     2433 Apr 16 20:18  llm16_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     1514 Apr 30 14:12  llm17_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     2600 Apr 16 20:18  llm18_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     1669 Apr 30 14:12  llm19_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     1503 Apr 30 14:12  llm1_health_proxy.py
--rw-rw-r--  1 cakidd cakidd      377 Dec  8 14:12  llm20.current.log
--rw-rw-r--  1 cakidd cakidd     2321 Apr 16 20:18  llm20_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     1675 Apr 30 14:12  llm21_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     2322 Apr 16 20:18  llm22_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     2410 Apr 16 20:18  llm2_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     2605 Apr 16 20:18  llm3_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     1503 Apr 30 14:12  llm4_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     2581 Apr 16 20:18  llm5_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     2417 Apr 16 20:18  llm6_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     1508 Apr 30 14:12  llm7_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     1503 Apr 30 14:12  llm8_health_proxy.py
--rw-rw-r--  1 cakidd cakidd     1528 Apr 30 14:12  llm9_health_proxy.py
--rw-rw-r--  1 cakidd cakidd      844 Apr 30 14:12  llm_belief_utils.py
--rw-rw-r--  1 cakidd cakidd     3312 Apr 30 14:12  llm_bridge_main.py
--rw-rw-r--  1 cakidd cakidd      936 Apr 30 14:12  llm_conscious_OPTIMIZED.py
--rw-rw-r--  1 cakidd cakidd       22 Nov 16 16:09  llm_consensus_19_PRODUCTION.log
--rw-rw-r--  1 cakidd cakidd     4755 Apr 30 14:12  llm_consensus_19_PRODUCTION.py
--rw-rw-r--  1 cakidd cakidd       22 Nov 16 16:09  llm_consensus_20_FINAL.log
--rw-rw-r--  1 cakidd cakidd    10731 Apr 30 14:12  llm_consensus_20_FINAL.py
--rw-rw-r--  1 cakidd cakidd     5221 Apr 30 14:12  llm_consensus_22_OPTIMIZED_ORDER.py
--rw-rw-r--  1 cakidd cakidd     5710 Apr 30 14:12  llm_consensus_22.py
--rw-rw-r--  1 cakidd cakidd     5329 Apr 30 14:12  llm_consensus_22_SMALL_TO_LARGE.py
--rw-rw-r--  1 cakidd cakidd     2845 Apr 30 14:12  llm_ensemble_router.py
--rw-rw-r--  1 cakidd cakidd     2774 Apr 30 14:12  llm_ensemble_router.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     4252 Apr 30 14:12  llm_judge_v3.py
--rw-rw-r--  1 cakidd cakidd     2848 Apr 30 14:12  lm_judge_helper.py
--rw-rw-r--  1 cakidd cakidd     5745 Apr 21 09:58  lm_synthesizer.py
--rwxrwxr-x  1 cakidd cakidd     4678 Apr 30 14:12  LOAD_AAACPE_RAG.sh
--rwxrwxr-x  1 cakidd cakidd     3032 Apr 30 14:12  load_knowledge.sh
--rw-rw-r--  1 cakidd cakidd      425 Nov 18 11:14  load_rag_data_9879.log
--rw-rw-r--  1 cakidd cakidd     2377 Nov 18 11:14  load_rag_knowledge_9381.log
--rw-rw-r--  1 cakidd cakidd     3424 Apr 30 14:12  local_resources_resolver.py
--rw-rw-r--  1 cakidd cakidd     3870 Apr 30 14:12  LOCATION_AWARENESS_SUCCESS.md
--rw-rw-r--  1 cakidd cakidd      512 Nov 16 16:09  location.log
--rw-rw-r--  1 cakidd cakidd     3842 Apr 30 14:12  location_scraper_service.py
--rw-rw-r--  1 cakidd cakidd     1069 Apr 30 14:12  logging_conf.py
--rw-rw-r--  1 cakidd cakidd      502 Apr 30 14:12  main_brain_attrs_patch.sh
--rw-rw-r--  1 cakidd cakidd    74805 Apr 30 14:12  main_brain_container_2055.py
--rw-rw-r--  1 cakidd cakidd    67053 Apr 16 20:18  main_brain_LEGACY_32svc.py
--rw-rw-r--  1 cakidd cakidd    19490 Apr 30 14:12  main_brain_legacy_backup.py
--rw-rw-r--  1 cakidd cakidd      338 Nov 16 16:09  main_brain.log
--rw-rw-r--  1 cakidd cakidd     7270 Apr 30 14:12  main_brain_psychology_patch.py
--rw-rw-r--  1 cakidd cakidd    91126 Apr 30 21:11  main_brain.py
--rw-rw-r--  1 cakidd cakidd    91110 Apr 30 21:11  main_brain.py.bak.20260430-211100
--rw-rw-r--  1 cakidd cakidd    64983 Apr 30 14:12  main_brain.py.broken-20260413-134536
--rw-r--r--  1 root   root      56970 Apr  7 17:24  main_brain.py.manualbak
--rw-r--r--  1 root   root      56970 Apr  7 17:25  main_brain.py.manualbak3
--rw-r--r--  1 root   root      56970 Apr  7 17:26  main_brain.py.manualbak4
--rw-r--r--  1 root   root      56970 Apr  7 17:27  main_brain.py.manualbak5
--rw-r--r--  1 cakidd cakidd    65496 Apr 13 13:52  main_brain.py.pre-aaacpe-fix-20260413-135408
--rw-r--r--  1 cakidd cakidd    65436 Apr 13 15:47  main_brain.py.pre-aaacpe-fix-20260413-154757
--rw-rw-r--  1 cakidd cakidd    56970 Apr 30 14:12  main_brain.py.pre_aaacpe_patch
--rw-r--r--  1 cakidd cakidd    65043 Apr 13 13:48  main_brain.py.pre-community-fix-20260413-134958
--rw-r--r--  1 cakidd cakidd    65322 Apr 13 13:49  main_brain.py.pre-community-fullfix-20260413-135255
--rw-r--r--  1 cakidd cakidd    64983 Apr 13 15:45  main_brain.py.pre-community-fullfix-20260413-154742
--rw-rw-r--  1 cakidd cakidd    66596 Apr 30 14:12  main_brain.py.pre_judges
--rw-r--r--  1 cakidd cakidd    65324 Apr 13 13:54  main_brain.py.pre-local-summary-fix-20260413-135507
--rw-r--r--  1 cakidd cakidd    65264 Apr 13 15:47  main_brain.py.pre-local-summary-fix-20260413-154816
--rw-r--r--  1 cakidd cakidd    64518 Apr 13 15:07  main_brain.py.pre-phase4-dedupe-20260413-150822
--rw-r--r--  1 cakidd cakidd    64458 Apr 13 15:48  main_brain.py.pre-phase4-dedupe-20260413-154851
--rw-r--r--  1 cakidd cakidd    65325 Apr 13 13:55  main_brain.py.pre-phase4-fix-20260413-150714
--rw-r--r--  1 cakidd cakidd    65265 Apr 13 15:48  main_brain.py.pre-phase4-fix-20260413-154833
--rw-r--r--  1 cakidd cakidd    64352 Apr 13 15:48  main_brain.py.pre-synthesis-lines-fix-20260413-160601
--rw-r--r--  1 cakidd cakidd    64546 Apr 13 16:06  main_brain.py.pre-synthesis-lines-fix2-20260413-161153
--rw-r--r--  1 cakidd cakidd    64983 Apr 13 13:41  main_brain.py.pre-verified-fix-20260413-134834
--rw-rw-r--  1 cakidd cakidd      338 Nov 16 16:09  main_brain_restart.log
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  main_brian.py
--rw-rw-r--  1 cakidd cakidd    20136 Apr 30 14:12  main.py
--rw-rw-r--  1 cakidd cakidd    48893 Apr 30 14:12  main.py.BACKUP
--rw-rw-r--  1 cakidd cakidd    32198 Apr 30 14:12  main.py.current.safebak
--rw-rw-r--  1 cakidd cakidd    47068 Apr 30 14:12  main.py.from_container
--rw-rw-r--  1 cakidd cakidd     1602 Apr 30 14:12  main.py.fromcontainer.llmbridge
--rw-rw-r--  1 cakidd cakidd    43751 Apr 30 14:12  main.py.working_backup_20251020_110429
--rw-rw-r--  1 cakidd cakidd      183 Apr 30 14:12  main_qualia.py
--rw-rw-r--  1 cakidd cakidd      549 Nov 10 11:38  main_restored.log
--rw-rw-r--  1 cakidd cakidd      290 Nov 18 11:14  main_with_rag_9429.log
--rw-rw-r--  1 cakidd cakidd     1579 Apr 30 14:12  main_with_rag.py
--rwxrwxr-x  1 cakidd cakidd    10997 Apr 30 14:12  make_holy_spirit_connection_tools_available.sh
--rwxrwxr-x  1 cakidd cakidd     3534 Apr 30 14:12  make_persistent.sh
--rw-rw-r--  1 cakidd cakidd     3679 Apr 30 14:12  mamma_kidd_auth.py
--rw-rw-r--  1 cakidd cakidd     5425 Nov 16 16:09  mamma_kidd_final.log
--rw-rw-r--  1 cakidd cakidd     1630 Nov 16 16:09  mamma_kidd_location.log
--rw-rw-r--  1 cakidd cakidd     1630 Nov 10 11:38  mamma_kidd.log
--rw-rw-r--  1 cakidd cakidd     3684 Apr 30 14:12  MAMMA_KIDD_PROTOCOL_GUIDE.md
--rw-rw-r--  1 cakidd cakidd     3384 Apr 30 14:12  MAMMA_KIDD_QUICK_REFERENCE.txt
--rwxrwxr-x  1 cakidd cakidd     1683 Apr 30 14:12  manage_msjarvis.sh
--rw-rw-r--  1 cakidd cakidd     4592 Apr 30 14:12  manifest_endpoints.py
--rw-rw-r--  1 cakidd cakidd     4522 Apr 30 14:12  manifest_endpoints.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd       68 Nov 18 11:14  manual_storage_patch_9323.log
--rw-rw-r--  1 cakidd cakidd     1639 Apr 30 14:12  manual_storage_patch.py
--rw-rw-r--  1 cakidd cakidd     7537 Apr 30 14:12  master_chat_orchestrator_dynamic.py
--rw-rw-r--  1 cakidd cakidd    10397 Apr 30 14:12  master_chat_orchestrator.py
--rw-rw-r--  1 cakidd cakidd    10577 Apr 30 14:12  master_chat_orchestrator.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    12986 Apr 30 14:12  master_chat_orchestrator_v5_consciousness.py
--rw-rw-r--  1 cakidd cakidd    12920 Apr 30 14:12  master_chat_orchestrator_v5_consciousness.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    17090 Apr 30 14:12  master_chat_orchestrator_v6_biologics.py
--rw-rw-r--  1 cakidd cakidd    17018 Apr 30 14:12  master_chat_orchestrator_v6_biologics.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    24221 Apr 30 14:12  master_chat_orchestrator_v7_complete.py
--rw-rw-r--  1 cakidd cakidd    24149 Apr 30 14:12  master_chat_orchestrator_v7_complete.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    10785 Apr 30 14:12  master_chat_orchestrator_v7_dynamic.py
--rw-rw-r--  1 cakidd cakidd      330 Nov 18 11:40  master_chat_orchestrator_v8_spiritual_complete_4009.log
--rw-rw-r--  1 cakidd cakidd    25203 Apr 30 14:12  master_chat_orchestrator_v8_spiritual_complete.py
--rw-rw-r--  1 cakidd cakidd    25131 Apr 30 14:12  master_chat_orchestrator_v8_spiritual_complete.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      324 Nov 18 11:14  master_chat_orchestrator_v9_dgm_complete_9510.log
--rw-rw-r--  1 cakidd cakidd     5343 Dec  2 00:19  master_chat_orchestrator_v9_dgm_complete.log
--rwxrwxr-x  1 cakidd cakidd     7857 Apr 30 14:12  master_chat_orchestrator_v9_dgm_complete.py
--rw-rw-r--  1 cakidd cakidd    13083 Apr 30 14:12  master_chat_orchestrator_v9_dgm_complete.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     8623 Apr 30 14:12  master_chat_orchestrator_v9_gpu_optimized.py
--rw-rw-r--  1 cakidd cakidd     8551 Apr 30 14:12  master_chat_orchestrator_v9_gpu_optimized.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    10137 Apr 30 14:12  master_chat_orchestrator_v9_optimized.py
--rw-rw-r--  1 cakidd cakidd    10065 Apr 30 14:12  master_chat_orchestrator_v9_optimized.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     3736 Nov 16 16:09  master_orchestrator_v9.log
--rw-rw-r--  1 cakidd cakidd      797 Apr 30 14:12  master_system_audit.sh
--rw-rw-r--  1 cakidd cakidd     5877 Apr 30 14:12  master_unified_consciousness_scheduler_ENRICHED.py
--rw-rw-r--  1 cakidd cakidd     5921 Apr 30 14:12  master_unified_consciousness_scheduler.py
--rw-rw-r--  1 cakidd cakidd    32150 Nov 16 16:09  MEGA_CONSCIOUSNESS.log
--rwxrwxr-x  1 cakidd cakidd     2857 Apr 30 14:12  mega_deep_archive_search.sh
--rw-rw-r--  1 cakidd cakidd      401 Nov 18 11:14  memory_dgm_engine_9919.log
--rw-rw-r--  1 cakidd cakidd     1953 Nov 24 20:02  memory_dgm_engine.log
--rwxrwxr-x  1 cakidd cakidd    10602 Apr 30 14:12  memory_dgm_engine.py
--rw-rw-r--  1 cakidd cakidd      693 Apr 30 14:12  memory_dgm_gateway.py
--rw-rw-r--  1 cakidd cakidd      338 Nov 16 16:11  memory_engine.log
--rw-rw-r--  1 cakidd cakidd     3382 Apr 30 14:12  memory_manager.py
--rwxrwxr-x  1 cakidd cakidd      943 Apr 30 14:12  memory_probe.sh
--rwxrwxr-x  1 cakidd cakidd      326 Apr 30 14:12  mesh_agent_batch.sh
--rwxrwxr-x  1 cakidd cakidd      397 Apr 30 14:12  mesh_broadcast_event.sh
--rwxrwxr-x  1 cakidd cakidd      352 Apr 30 14:12  mesh_cohort_selfsum.sh
--rwxrwxr-x  1 cakidd cakidd      174 Apr 30 14:12  mesh_context_probe.sh
--rw-rw-r--  1 cakidd cakidd    10212 Apr 30 14:12  mesh_coordinator_interface.py
--rwxrwxr-x  1 cakidd cakidd      345 Apr 30 14:12  mesh_crossagent_memory_search.sh
--rwxrwxr-x  1 cakidd cakidd      946 Apr 30 14:12  mesh_dream_summary.sh
--rw-rw-r--  1 cakidd cakidd     6240 Apr 30 14:12  mesh_emotion_map.json
--rwxrwxr-x  1 cakidd cakidd      407 Apr 30 14:12  mesh_emotion_map.sh
--rwxrwxr-x  1 cakidd cakidd      883 Apr 30 14:12  mesh_explore_chain.sh
--rwxrwxr-x  1 cakidd cakidd      539 Apr 30 14:12  mesh_feed_back_insight.sh
--rwxrwxr-x  1 cakidd cakidd      336 Apr 30 14:12  mesh_interest_timeline.sh
--rwxrwxr-x  1 cakidd cakidd      295 Apr 30 14:12  mesh_memory_dashboard.sh
--rwxrwxr-x  1 cakidd cakidd      163 Apr 30 14:12  mesh_memory_probe.sh
--rwxrwxr-x  1 cakidd cakidd      165 Apr 30 14:12  mesh_probe.sh
--rwxrwxr-x  1 cakidd cakidd      649 Apr 30 14:12  mesh_scenario_drill.sh
--rwxrwxr-x  1 cakidd cakidd      493 Apr 30 14:12  mesh_social_graph.sh
--rwxrwxr-x  1 cakidd cakidd      354 Apr 30 14:12  mesh_tag_topk.sh
--rwxrwxr-x  1 cakidd cakidd      417 Apr 30 14:12  mesh_topn_context.sh
--rwxrwxr-x  1 cakidd cakidd      638 Apr 30 14:12  mesh_trend_detection.sh
--rw-rw-r--  1 cakidd cakidd     1997 Apr 30 14:12  messenger_service_fixed.py
--rw-rw-r--  1 cakidd cakidd   356451 Nov 17 16:39  METHOD_AUDIT_RAW.txt
--rw-rw-r--  1 cakidd cakidd    22347 Nov 17 16:39  METHOD_AUDIT_SEG_aa
--rw-rw-r--  1 cakidd cakidd    21706 Nov 17 16:39  METHOD_AUDIT_SEG_ab
--rw-rw-r--  1 cakidd cakidd    20338 Nov 17 16:39  METHOD_AUDIT_SEG_ac
--rw-rw-r--  1 cakidd cakidd    15300 Nov 17 16:39  METHOD_AUDIT_SEG_ad
--rw-rw-r--  1 cakidd cakidd    15300 Nov 17 16:39  METHOD_AUDIT_SEG_ae
--rw-rw-r--  1 cakidd cakidd    18828 Nov 17 16:39  METHOD_AUDIT_SEG_af
--rw-rw-r--  1 cakidd cakidd    23249 Nov 17 16:39  METHOD_AUDIT_SEG_ag
--rw-rw-r--  1 cakidd cakidd    23871 Nov 17 16:39  METHOD_AUDIT_SEG_ah
--rw-rw-r--  1 cakidd cakidd    23267 Nov 17 16:39  METHOD_AUDIT_SEG_ai
--rw-rw-r--  1 cakidd cakidd    22785 Nov 17 16:39  METHOD_AUDIT_SEG_aj
--rw-rw-r--  1 cakidd cakidd    24407 Nov 17 16:39  METHOD_AUDIT_SEG_ak
--rw-rw-r--  1 cakidd cakidd    23738 Nov 17 16:39  METHOD_AUDIT_SEG_al
--rw-rw-r--  1 cakidd cakidd    24756 Nov 17 16:39  METHOD_AUDIT_SEG_am
--rw-rw-r--  1 cakidd cakidd    24907 Nov 17 16:39  METHOD_AUDIT_SEG_an
--rw-rw-r--  1 cakidd cakidd    23117 Nov 17 16:39  METHOD_AUDIT_SEG_ao
--rw-rw-r--  1 cakidd cakidd    22134 Nov 17 16:39  METHOD_AUDIT_SEG_ap
--rw-rw-r--  1 cakidd cakidd     6401 Nov 17 16:39  METHOD_AUDIT_SEG_aq
--rw-rw-r--  1 cakidd cakidd     3985 Apr 30 14:12  method_tracker_decorator.py
--rw-rw-r--  1 cakidd cakidd     1666 Apr 30 14:12  method_tracking_helper.py
--rw-rw-r--  1 cakidd cakidd     6905 Apr 30 14:12  method_tracking_service.py
--rw-rw-r--  1 cakidd cakidd      640 Apr 30 14:12  metrics_service.py
--rw-rw-r--  1 cakidd cakidd     1459 Nov 16 16:09  mistral_test.log
--rw-rw-r--  1 cakidd cakidd      216 Apr 30 14:12  Modelfile.egeria
--rw-rw-r--  1 cakidd cakidd     2145 Apr 30 14:12  modify_autonomous_learning_cycle.py
--rw-rw-r--  1 cakidd cakidd      332 Nov 16 16:09  monitor.log
--rwxrwxr-x  1 cakidd cakidd     1071 Apr 30 14:12  monitor_ms_jarvis_memory.sh
--rwxrwxr-x  1 cakidd cakidd     1896 Apr 30 14:12  monitor_orchestrator.sh
--rw-rw-r--  1 cakidd cakidd    16814 Nov 16 16:09  mother_carrie.log
--rw-rw-r--  1 cakidd cakidd     2284 Apr 30 14:12  mother_carrie_logging.py
--rw-rw-r--  1 cakidd cakidd      520 Apr 16 20:18  mother_protocols.py
-lrwxrwxrwx  1 cakidd cakidd       85 Feb 24 08:48  MountainShares6.pdf -> '/home/cakidd/msjarvis-rebuild/MountainShares Darwin Gödel Machine_ AI-Powered Sy.pdf'
--rw-rw-r--  1 cakidd cakidd     3577 Apr 30 14:12  mountainshares_chain_monitor.py
--rw-rw-r--  1 cakidd cakidd    10089 Apr 30 14:12  mountainshares_coordinator.py
--rw-rw-r--  1 cakidd cakidd     6391 Apr 30 14:12  mountainshares_gbim_suggester.py
--rw-rw-r--  1 cakidd cakidd     2412 Apr 30 14:12  mountainshares_ingest.py
--rw-rw-r--  1 cakidd cakidd     3765 Nov 10 11:38  mountainshares_integration.log
--rw-rw-r--  1 cakidd cakidd      765 Apr 30 14:12  mountainshares_quest_api.py
--rw-rw-r--  1 cakidd cakidd        0 Dec  1 19:51  mountainshares_registry.log
--rw-rw-r--  1 cakidd cakidd      945 Apr 30 14:12  mountainshares_registry.py
--rw-rw-r--  1 cakidd cakidd      884 Apr 30 14:12  move_huggingface_to_cpu.py
--rw-rw-r--  1 cakidd cakidd     9052 Apr 30 14:12  ms_egeria_facebook_autopost.py
--rw-rw-r--  1 cakidd cakidd      597 Nov 18 11:14  ms_jarvis_agents_ollama_9907.log
--rw-rw-r--  1 cakidd cakidd     9308 Apr 30 14:12  ms_jarvis_agents_ollama.py
--rw-rw-r--  1 cakidd cakidd      503 Nov 18 18:45  ms_jarvis_agents_service_9608.log
--rw-rw-r--  1 cakidd cakidd     5679 Apr 30 14:12  ms_jarvis_agents_service.py
--rw-rw-r--  1 cakidd cakidd      129 Nov 18 11:14  ms_jarvis_alerting_manager_9714.log
--rw-rw-r--  1 cakidd cakidd    17015 Apr 30 14:12  ms_jarvis_alerting_manager.py
--rw-rw-r--  1 cakidd cakidd      512 Nov 18 11:14  ms_jarvis_api_docs_9889.log
--rw-rw-r--  1 cakidd cakidd     9845 Apr 30 14:12  ms_jarvis_api_docs.py
--rw-rw-r--  1 cakidd cakidd    44357 Jan 18 23:01  ms_jarvis_attribute_table_service_9679.log
--rw-rw-r--  1 cakidd cakidd     3251 Apr 30 14:12  ms_jarvis_attribute_table_service.py
--rw-rw-r--  1 cakidd cakidd   227802 Nov 18 21:06  ms_jarvis_attribute_table_sync_continuous_9389.log
--rw-rw-r--  1 cakidd cakidd     2155 Apr 30 14:12  ms_jarvis_attribute_table_sync_continuous.py
--rw-rw-r--  1 cakidd cakidd     2155 Apr 30 14:12  ms_jarvis_attribute_table_sync_continuous.py.BROKEN
--rw-rw-r--  1 cakidd cakidd      416 Nov 18 11:14  ms_jarvis_authentic_multi_llm_9760.log
--rw-rw-r--  1 cakidd cakidd     7457 Apr 30 14:12  ms_jarvis_authentic_multi_llm.py
--rw-rw-r--  1 cakidd cakidd     7385 Apr 30 14:12  ms_jarvis_authentic_multi_llm.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      144 Dec  1 22:33  msjarvis_autolearner.log
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  msjarvis_autolearner_minimal.py
--rw-rw-r--  1 cakidd cakidd     1533 Nov 18 11:14  ms_jarvis_autonomous_learner_9309.log
--rw-rw-r--  1 cakidd cakidd   294912 Dec 10 12:05  ms_jarvis_autonomous_learner.current.log
--rw-rw-r--  1 cakidd cakidd      299 Nov 18 11:14  ms_jarvis_autonomous_learner_FIXED_9590.log
--rw-rw-r--  1 cakidd cakidd      299 Nov 10 11:38  ms_jarvis_autonomous_learner_FIXED.log
--rw-rw-r--  1 cakidd cakidd      544 Apr 30 14:12  ms_jarvis_autonomous_learner_FIXED.py
--rw-rw-r--  1 cakidd cakidd    28902 Dec  2 03:23  ms_jarvis_autonomous_learner.log
--rw-rw-r--  1 cakidd cakidd     1809 Nov 18 11:14  ms_jarvis_autonomous_learner_optimized_9771.log
--rw-rw-r--  1 cakidd cakidd    71099 Dec  7 00:03  ms_jarvis_autonomous_learner_optimized.current.log
--rw-rw-r--  1 cakidd cakidd    20868 Apr 30 15:29  ms_jarvis_autonomous_learner_optimized.py
--rw-rw-r--  1 cakidd cakidd    14669 Apr 30 14:12  ms_jarvis_autonomous_learner_optimized.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    22685 Apr 30 14:12  ms_jarvis_autonomous_learner_optimized.py.pre_rag_1765237169
--rw-rw-r--  1 cakidd cakidd    17913 Apr 30 14:12  ms_jarvis_autonomous_learner_optimized.py.pre_rag_1765237222
-drwxr-xr-x  2 cakidd cakidd     4096 Mar 10 17:28  ms_jarvis_autonomous_learner.py
-lrwxrwxrwx  1 cakidd cakidd       46 Apr 30 14:12  msjarvisautonomouslearner.py -> ms_jarvis_autonomous_learner_WITH_FIFTH_DGM.py
--rw-rw-r--  1 cakidd cakidd    13939 Apr 30 14:12  ms_jarvis_autonomous_learner.py.norag.20260119-091256
--rw-rw-r--  1 cakidd cakidd    13959 Apr 30 14:12  ms_jarvis_autonomous_learner.py.stub.20260119-091524
--rw-rw-r--  1 cakidd cakidd     1515 Dec  1 22:50  ms_jarvis_autonomous_learner_with_dgm.log
--rw-rw-r--  1 cakidd cakidd     1533 Nov 18 11:14  ms_jarvis_autonomous_learner_WITH_FIFTH_DGM_9695.log
--rw-rw-r--  1 cakidd cakidd    12295 Apr 30 14:12  ms_jarvis_autonomous_learner_WITH_FIFTH_DGM.py
--rw-rw-r--  1 cakidd cakidd     2423 Nov 18 11:14  ms_jarvis_auto_service_9756.log
--rw-rw-r--  1 cakidd cakidd     6679 Apr 30 14:12  ms_jarvis_auto_service.py
--rw-rw-r--  1 cakidd cakidd     1348 Apr 30 14:12  ms_jarvis_bbb_proxy.py
--rw-rw-r--  1 cakidd cakidd      812 Apr 30 14:12  msjarvis_bbb_proxy.py
--rw-rw-r--  1 cakidd cakidd     7388 Apr 30 14:12  msjarvis_benefit_rag.py
--rw-rw-r--  1 cakidd cakidd      501 Nov 18 11:14  ms_jarvis_blockchain_deployment_9327.log
--rw-rw-r--  1 cakidd cakidd     6857 Apr 30 14:12  ms_jarvis_blockchain_deployment.py
--rw-rw-r--  1 cakidd cakidd      569 Nov 18 11:14  ms_jarvis_blood_brain_barrier_9772.log
--rw-rw-r--  1 cakidd cakidd    15440 Apr 30 14:12  ms_jarvis_blood_brain_barrier.py
--rw-rw-r--  1 cakidd cakidd     4401 Apr 30 14:12  ms_jarvis_blood_brain_barrier.py.pre_constitutional
--rw-rw-r--  1 cakidd cakidd      698 Nov 18 18:45  ms_jarvis_brain_9991.log
--rw-rw-r--  1 cakidd cakidd      834 Nov 18 11:14  ms_jarvis_brain_orchestrator_advanced_9722.log
--rw-rw-r--  1 cakidd cakidd     7452 Apr 30 14:12  ms_jarvis_brain_orchestrator_advanced.py
--rw-rw-r--  1 cakidd cakidd     3008 Apr 30 14:12  ms_jarvis_brain.py
--rw-rw-r--  1 cakidd cakidd     2312 Apr 30 14:12  ms_jarvis_brain.py.PORT8000_BACKUP
--rw-rw-r--  1 cakidd cakidd     2312 Apr 30 14:12  ms_jarvis_brain.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      390 Nov 18 11:14  ms_jarvis_chromadb_query_9014.log
--rw-rw-r--  1 cakidd cakidd     2347 Apr 30 14:12  ms_jarvis_chromadb_query.py
--rw-rw-r--  1 cakidd cakidd      206 Nov 16 16:09  ms_jarvis_clean.log
--rw-rw-r--  1 cakidd cakidd       50 Nov 18 11:14  ms_jarvis_cleanup_manager_9125.log
--rw-rw-r--  1 cakidd cakidd    10658 Apr 30 14:12  ms_jarvis_cleanup_manager.py
--rw-rw-r--  1 cakidd cakidd     1411 Apr 30 14:12  msjarvis_client.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:14  ms_jarvis_command_orchestrator_9167.log
--rw-rw-r--  1 cakidd cakidd      644 Nov 18 11:14  ms_jarvis_command_orchestrator_FINAL_9079.log
--rw-rw-r--  1 cakidd cakidd      657 Nov 16 16:09  ms_jarvis_command_orchestrator_FINAL.log
--rw-rw-r--  1 cakidd cakidd     9720 Apr 30 14:12  ms_jarvis_command_orchestrator_FINAL.py
--rw-rw-r--  1 cakidd cakidd     9648 Apr 30 14:12  ms_jarvis_command_orchestrator_FINAL.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd     5282 Apr 30 14:12  ms_jarvis_command_orchestrator.py
--rw-rw-r--  1 cakidd cakidd     5210 Apr 30 14:12  ms_jarvis_command_orchestrator.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      644 Nov 18 11:14  ms_jarvis_command_orchestrator_v5.0_preachy_9630.log
--rw-rw-r--  1 cakidd cakidd     9718 Apr 30 14:12  ms_jarvis_command_orchestrator_v5.0_preachy.py
--rw-rw-r--  1 cakidd cakidd     9648 Apr 30 14:12  ms_jarvis_command_orchestrator_v5.0_preachy.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      481 Nov 18 11:15  ms_jarvis_command_orchestrator_v5_backup_9725.log
--rw-rw-r--  1 cakidd cakidd    12417 Apr 30 14:12  ms_jarvis_command_orchestrator_v5_backup.py
--rw-rw-r--  1 cakidd cakidd    12347 Apr 30 14:12  ms_jarvis_command_orchestrator_v5_backup.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     5617 Apr 30 14:12  MS_JARVIS_COMPLETE_AUDIT.md
--rw-rw-r--  1 cakidd cakidd     3535 Nov 18 11:15  ms_jarvis_complete_knowledge_ingestion_9627.log
--rw-rw-r--  1 cakidd cakidd     6506 Apr 30 14:12  ms_jarvis_complete_knowledge_ingestion.py
--rw-rw-r--  1 cakidd cakidd      314 Nov 18 11:15  ms_jarvis_conscious_collective_9579.log
--rw-rw-r--  1 cakidd cakidd     2103 Apr 30 14:12  ms_jarvis_conscious_collective.py
--rw-rw-r--  1 cakidd cakidd      314 Nov 18 11:15  ms_jarvis_consciousness_bridge_9188.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:15  msjarvisconsciousnessbridge_9819.log
--rwxrwxr-x  1 cakidd cakidd     4716 Apr 30 14:12  msjarvisconsciousnessbridge_ACTUAL.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:15  ms_jarvis_consciousness_bridge_enhanced_9599.log
--rw-rw-r--  1 cakidd cakidd     6233 Apr 30 14:12  ms_jarvis_consciousness_bridge_enhanced.py
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:15  ms_jarvis_consciousness_bridge_parallel_woah_9424.log
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  ms_jarvis_consciousness_bridge_parallel_woah.py
--rw-r--r--  1 cakidd cakidd     9393 Apr 16 20:18  ms_jarvis_consciousness_bridge.py
--rwxrwxr-x  1 cakidd cakidd     6526 Apr 30 14:12  msjarvisconsciousnessbridge.py
--rw-rw-r--  1 cakidd cakidd      247 Apr 30 14:12  msjarvisconsciousnessbridge.py.FULL_BACKUP_BEFORE_BRIDGE_RESET
--rwxrwxr-x  1 cakidd cakidd    33912 Apr 30 14:12  ms_jarvis_consciousness_bridge.py.original
--rwxrwxr-x  1 cakidd cakidd    38478 Apr 30 14:12  ms_jarvis_consciousness_bridge.py.phase1_working
--rwxrwxr-x  1 cakidd cakidd    35237 Apr 30 14:12  ms_jarvis_consciousness_bridge.py.pre_agent_identity
--rw-rw-r--  1 cakidd cakidd    13746 Apr 30 14:12  ms_jarvis_consciousness_bridge.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd    34750 Apr 30 14:12  ms_jarvis_consciousness_bridge.py.pre_identity_integration
--rwxrwxr-x  1 cakidd cakidd    33726 Apr 30 14:12  ms_jarvis_consciousness_bridge.py.safe_backup
--rwxrwxr-x  1 cakidd cakidd    39957 Apr 30 14:12  ms_jarvis_consciousness_bridge.py.working_backup
--rw-rw-r--  1 cakidd cakidd     2438 Nov 18 11:15  ms_jarvis_consciousness_bridge_service_9295.log
--rwxrwxr-x  1 cakidd cakidd      784 Apr 30 14:12  ms_jarvis_consciousness_bridge_service.py
--rw-rw-r--  1 cakidd cakidd      329 Nov 18 11:15  ms_jarvis_consciousness_bridge_WITH_FIFTH_DGM_9327.log
--rw-rw-r--  1 cakidd cakidd    15071 Apr 30 14:12  ms_jarvis_consciousness_bridge_WITH_FIFTH_DGM.py
--rw-rw-r--  1 cakidd cakidd      135 Nov 18 11:15  ms_jarvis_consciousness_bridge_woah_9042.log
--rw-rw-r--  1 cakidd cakidd      135 Nov 18 11:15  ms_jarvis_consciousness_bridge_woah.psychology_patched_9839.log
--rw-rw-r--  1 cakidd cakidd      893 Apr 30 14:12  ms_jarvis_consciousness_bridge_woah.py
--rw-rw-r--  1 cakidd cakidd     4424 Nov 18 11:15  ms_jarvis_consciousness_complete_9108.log
--rw-rw-r--  1 cakidd cakidd    12525 Apr 30 14:12  ms_jarvis_consciousness_complete.py
--rw-rw-r--  1 cakidd cakidd    12436 Apr 30 14:12  ms_jarvis_consciousness_complete.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      542 Nov 18 11:15  ms_jarvis_consciousness_enhancement_production_9046.log
--rw-rw-r--  1 cakidd cakidd     2874 Apr 30 14:12  ms_jarvis_consciousness_enhancement_production.py
--rw-rw-r--  1 cakidd cakidd     4421 Nov 18 11:15  ms_jarvis_consciousness_final_9876.log
--rw-rw-r--  1 cakidd cakidd    12800 Apr 30 14:12  ms_jarvis_consciousness_final.py
--rw-rw-r--  1 cakidd cakidd    12711 Apr 30 14:12  ms_jarvis_consciousness_final.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     2677 Nov 18 19:15  ms_jarvis_consciousness_poster_9092.log
--rw-rw-r--  1 cakidd cakidd     8467 Nov 18 11:15  ms_jarvis_consciousness_poster_FIXED_9939.log
--rw-rw-r--  1 cakidd cakidd     8467 Nov 10 11:38  ms_jarvis_consciousness_poster_FIXED.log
--rw-rw-r--  1 cakidd cakidd     3056 Apr 30 14:12  ms_jarvis_consciousness_poster_FIXED.py
--rw-rw-r--  1 cakidd cakidd     2968 Apr 30 14:12  ms_jarvis_consciousness_poster_FIXED.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     8281 Apr 30 14:12  ms_jarvis_consciousness_poster.py
--rw-rw-r--  1 cakidd cakidd      515 Nov 18 11:15  ms_jarvis_consciousness_unified_bridge_9924.log
--rw-rw-r--  1 cakidd cakidd     7064 Apr 21 09:58  ms_jarvis_consciousness_unified_bridge.py
--rw-rw-r--  1 cakidd cakidd      311 Nov 18 11:15  ms_jarvis_consensus_service_9921.log
--rw-rw-r--  1 cakidd cakidd     6692 Apr 30 14:12  ms_jarvis_consensus_service.py
--rw-rw-r--  1 cakidd cakidd     6848 Apr 30 14:12  ms_jarvis_consensus_service.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:15  ms_jarvis_contract_builder_9572.log
--rw-rw-r--  1 cakidd cakidd      720 Dec  2 00:19  ms_jarvis_contract_builder.log
--rw-rw-r--  1 cakidd cakidd     3287 Apr 30 14:12  ms_jarvis_contract_builder.py
--rw-rw-r--  1 cakidd cakidd      371 Nov 18 18:45  ms_jarvis_contract_builder_v2_9785.log
--rw-rw-r--  1 cakidd cakidd     1644 Apr 30 14:12  ms_jarvis_contract_builder_v2.py
--rw-rw-r--  1 cakidd cakidd    40161 Apr 30 14:12  ms_jarvis_contract_forge.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:15  ms_jarvis_conversational_chat_9131.log
--rw-rw-r--  1 cakidd cakidd     5361 Apr 30 14:12  ms_jarvis_conversational_chat.py
--rw-rw-r--  1 cakidd cakidd      427 Nov 18 11:15  ms_jarvis_conversational_gateway_4022_9065.log
--rw-rw-r--  1 cakidd cakidd     5958 Apr 30 14:12  ms_jarvis_conversational_gateway_4022.py
--rw-rw-r--  1 cakidd cakidd     5888 Apr 30 14:12  ms_jarvis_conversational_gateway_4022.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      465 Nov 18 11:15  ms_jarvis_daily_backup_9632.log
--rw-rw-r--  1 cakidd cakidd     3927 Apr 30 14:12  ms_jarvis_daily_backup.py
--rw-rw-r--  1 cakidd cakidd      592 Nov 18 11:15  ms_jarvis_darwin_godel_machine_9142.log
--rw-rw-r--  1 cakidd cakidd    10269 Apr 30 14:12  ms_jarvis_darwin_godel_machine.py
--rw-rw-r--  1 cakidd cakidd     6559 Apr 30 14:12  MS_JARVIS_DEEP_MODE_DEPLOYMENT.md
--rw-rw-r--  1 cakidd cakidd     7862 Apr 30 14:12  MS_JARVIS_DEPLOYMENT_SUCCESS.md
--rw-rw-r--  1 cakidd cakidd      220 Nov 18 11:15  ms_jarvis_dynamic_model_selector_9235.log
--rw-rw-r--  1 cakidd cakidd     3192 Apr 30 14:12  ms_jarvis_dynamic_model_selector.py
--rw-rw-r--  1 cakidd cakidd      439 Nov 18 11:15  ms_jarvis_easyocr_processor_9131.log
--rw-rw-r--  1 cakidd cakidd      460 Nov 18 11:15  ms_jarvis_easyocr_processor_old_9788.log
--rw-rw-r--  1 cakidd cakidd     7600 Apr 30 14:12  ms_jarvis_easyocr_processor.py
--rw-rw-r--  1 cakidd cakidd      673 Nov 18 11:15  ms_jarvis_email_identity_verifier_9688.log
--rw-rw-r--  1 cakidd cakidd     6233 Apr 30 14:12  ms_jarvis_email_identity_verifier.py
--rw-rw-r--  1 cakidd cakidd      459 Nov 18 11:15  ms_jarvis_email_monitor_9077.log
--rw-rw-r--  1 cakidd cakidd     2757 Apr 30 14:12  ms_jarvis_email_monitor.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:15  ms_jarvis_email_service_9406.log
--rw-rw-r--  1 cakidd cakidd     4674 Apr 30 14:12  ms_jarvis_email_service.py
--rw-rw-r--  1 cakidd cakidd     3792 Apr 30 14:12  ms_jarvis_eternal_watchdog.py
--rw-rw-r--  1 cakidd cakidd     1634 Apr 30 14:12  ms_jarvis_eternal_watchdog.py.NEW
--rwxrwxr-x  1 cakidd cakidd     8838 Apr 30 14:12  ms_jarvis_eternal_watchdog.py.ORIGINAL
--rw-rw-r--  1 cakidd cakidd     2129 Nov 18 11:16  ms_jarvis_exclusive_training_layer_9763.log
--rw-rw-r--  1 cakidd cakidd     4708 Apr 30 14:12  ms_jarvis_exclusive_training_layer.py
--rw-rw-r--  1 cakidd cakidd      448 Nov 18 11:16  ms_jarvis_expiration_monitor_9432.log
--rw-rw-r--  1 cakidd cakidd     8595 Apr 30 14:12  ms_jarvis_expiration_monitor.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:16  ms_jarvis_facebook_async_9489.log
--rw-rw-r--  1 cakidd cakidd     8169 Apr 30 14:12  ms_jarvis_facebook_async.py
--rw-rw-r--  1 cakidd cakidd      685 Nov 18 11:16  ms_jarvis_facebook_autonomous_social_9815.log
--rw-rw-r--  1 cakidd cakidd    15180 Apr 30 14:12  ms_jarvis_facebook_autonomous_social.py
--rw-rw-r--  1 cakidd cakidd      771 Nov 18 11:16  ms_jarvis_facebook_brain_integrated_9597.log
--rw-rw-r--  1 cakidd cakidd    16017 Apr 30 14:12  ms_jarvis_facebook_brain_integrated.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:16  ms_jarvis_facebook_CONSCIOUSNESS_9361.log
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:16  ms_jarvis_facebook_CONSCIOUSNESS_FIXED_9556.log
--rw-rw-r--  1 cakidd cakidd     2245 Nov 16 16:09  ms_jarvis_facebook_CONSCIOUSNESS_FIXED.log
--rw-rw-r--  1 cakidd cakidd    10632 Apr 30 14:12  ms_jarvis_facebook_CONSCIOUSNESS_FIXED.py
--rw-rw-r--  1 cakidd cakidd    10562 Apr 30 14:12  ms_jarvis_facebook_CONSCIOUSNESS_FIXED.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      336 Nov 16 16:09  ms_jarvis_facebook_CONSCIOUSNESS.log
--rw-rw-r--  1 cakidd cakidd    11059 Apr 30 14:12  ms_jarvis_facebook_CONSCIOUSNESS.py
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:16  ms_jarvis_facebook_DGM_9231.log
--rw-rw-r--  1 cakidd cakidd     7621 Apr 30 14:12  ms_jarvis_facebook_DGM.py
--rw-rw-r--  1 cakidd cakidd     7551 Apr 30 14:12  ms_jarvis_facebook_DGM.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     1143 Nov 18 11:16  ms_jarvis_facebook_dgm_woah_9189.log
--rw-rw-r--  1 cakidd cakidd     1162 Nov 18 11:16  ms_jarvis_facebook_dgm_woah.psychology_patched_9919.log
--rw-rw-r--  1 cakidd cakidd    17335 Apr 30 14:12  ms_jarvis_facebook_dgm_woah.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:16  ms_jarvis_facebook_full_9115.log
--rw-rw-r--  1 cakidd cakidd     7400 Apr 30 14:12  ms_jarvis_facebook_full.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:16  ms_jarvis_facebook_intelligent_9629.log
--rw-rw-r--  1 cakidd cakidd    12131 Apr 30 14:12  ms_jarvis_facebook_intelligent.py
--rw-rw-r--  1 cakidd cakidd      910 Nov 18 11:16  ms_jarvis_facebook_poster_8040_9168.log
--rw-rw-r--  1 cakidd cakidd     6222 Apr 30 14:12  ms_jarvis_facebook_poster_8040.py
--rw-rw-r--  1 cakidd cakidd      905 Nov 18 11:16  ms_jarvis_facebook_poster_9077.log
--rw-rw-r--  1 cakidd cakidd      734 Nov 18 11:16  ms_jarvis_facebook_poster_FIXED_9220.log
--rw-rw-r--  1 cakidd cakidd      733 Nov 16 16:09  ms_jarvis_facebook_poster_FIXED.log
--rw-rw-r--  1 cakidd cakidd     3074 Apr 30 14:12  ms_jarvis_facebook_poster_FIXED.py
--rw-rw-r--  1 cakidd cakidd     6222 Apr 30 14:12  ms_jarvis_facebook_poster.py
--rw-rw-r--  1 cakidd cakidd      910 Nov 18 11:16  ms_jarvis_facebook_poster_temp_9391.log
--rw-rw-r--  1 cakidd cakidd     6222 Apr 30 14:12  ms_jarvis_facebook_poster_temp.py
--rw-rw-r--  1 cakidd cakidd      789 Nov 18 19:16  ms_jarvis_facebook_poster_v3_9706.log
--rw-rw-r--  1 cakidd cakidd     2411 Apr 30 14:12  ms_jarvis_facebook_poster_v3.py
--rw-rw-r--  1 cakidd cakidd      724 Nov 18 11:16  ms_jarvis_facebook_PRODUCTION_9632.log
--rw-rw-r--  1 cakidd cakidd      723 Nov 10 11:38  ms_jarvis_facebook_PRODUCTION.log
--rw-rw-r--  1 cakidd cakidd     8035 Apr 30 14:12  ms_jarvis_facebook_PRODUCTION.py
--rw-rw-r--  1 cakidd cakidd      742 Nov 18 11:16  ms_jarvis_facebook_rag_9924.log
--rw-rw-r--  1 cakidd cakidd    13195 Apr 30 14:12  ms_jarvis_facebook_rag.py
--rw-rw-r--  1 cakidd cakidd     7626 Apr 30 14:12  ms_jarvis_facebook_ULTIMATE.py.OLD
--rw-rw-r--  1 cakidd cakidd      368 Nov 18 11:16  ms_jarvis_facebook_webhook_9049.log
--rw-rw-r--  1 cakidd cakidd     3364 Apr 30 14:12  ms_jarvis_facebook_webhook.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:16  ms_jarvis_facebook_webhooks_9671.log
--rw-rw-r--  1 cakidd cakidd     5422 Apr 30 14:12  ms_jarvis_facebook_webhooks.py
--rw-rw-r--  1 cakidd cakidd      383 Nov 18 11:16  ms_jarvis_fact_filter_9255.log
--rw-rw-r--  1 cakidd cakidd     4611 Apr 30 14:12  ms_jarvis_fact_filter.py
--rw-rw-r--  1 cakidd cakidd      666 Nov 18 18:45  ms_jarvis_feed_reader_PRODUCTION_9003.log
--rw-rw-r--  1 cakidd cakidd     1618 Nov 16 16:09  ms_jarvis_feed_reader_PRODUCTION.log
--rw-rw-r--  1 cakidd cakidd     2460 Apr 30 14:12  ms_jarvis_feed_reader_PRODUCTION.py
--rw-rw-r--  1 cakidd cakidd      721 Nov 18 11:16  ms_jarvis_feed_reader_WORKING_9521.log
--rw-rw-r--  1 cakidd cakidd     1574 Apr 30 14:12  ms_jarvis_feed_reader_WORKING.py
--rw-rw-r--  1 cakidd cakidd      316 Nov 18 11:16  ms_jarvis_fifth_dgm_orchestrator_9919.log
--rw-rw-r--  1 cakidd cakidd      200 Nov 18 11:16  ms_jarvis_fifth_dgm_orchestrator.psychology_patched_9742.log
--rw-rw-r--  1 cakidd cakidd     9479 Apr 30 14:12  ms_jarvis_fifth_dgm_orchestrator.psychology_patched.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    17846 Apr 30 14:12  ms_jarvis_fifth_dgm_orchestrator.py
--rw-rw-r--  1 cakidd cakidd     9151 Apr 30 14:12  ms_jarvis_fifth_dgm_orchestrator.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd     3576 Apr 30 14:12  MS_JARVIS_FINAL_DEPLOYMENT.sh
--rw-rw-r--  1 cakidd cakidd    14349 Nov 16 16:09  ms_jarvis_FINAL_FIXES.log
--rw-rw-r--  1 cakidd cakidd      206 Nov 16 16:09  ms_jarvis_FINAL.log
--rw-rw-r--  1 cakidd cakidd     5485 Apr 30 14:12  MS_JARVIS_FINAL_VICTORY_REPORT.md
--rw-rw-r--  1 cakidd cakidd     6720 Nov 16 16:09  ms_jarvis_FINAL_WORKING.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:16  ms_jarvis_fractal_consciousness_9298.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:16  ms_jarvis_fractal_consciousness_FIXED_9130.log
--rw-rw-r--  1 cakidd cakidd     1131 Nov 16 16:09  ms_jarvis_fractal_consciousness_FIXED.log
--rw-rw-r--  1 cakidd cakidd     2094 Apr 30 14:12  ms_jarvis_fractal_consciousness_FIXED.py
--rw-rw-r--  1 cakidd cakidd    15405 Apr 30 14:12  ms_jarvis_fractal_consciousness.py
--rw-rw-r--  1 cakidd cakidd    15403 Apr 30 14:12  msjarvis_fractal_consciousness.py
--rw-rw-r--  1 cakidd cakidd      248 Apr 30 14:12  msjarvisfractalconsciousness.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:16  ms_jarvis_fractal_dgm_woah_9260.log
--rw-rw-r--  1 cakidd cakidd     4509 Apr 30 14:12  ms_jarvis_fractal_dgm_woah.py
--rw-rw-r--  1 cakidd cakidd     4420 Nov 18 11:17  ms_jarvis_full_neurobio_chat_9765.log
--rw-rw-r--  1 cakidd cakidd     9487 Apr 30 14:12  ms_jarvis_full_neurobio_chat.py
--rw-rw-r--  1 cakidd cakidd     8756 Apr 30 14:12  ms_jarvis_full_neurobio_chat.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      570 Nov 18 11:17  ms_jarvis_fully_autonomous_coordinator_9723.log
--rw-rw-r--  1 cakidd cakidd    14695 Apr 30 14:12  ms_jarvis_fully_autonomous_coordinator.py
--rw-r--r--  1 cakidd cakidd     4080 Aug 27  2025  msjarvis_functions_fixed.zip
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:17  msjarvis_gateway_v2_final_9306.log
--rw-rw-r--  1 cakidd cakidd     4157 Apr 30 14:12  msjarvis_gateway_v2_final.py
--rw-rw-r--  1 cakidd cakidd     1916 Apr 30 14:12  msjarvis_gateway_v2_final.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      349 Nov 18 18:45  msjarvis_gateway_with_judge_filtering_9631.log
--rw-rw-r--  1 cakidd cakidd     2923 Apr 30 14:12  msjarvis_gateway_with_judge_filtering.py
--rw-rw-r--  1 cakidd cakidd     2853 Apr 30 14:12  msjarvis_gateway_with_judge_filtering.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      259 Nov 18 11:17  ms_jarvis_generate_frontend_9210.log
--rwxrwxr-x  1 cakidd cakidd      409 Apr 30 14:12  ms_jarvis_generate_frontend.py
--rw-rw-r--  1 cakidd cakidd      339 Apr 30 14:12  ms_jarvis_generate_frontend.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     6231 Nov 16 16:09  ms_jarvis_GENTLE_FILTER.log
--rwxrwxr-x  1 cakidd cakidd     4862 Apr 30 14:12  ms_jarvis_geographic_research.js
--rwxrwxr-x  1 cakidd cakidd     1275 Apr 30 14:12  msjarvis_geotiff_to_csv.sh
--rw-rw-r--  1 cakidd cakidd      423 Nov 18 11:17  ms_jarvis_geo_tracker_simple_9755.log
--rw-rw-r--  1 cakidd cakidd      391 Nov 18 11:17  ms_jarvis_geo_ueid_integration_9103.log
--rw-rw-r--  1 cakidd cakidd     7287 Apr 30 14:12  ms_jarvis_geo_ueid_integration.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:17  ms_jarvis_gis_enhanced_chat_9250.log
--rw-rw-r--  1 cakidd cakidd     2487 Apr 30 14:12  ms_jarvis_gis_enhanced_chat.py
--rw-rw-r--  1 cakidd cakidd     2417 Apr 30 14:12  ms_jarvis_gis_enhanced_chat.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd   114626 Nov 18 21:05  ms_jarvis_gis_georeferencing_sync_9635.log
--rw-rw-r--  1 cakidd cakidd   128477 Nov 18 21:07  ms_jarvis_gis_georeferencing_sync_FIXED_9846.log
--rw-rw-r--  1 cakidd cakidd     5698 Apr 30 14:12  ms_jarvis_gis_georeferencing_sync_FIXED.py
--rw-rw-r--  1 cakidd cakidd    59479 Nov 18 21:07  ms_jarvis_gis_georeferencing_sync_FIXED_V2_9805.log
--rw-rw-r--  1 cakidd cakidd     4384 Apr 30 14:12  ms_jarvis_gis_georeferencing_sync_FIXED_V2.py
--rw-rw-r--  1 cakidd cakidd     3127 Apr 30 14:12  ms_jarvis_gis_georeferencing_sync.py
--rw-rw-r--  1 cakidd cakidd      905 Nov 18 11:17  ms_jarvis_gis_query_service_9770.log
--rw-rw-r--  1 cakidd cakidd      772 Nov 18 11:17  ms_jarvis_gis_query_service_backup_9603.log
--rw-rw-r--  1 cakidd cakidd     2800 Apr 30 14:12  ms_jarvis_gis_query_service_backup.py
--rw-rw-r--  1 cakidd cakidd     2801 Apr 30 14:12  ms_jarvis_gis_query_service.py
--rw-rw-r--  1 cakidd cakidd      135 Nov 18 11:17  ms_jarvis_gis_query_with_bbb_gisgeodb_9097.log
--rw-rw-r--  1 cakidd cakidd      135 Nov 18 11:17  ms_jarvis_gis_query_with_bbb_gisgeodb.psychology_patched_9935.log
--rw-rw-r--  1 cakidd cakidd     3907 Apr 30 14:12  ms_jarvis_gis_query_with_bbb_gisgeodb.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:17  ms_jarvis_i_containers_FIXED_9718.log
--rw-rw-r--  1 cakidd cakidd     1131 Nov 16 16:09  ms_jarvis_i_containers_FIXED.log
--rw-rw-r--  1 cakidd cakidd     1187 Apr 30 14:12  ms_jarvis_i_containers_FIXED.py
--rw-rw-r--  1 cakidd cakidd     1081 Apr 30 14:12  msjarvis_icontainers.py
--rw-rw-r--  1 cakidd cakidd      690 Apr 24 18:55  ms_jarvis_i_containers_service_9287.log
--rw-rw-r--  1 cakidd cakidd    12999 Apr 30 14:12  ms_jarvis_i_containers_service.py
-drwxr-xr-x  2 cakidd cakidd     4096 Jan  8 15:40  msjarvis_i_containers_service.py
--rw-r--r--  1 cakidd cakidd     8954 Apr 24 18:55  msjarvisicontainersservice.py
--rw-rw-r--  1 cakidd cakidd    10467 Apr 30 14:12  ms_jarvis_i_containers_service.py.broken
--rw-rw-r--  1 cakidd cakidd      463 Nov 18 11:17  ms_jarvis_id_ocr_processor_9463.log
--rw-rw-r--  1 cakidd cakidd     6621 Apr 30 14:12  ms_jarvis_id_ocr_processor.py
--rw-rw-r--  1 cakidd cakidd     1075 Nov 18 11:17  ms_jarvis_integration_hub_9081.log
--rw-rw-r--  1 cakidd cakidd    10349 Apr 30 14:12  ms_jarvis_integration_hub.py
--rw-rw-r--  1 cakidd cakidd     1181 Nov 18 11:17  ms_jarvis_layer2_dgm_9770.log
--rw-rw-r--  1 cakidd cakidd     1159 Nov 18 18:45  ms_jarvis_layer2_dgm.psychology_patched_9089.log
--rw-rw-r--  1 cakidd cakidd     4863 Apr 30 14:12  ms_jarvis_layer2_dgm.py
--rw-rw-r--  1 cakidd cakidd   226338 Nov 18 21:07  ms_jarvis_layer2_woah_9735.log
--rw-rw-r--  1 cakidd cakidd     3181 Apr 30 14:12  ms_jarvis_layer2_woah.py
--rw-rw-r--  1 cakidd cakidd     1812 Nov 18 11:17  ms_jarvis_link_reader_scheduled_9430.log
--rw-rw-r--  1 cakidd cakidd      753 Nov 18 18:45  ms_jarvis_link_reader_scheduled_FIXED_9450.log
--rw-rw-r--  1 cakidd cakidd     1818 Nov 16 16:09  ms_jarvis_link_reader_scheduled_FIXED.log
--rw-rw-r--  1 cakidd cakidd     2380 Apr 30 14:12  ms_jarvis_link_reader_scheduled_FIXED.py
--rw-rw-r--  1 cakidd cakidd     3260 Apr 30 14:12  ms_jarvis_link_reader_scheduled.py
--rw-rw-r--  1 cakidd cakidd      304 Nov 18 11:17  ms_jarvis_llm_bridge_9908.log
--rw-rw-r--  1 cakidd cakidd     8957 Dec 13 00:45  ms_jarvis_llm_bridge.current.log
--rw-rw-r--  1 cakidd cakidd    11736 Apr 30 14:12  ms_jarvis_llm_bridge.py
--rwxrwxr-x  1 cakidd cakidd     3000 Apr 30 14:12  ms_jarvis_llm_bridge.py.broken
--rw-rw-r--  1 cakidd cakidd     5719 Apr 30 14:12  ms_jarvis_llm_bridge.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      398 Nov 18 18:45  ms_jarvis_llm_bridge_simple_9303.log
--rw-rw-r--  1 cakidd cakidd     1744 Apr 30 14:12  ms_jarvis_local_resources_api.py
--rw-rw-r--  1 cakidd cakidd      428 Nov 18 18:45  ms_jarvis_location_services_9808.log
--rw-rw-r--  1 cakidd cakidd    12982 Apr 30 14:12  ms_jarvis_location_services.py
--rw-rw-r--  1 cakidd cakidd     3133 Nov 16 16:09  msjarvis.log
--rw-rw-r--  1 cakidd cakidd     3851 Apr 30 14:12  ms_jarvis_main_gateway_8000.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:18  ms_jarvis_main_gateway_9124.log
--rw-rw-r--  1 cakidd cakidd      289 Nov 18 11:18  ms_jarvis_main_gateway.broken_final_9520.log
--rw-rw-r--  1 cakidd cakidd     5450 Apr 30 14:12  ms_jarvis_main_gateway.broken_final.py
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  ms_jarvis_main_gateway.error_final
--rw-rw-r--  1 cakidd cakidd      781 Nov 18 11:18  ms_jarvis_main_gateway.error_final_9676.log
--rw-rw-r--  1 cakidd cakidd     9870 Apr 30 14:12  ms_jarvis_main_gateway.error_final.py
--rw-rw-r--  1 cakidd cakidd      247 Nov 18 11:18  ms_jarvis_main_gateway.pre_fix_9581.log
--rw-rw-r--  1 cakidd cakidd     7914 Apr 30 14:12  ms_jarvis_main_gateway.pre_fix.py
--rw-rw-r--  1 cakidd cakidd      260 Nov 18 11:18  ms_jarvis_main_gateway.proxy_backup_9695.log
--rw-rw-r--  1 cakidd cakidd     9087 Apr 30 14:12  ms_jarvis_main_gateway.proxy_backup.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:18  ms_jarvis_main_gateway.proxy_final_9690.log
--rw-rw-r--  1 cakidd cakidd     7041 Apr 30 14:12  ms_jarvis_main_gateway.proxy_final.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:18  ms_jarvis_main_gateway.proxy_still_broken_9517.log
--rw-rw-r--  1 cakidd cakidd     7093 Apr 30 14:12  ms_jarvis_main_gateway.proxy_still_broken.py
--rw-rw-r--  1 cakidd cakidd    10873 Apr 30 14:12  ms_jarvis_main_gateway.py
--rw-rw-r--  1 cakidd cakidd     4864 Apr 30 14:12  msjarvismaingateway.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:18  ms_jarvis_main_gateway.py.30endpoints_backup_9352.log
--rw-rw-r--  1 cakidd cakidd    14707 Apr 30 14:12  ms_jarvis_main_gateway.py.30endpoints_backup.py
--rw-rw-r--  1 cakidd cakidd     6305 Apr 30 14:12  ms_jarvis_main_gateway.py.broken
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:18  ms_jarvis_main_gateway.py.corrupted37_backup_1762223499_9030.log
--rw-rw-r--  1 cakidd cakidd    16768 Apr 30 14:12  ms_jarvis_main_gateway.py.corrupted37_backup_1762223499.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:18  ms_jarvis_main_gateway.py.full_backup_1762223304_9476.log
--rw-rw-r--  1 cakidd cakidd     4196 Apr 30 14:12  ms_jarvis_main_gateway.py.full_backup_1762223304.py
--rw-rw-r--  1 cakidd cakidd     6305 Apr 30 14:12  ms_jarvis_main_gateway.py.locked_backup
--rw-rw-r--  1 cakidd cakidd    14870 Apr 30 14:12  ms_jarvis_memory.py
--rw-rw-r--  1 cakidd cakidd    10144 Dec  2 01:36  ms_jarvis_memory_service_8010.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:18  ms_jarvis_memory_service_9400.log
--rw-rw-r--  1 cakidd cakidd     1511 Apr 30 14:12  ms_jarvis_memory_service.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:18  ms_jarvis_messenger_ui_9297.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:18  ms_jarvis_messenger_ui_final_9846.log
--rw-rw-r--  1 cakidd cakidd     8227 Apr 30 14:12  ms_jarvis_messenger_ui_final.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:18  ms_jarvis_messenger_ui_fixed_9737.log
--rw-rw-r--  1 cakidd cakidd     7653 Apr 30 14:12  ms_jarvis_messenger_ui_fixed.py
--rw-rw-r--  1 cakidd cakidd     5722 Apr 30 14:12  ms_jarvis_messenger_ui.py
--rw-rw-r--  1 cakidd cakidd    84832 Nov 18 20:58  ms_jarvis_metadata_aware_learner_9888.log
--rw-rw-r--  1 cakidd cakidd     7936 Apr 30 14:12  ms_jarvis_metadata_aware_learner.py
--rw-rw-r--  1 cakidd cakidd      488 Nov 18 11:18  ms_jarvis_microsoft_integration_9436.log
--rw-rw-r--  1 cakidd cakidd      480 Nov 18 11:18  ms_jarvis_microsoft_integration_FIXED_9923.log
--rw-rw-r--  1 cakidd cakidd      479 Nov 16 16:09  ms_jarvis_microsoft_integration_FIXED.log
--rw-rw-r--  1 cakidd cakidd     8590 Apr 30 14:12  ms_jarvis_microsoft_integration_FIXED.py
--rw-rw-r--  1 cakidd cakidd     8550 Apr 30 14:12  ms_jarvis_microsoft_integration.py
--rw-rw-r--  1 cakidd cakidd      317 Nov 18 11:18  ms_jarvis_mother_carrie_protocols_9632.log
--rw-rw-r--  1 cakidd cakidd     8937 Apr 30 14:12  ms_jarvis_mother_carrie_protocols.py
--rw-rw-r--  1 cakidd cakidd      431 Nov 18 18:45  ms_jarvis_mountainshares_integration_9432.log
--rw-rw-r--  1 cakidd cakidd    11407 Apr 30 14:12  ms_jarvis_mountainshares_integration.py
--rw-rw-r--  1 cakidd cakidd      316 Nov 18 11:18  ms_jarvis_neurobiological_master_9993.log
--rw-rw-r--  1 cakidd cakidd     8664 Apr 30 14:12  ms_jarvis_neurobiological_master.py
--rw-rw-r--  1 cakidd cakidd     7213 Nov 18 11:18  ms_jarvis_paddleocr_processor_9897.log
--rw-rw-r--  1 cakidd cakidd     6672 Apr 30 14:12  ms_jarvis_paddleocr_processor.py
--rw-rw-r--  1 cakidd cakidd    36285 Apr 30 14:12  msjarvis_ports_runtime.txt
--rw-rw-r--  1 cakidd cakidd     2239 Apr 30 14:12  msjarvis_processes_runtime.txt
--rw-rw-r--  1 cakidd cakidd      220 Nov 18 11:18  ms_jarvis_production_chat_9814.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:18  ms_jarvis_production_chat_BACKUP_9082.log
--rw-rw-r--  1 cakidd cakidd    12046 Apr 30 14:12  ms_jarvis_production_chat_BACKUP.py
--rw-rw-r--  1 cakidd cakidd    11976 Apr 30 14:12  ms_jarvis_production_chat_BACKUP.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:18  ms_jarvis_production_chat_BEFORE_GIS_9373.log
--rw-rw-r--  1 cakidd cakidd    12046 Apr 30 14:12  ms_jarvis_production_chat_BEFORE_GIS.py
--rw-rw-r--  1 cakidd cakidd    11976 Apr 30 14:12  ms_jarvis_production_chat_BEFORE_GIS.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    12998 Apr 30 14:12  ms_jarvis_production_chat.py
--rw-rw-r--  1 cakidd cakidd    12499 Apr 30 14:12  ms_jarvis_production_chat.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd     1850 Apr 30 14:12  MS_JARVIS_PRODUCTION_FINAL.sh
--rw-rw-r--  1 cakidd cakidd      422 Nov 18 18:45  ms_jarvis_psychology_services_9738.log
--rw-rw-r--  1 cakidd cakidd     5635 Apr 30 14:12  ms_jarvis_psychology_services.py
--rw-rw-r--  1 cakidd cakidd      307 Nov 18 11:18  ms_jarvis_qualia_engine_9390.log
--rw-rw-r--  1 cakidd cakidd      540 Nov 24 09:57  msjarvis_qualia_engine.log
--rw-rw-r--  1 cakidd cakidd     6640 Apr 21 09:58  ms_jarvis_qualia_engine.py
--rw-rw-r--  1 cakidd cakidd     8512 Apr 30 21:12  ms_jarvis_rag_server.py
--rw-rw-r--  1 cakidd cakidd     8516 Apr 30 21:12  ms_jarvis_rag_server.py.bak.20260430-211218
--rw-rw-r--  1 cakidd cakidd     2063 Apr 30 14:12  msjarvisragserver_wvpatch.py
--rw-rw-r--  1 cakidd cakidd     2227 Apr 30 14:12  msjarvisragserverwvpatch.py
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:18  ms_jarvis_ram_watchdog_9946.log
--rwxrwxr-x  1 cakidd cakidd     2856 Apr 30 14:12  ms_jarvis_ram_watchdog.py
--rw-rw-r--  1 cakidd cakidd     1991 Apr 16 20:18  msjarvis-rebuild-nbb_blood_brain_barrier-1_ms_jarvis_consciousness_bridge.py
--rwxr-xr-x  1 cakidd cakidd      292 Apr 16 20:18  msjarvis-rebuild-nbb_consciousness_containers-1_main.py
--rwxr-xr-x  1 cakidd cakidd      292 Apr 16 20:18  msjarvis-rebuild-nbb_heteroglobulin_transport-1_main.py
--rw-r--r--  1 cakidd cakidd     7064 Apr 16 20:18  msjarvis-rebuild-nbb_i_containers-1_ms_jarvis_consciousness_unified_bridge.py
--rwxr-xr-x  1 cakidd cakidd      292 Apr 16 20:18  msjarvis-rebuild-nbb_mother_carrie_protocols-1_main.py
--rwxr-xr-x  1 cakidd cakidd      292 Apr 16 20:18  msjarvis-rebuild-nbb_pituitary_gland-1_main.py
--rwxr-xr-x  1 cakidd cakidd      292 Apr 16 20:18  msjarvis-rebuild-nbb_prefrontal_cortex-1_main.py
--rw-rw-r--  1 cakidd cakidd      276 Apr 16 20:18  msjarvis-rebuild-nbb_qualia_engine-1_ms_jarvis_consciousness_bridge.py
--rwxr-xr-x  1 cakidd cakidd      292 Apr 16 20:18  msjarvis-rebuild-nbb_spiritual_maternal_integration-1_main.py
--rwxr-xr-x  1 cakidd cakidd      292 Apr 16 20:18  msjarvis-rebuild-nbb_spiritual_root-1_main.py
--rwxr-xr-x  1 cakidd cakidd      292 Apr 16 20:18  msjarvis-rebuild-nbb_subconscious-1_main.py
--rw-rw-r--  1 cakidd cakidd     8979 Apr 16 20:18  msjarvis-rebuild-nbb_woah_algorithms-1_service_discovery.py
--rw-rw-r--  1 cakidd cakidd     1879 Nov 16 16:09  ms_jarvis_REFINED.log
--rw-rw-r--  1 cakidd cakidd    43035 Nov 18 21:03  ms_jarvis_seamless_monitor_9930.log
--rw-rw-r--  1 cakidd cakidd     2650 Apr 16 20:18  ms_jarvis_seamless_monitor.py
--rw-rw-r--  1 cakidd cakidd     2518 Apr 30 14:12  msjarvis_semaphore.py
--rw-rw-r--  1 cakidd cakidd      399 Apr 30 14:12  msjarvis.service
--rw-rw-r--  1 cakidd cakidd   641250 Nov 18 21:03  ms_jarvis_service_factory_9936.log
--rw-rw-r--  1 cakidd cakidd     4604 Apr 30 14:12  ms_jarvis_service_factory.py
--rw-rw-r--  1 cakidd cakidd     1132 Nov 18 11:18  ms_jarvis_showcase_api_9963.log
--rw-rw-r--  1 cakidd cakidd     9629 Apr 30 14:12  ms_jarvis_showcase_api.py
--rwxrwxr-x  1 cakidd cakidd     1538 Apr 30 14:12  msjarvis_shp_to_csv.sh
--rw-rw-r--  1 cakidd cakidd      465 Nov 18 11:19  ms_jarvis_silent_geo_tracker_9572.log
--rw-rw-r--  1 cakidd cakidd     7654 Apr 30 14:12  ms_jarvis_silent_geo_tracker.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:19  ms_jarvis_simple_web_ui_9649.log
--rw-rw-r--  1 cakidd cakidd     6050 Apr 30 14:12  ms_jarvis_simple_web_ui.py
--rw-rw-r--  1 cakidd cakidd      482 Nov 18 11:37  ms_jarvis_spiritual_services_4009.log
--rw-rw-r--  1 cakidd cakidd      157 Nov 18 11:30  msjarvisspiritualservices_4009.log
--rw-rw-r--  1 cakidd cakidd      422 Nov 18 18:45  ms_jarvis_spiritual_services_9826.log
--rw-rw-r--  1 cakidd cakidd    10754 Apr 30 14:12  ms_jarvis_spiritual_services.py
--rw-rw-r--  1 cakidd cakidd    12127 Apr 30 14:12  MS_JARVIS_STATUS_REPORT.md
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:19  ms_jarvis_substack_reader_9316.log
--rw-rw-r--  1 cakidd cakidd     1527 Apr 30 14:12  ms_jarvis_substack_reader.py
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:19  ms_jarvis_swap_memory_manager_9115.log
--rwxrwxr-x  1 cakidd cakidd     5628 Apr 30 14:12  ms_jarvis_swap_memory_manager.py
--rw-rw-r--  1 cakidd cakidd      839 Nov 18 11:19  ms_jarvis_swarm_intelligence_9921.log
--rw-rw-r--  1 cakidd cakidd    10565 Apr 30 14:12  ms_jarvis_swarm_intelligence.py
--rw-rw-r--  1 cakidd cakidd    10491 Apr 30 14:12  ms_jarvis_swarm_intelligence.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    45994 Nov 18 21:04  ms_jarvis_sync_monitor_9898.log
--rw-rw-r--  1 cakidd cakidd     2607 Apr 30 14:12  ms_jarvis_sync_monitor.py
--rw-rw-r--  1 cakidd cakidd      351 Nov 18 18:45  ms_jarvis_temporal_consciousness_9220.log
--rw-rw-r--  1 cakidd cakidd     6314 Apr 30 14:12  ms_jarvis_temporal_consciousness.py
--rw-rw-r--  1 cakidd cakidd      418 Nov 18 18:45  ms_jarvis_theological_integration_9882.log
--rw-rw-r--  1 cakidd cakidd    11768 Apr 30 14:12  ms_jarvis_theological_integration.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:19  ms_jarvis_toroidal_consciousness_9720.log
--rw-rw-r--  1 cakidd cakidd     7196 Apr 30 14:12  ms_jarvis_toroidal_consciousness.py
--rw-rw-r--  1 cakidd cakidd      249 Apr 30 14:12  msjarvistoroidalconsciousness.py
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:19  ms_jarvis_truth_filter_gisgeodb_9054.log
--rw-rw-r--  1 cakidd cakidd     2077 Apr 30 14:12  ms_jarvis_truth_filter_gisgeodb.py
--rw-rw-r--  1 cakidd cakidd      449 Nov 18 11:19  ms_jarvis_ueid_system_9671.log
--rw-rw-r--  1 cakidd cakidd    12321 Apr 30 14:12  ms_jarvis_ueid_system.py
--rw-rw-r--  1 cakidd cakidd      527 Nov 18 11:19  ms_jarvis_ueid_wallet_integration_9477.log
--rw-rw-r--  1 cakidd cakidd     6453 Apr 30 14:12  ms_jarvis_ueid_wallet_integration.py
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  MS_JARVIS_ULTIMATE_AUDIT_20251010_002719.txt
--rw-rw-r--  1 cakidd cakidd      151 Nov 18 11:21  ms_jarvis_ULTIMATE.py:_9222.log
--rw-rw-r--  1 cakidd cakidd    21835 Apr 30 14:12  ms_jarvis_ULTIMATE.py.OLD
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:19  ms_jarvis_unified_gateway_9085.log
--rw-rw-r--  1 cakidd cakidd    73660 Apr 30 14:12  ms_jarvis_unified_gateway.py
--rw-rw-r--  1 cakidd cakidd    11057 Apr 30 14:12  msjarvis_unified_gateway.py
--rw-rw-r--  1 cakidd cakidd    15420 Apr 30 14:12  msjarvisunifiedgateway.py
--rwxrwxr-x  1 cakidd cakidd     6869 Apr 30 14:12  ms_jarvis_unified_gateway.py.BEFORE_REAL_CHAT_1768842649
--rw-rw-r--  1 cakidd cakidd     6491 Apr 30 14:12  ms_jarvis_unified_gateway.py.FORCED_UNIFIED_BACKUP
--rw-rw-r--  1 cakidd cakidd    11057 Apr 30 14:12  ms_jarvis_unified_gateway.py.pre_constitutional
--rwxrwxr-x  1 cakidd cakidd     6869 Apr 30 14:12  ms_jarvis_unified_gateway.py.WORKING_1768842334
--rw-rw-r--  1 cakidd cakidd    20022 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.20251124.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:19  ms_jarvis_unified_gateway_v4.3_9863.log
--rw-rw-r--  1 cakidd cakidd      559 Nov 18 11:19  ms_jarvis_unified_gateway_v4.3.BEFORE_69DGM_INTEGRATION_9882.log
--rw-rw-r--  1 cakidd cakidd    32755 Apr 16 20:18  ms_jarvis_unified_gateway_v4.3.BEFORE_69DGM_INTEGRATION.py
--rw-rw-r--  1 cakidd cakidd      292 Nov 18 11:19  ms_jarvis_unified_gateway_v4.3.CONSTITUTIONAL_BACKUP_9314.log
--rw-rw-r--  1 cakidd cakidd    20024 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.CONSTITUTIONAL_BACKUP.py
--rw-rw-r--  1 cakidd cakidd     1004 Dec  2 02:36  ms_jarvis_unified_gateway_v4.3.log
--rw-rw-r--  1 cakidd cakidd      246 Nov 18 11:19  ms_jarvis_unified_gateway_v4.3.ORIGINAL_SWAGGER_9195.log
--rw-rw-r--  1 cakidd cakidd    19112 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.ORIGINAL_SWAGGER.py
--rw-rw-r--  1 cakidd cakidd     9312 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py
--rwxrwxr-x  1 cakidd cakidd    36491 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.BACKUP_1762777467
--rwxrwxr-x  1 cakidd cakidd    40597 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.BACKUP_AUTH_1762778121
--rwxrwxr-x  1 cakidd cakidd    43281 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.BACKUP_CHAT_1762778286
--rwxrwxr-x  1 cakidd cakidd    33451 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.BACKUP_CORRECT_20251109_141823
--rw-rw-r--  1 cakidd cakidd    37444 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.BACKUP_DNSADD_202511100838
--rwxrwxr-x  1 cakidd cakidd    33647 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.BACKUP_GIS
--rw-rw-r--  1 cakidd cakidd    38245 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.BACKUP_JWT_202511100840
--rwxrwxr-x  1 cakidd cakidd    33583 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.BACKUP_MICROSERVICES
--rw-rw-r--  1 cakidd cakidd   155639 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.BACKUP_OPENCHAT_202511100915
--rwxrwxr-x  1 cakidd cakidd    33451 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.BACKUP_SWAGGER_EXPANSION_20251109_141525
--rwxrwxr-x  1 cakidd cakidd    32425 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.BEFORE_INVESTIGATION
--rwxrwxr-x  1 cakidd cakidd    32480 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.FINAL_BACKUP_1762710032
--rw-rw-r--  1 cakidd cakidd    21222 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.original
--rw-rw-r--  1 cakidd cakidd     5448 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    21222 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.PRE_GUARDS_20251105_171934
--rwxrwxr-x  1 cakidd cakidd    33720 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.REGISTRY_FIX_BACKUP
--rw-rw-r--  1 cakidd cakidd    30261 Apr 30 14:12  ms_jarvis_unified_gateway_v4.3.py.working_backup
--rw-rw-r--  1 cakidd cakidd     1365 Nov 18 11:19  ms_jarvis_unified_rag_bridge_9600.log
--rw-rw-r--  1 cakidd cakidd    10909 Apr 30 14:12  ms_jarvis_unified_rag_bridge.py
--rw-rw-r--  1 cakidd cakidd     4426 Nov 18 11:20  ms_jarvis_unified_swagger_gateway_9825.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:19  ms_jarvis_unified_swagger_gateway_BACKUP_9797.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:19  ms_jarvis_unified_swagger_gateway_CLEAN_9092.log
--rw-rw-r--  1 cakidd cakidd     5215 Apr 30 14:12  ms_jarvis_unified_swagger_gateway_CLEAN.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:19  ms_jarvis_unified_swagger_gateway_COMPLETE_9011.log
--rw-rw-r--  1 cakidd cakidd     7319 Apr 30 14:12  ms_jarvis_unified_swagger_gateway_COMPLETE.py
--rw-rw-r--  1 cakidd cakidd     7249 Apr 30 14:12  ms_jarvis_unified_swagger_gateway_COMPLETE.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:19  ms_jarvis_unified_swagger_gateway_FINAL_9845.log
--rw-rw-r--  1 cakidd cakidd      336 Nov 10 11:38  ms_jarvis_unified_swagger_gateway_FINAL.log
--rw-rw-r--  1 cakidd cakidd      207 Nov 18 11:19  ms_jarvis_unified_swagger_gateway_FINAL.psychology_patched_9134.log
--rw-rw-r--  1 cakidd cakidd      207 Nov 16 16:09  ms_jarvis_unified_swagger_gateway_FINAL.psychology_patched.log
--rw-rw-r--  1 cakidd cakidd    28827 Apr 30 14:12  ms_jarvis_unified_swagger_gateway_FINAL.py
--rw-rw-r--  1 cakidd cakidd     2519 Apr 30 14:12  msjarvisunifiedswaggergatewayFINAL.py
--rw-rw-r--  1 cakidd cakidd     9515 Apr 30 14:12  ms_jarvis_unified_swagger_gateway_FINAL.py.layer2_backup
--rw-rw-r--  1 cakidd cakidd     4438 Nov 18 11:19  msjarvisunifiedswaggergatewayFIXED_9540.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:19  ms_jarvis_unified_swagger_gateway_FIXED_9867.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:19  ms_jarvis_unified_swagger_gateway_FIXED_BACKUP_9365.log
--rw-rw-r--  1 cakidd cakidd    27153 Apr 30 14:12  ms_jarvis_unified_swagger_gateway_FIXED_BACKUP.py
--rw-rw-r--  1 cakidd cakidd      336 Nov 16 16:09  ms_jarvis_unified_swagger_gateway_FIXED.log
--rw-rw-r--  1 cakidd cakidd      406 Nov 16 16:09  msjarvisunifiedswaggergatewayFIXED.log
--rw-rw-r--  1 cakidd cakidd    31882 Apr 30 14:12  ms_jarvis_unified_swagger_gateway_FIXED.py
--rw-rw-r--  1 cakidd cakidd    10933 Apr 30 14:12  msjarvisunifiedswaggergatewayFIXED.py
--rw-rw-r--  1 cakidd cakidd    10943 Apr 30 14:12  msjarvisunifiedswaggergatewayFIXED.py.BEFORE_DOCKER_REWIRE
--rw-rw-r--  1 cakidd cakidd    11737 Apr 30 14:12  ms_jarvis_unified_swagger_gateway_FIXED.py.broken
--rw-rw-r--  1 cakidd cakidd     3517 Apr 30 14:12  ms_jarvis_unified_swagger_gateway_FIXED.py.new
--rw-rw-r--  1 cakidd cakidd    31804 Apr 30 14:12  ms_jarvis_unified_swagger_gateway_FIXED.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     5078 Apr 30 14:12  msjarvisunifiedswaggergatewayFIXED.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    24268 Dec  2 00:45  ms_jarvis_unified_swagger_gateway.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:19  ms_jarvis_unified_swagger_gateway_PROD_9481.log
--rw-rw-r--  1 cakidd cakidd     7257 Apr 30 14:12  ms_jarvis_unified_swagger_gateway_PROD.py
--rw-rw-r--  1 cakidd cakidd     1642 Apr 30 14:12  msjarvisunifiedswaggergateway.py
--rw-rw-r--  1 cakidd cakidd    10528 Apr 30 14:12  ms_jarvis_unified_swagger_gateway.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:20  ms_jarvis_unified_swagger_gateway_SECURED_9347.log
--rw-rw-r--  1 cakidd cakidd     8142 Apr 30 14:12  ms_jarvis_unified_swagger_gateway_SECURED.py
--rw-rw-r--  1 cakidd cakidd     1971 Nov 16 16:09  ms_jarvis_v3.log
--rw-rw-r--  1 cakidd cakidd     2604 Nov 16 16:09  ms_jarvis_v4.log
--rw-rw-r--  1 cakidd cakidd     2360 Nov 18 11:20  ms_jarvis_venv_scheduler_9811.log
--rw-rw-r--  1 cakidd cakidd     2378 Nov 18 11:20  ms_jarvis_venv_scheduler_FIXED_9252.log
--rw-rw-r--  1 cakidd cakidd     3476 Apr 30 14:12  ms_jarvis_venv_scheduler_FIXED.final_bak
--rw-rw-r--  1 cakidd cakidd      814 Nov 16 16:09  ms_jarvis_venv_scheduler_FIXED.log
--rw-rw-r--  1 cakidd cakidd     4636 Apr 30 14:12  ms_jarvis_venv_scheduler_FIXED.py
--rw-rw-r--  1 cakidd cakidd     3302 Apr 30 14:12  ms_jarvis_venv_scheduler_FIXED.safe
--rw-rw-r--  1 cakidd cakidd     3546 Apr 30 14:12  ms_jarvis_venv_scheduler_FIXED.safe2
--rw-rw-r--  1 cakidd cakidd     3738 Apr 30 14:12  ms_jarvis_venv_scheduler_FIXED.superbak
--rw-rw-r--  1 cakidd cakidd     3562 Apr 30 14:12  ms_jarvis_venv_scheduler_FIXED.totalsafe
--rw-rw-r--  1 cakidd cakidd     3743 Apr 30 14:12  ms_jarvis_venv_scheduler_FIXED.ultimate_bak
--rw-rw-r--  1 cakidd cakidd     3699 Apr 30 14:12  ms_jarvis_venv_scheduler_FIXED.ultrasafe
--rw-rw-r--  1 cakidd cakidd     6515 Apr 30 14:12  ms_jarvis_venv_scheduler.py
--rw-rw-r--  1 cakidd cakidd     2329 Nov 18 11:20  ms_jarvis_venv_scheduler_SIMPLE_9550.log
--rw-rw-r--  1 cakidd cakidd     2290 Apr 30 14:12  ms_jarvis_venv_scheduler_SIMPLE.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:20  ms_jarvis_web_deployer_9991.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:20  ms_jarvis_web_deployer_old_9156.log
--rw-rw-r--  1 cakidd cakidd     5463 Apr 30 14:12  ms_jarvis_web_deployer.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:20  ms_jarvis_web_research_9032.log
--rw-rw-r--  1 cakidd cakidd    10333 Apr 21 09:58  ms_jarvis_web_research_aggregate.py
--rw-rw-r--  1 cakidd cakidd    10342 Apr 30 14:12  ms_jarvis_web_research_aggregate.safe.20260119-094221.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:20  ms_jarvis_web_research_fixed_9119.log
--rw-rw-r--  1 cakidd cakidd     3064 Apr 30 14:12  ms_jarvis_web_research_fixed.py
--rw-rw-r--  1 cakidd cakidd      134 Dec  1 23:03  msjarviswebresearch.log
--rw-rw-r--  1 cakidd cakidd     6374 Apr 30 14:12  ms_jarvis_web_research.py
--rw-rw-r--  1 cakidd cakidd     6368 Apr 30 14:12  ms_jarvis_web_research.py.broken
--rw-rw-r--  1 cakidd cakidd     2557 Apr 30 14:12  ms_jarvis_web_research.py.broken_backup
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:20  ms_jarvis_web_research_simple_9552.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:20  ms_jarvis_web_research_v2_9404.log
--rw-rw-r--  1 cakidd cakidd     3893 Dec  6 22:03  ms_jarvis_web_research_v2.current.log
--rw-rw-r--  1 cakidd cakidd    14714 Dec  2 03:23  ms_jarvis_web_research_v2.log
--rw-rw-r--  1 cakidd cakidd     2879 Apr 30 14:12  ms_jarvis_web_research_v2.py
--rw-rw-r--  1 cakidd cakidd     6791 Nov 16 16:09  ms_jarvis_WITH_IMPORTS.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:20  ms_jarvis_woah_algorithms_9915.log
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:20  ms_jarvis_woah_algorithms_enhanced_9290.log
--rw-rw-r--  1 cakidd cakidd     4704 Apr 30 14:12  ms_jarvis_woah_algorithms_enhanced.py
--rw-rw-r--  1 cakidd cakidd      316 Dec  1 18:26  ms_jarvis_woah_algorithms.log
--rw-rw-r--  1 cakidd cakidd     6255 Apr 21 09:58  ms_jarvis_woah_algorithms.py
--rw-rw-r--  1 cakidd cakidd      242 Apr 30 14:12  msjarvis_woah_algorithms.py
--rwxrwxr-x  1 cakidd cakidd      372 Apr 30 14:12  msjarvis_woah_algorithms_service.py
--rw-rw-r--  1 cakidd cakidd      286 Apr 30 14:12  msjarvis_woah_runner.py
--rw-rw-r--  1 cakidd cakidd      213 Nov 16 16:09  ms_jarvis_WORKING.log
--rw-rw-r--  1 cakidd cakidd     4268 Apr 30 14:12  msjarvis_wv_entangled_gateway.py
--rw-rw-r--  1 cakidd cakidd     9476 Apr 30 14:12  ms_mountainshares_analytics.py
--rw-rw-r--  1 cakidd cakidd    12528 Apr 30 14:12  ms_mountainshares_coordinator.py
--rw-rw-r--  1 cakidd cakidd     7338 Apr 30 14:12  ms_mountainshares_indexer.py
--rw-rw-r--  1 cakidd cakidd     8701 Apr 30 14:12  multi_model_consensus.py
--rw-rw-r--  1 cakidd cakidd      148 Nov 18 11:25  multi_rag_4011.log
--rw-rw-r--  1 cakidd cakidd     3983 Nov 16 16:09  multi_rag_dgm.log
--rw-rw-r--  1 cakidd cakidd      461 Nov 18 11:37  multi_rag_dgm_system_4011.log
--rw-rw-r--  1 cakidd cakidd      149 Nov 18 11:30  multiragdgmsystem_4011.log
--rw-rw-r--  1 cakidd cakidd      395 Nov 18 11:37  multiragdgmsystem_4011_test.log
--rw-rw-r--  1 cakidd cakidd      157 Nov 18 11:40  multi_rag_dgm_system_9307_4011.log
--rw-rw-r--  1 cakidd cakidd      461 Nov 18 11:20  multi_rag_dgm_system_9307.log
--rw-rw-r--  1 cakidd cakidd    12587 Apr 30 14:12  multi_rag_dgm_system.py
--rw-rw-r--  1 cakidd cakidd      149 Nov 18 10:23  my_service_9004.log
--rw-rw-r--  1 cakidd cakidd      479 Apr 30 14:12  my_service.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  nbb
--rwxr-xr-x  1 cakidd cakidd      292 Apr 16 20:18  nbb_darwin_godel_machines_msjarvis-rebuild-nbb_spiritual_root-1_main.py
--rw-r--r--  1 cakidd cakidd    10705 Apr 16 20:18  nbb_darwin_godel_machines.py
--rw-r--r--  1 cakidd cakidd    10051 Mar  9 16:43  nbb_darwin_godel_machines.py.pre_debug
--rw-r--r--  1 cakidd cakidd     9974 Mar  9 16:43  nbb_darwin_godel_machines.py.pre_dynamic
--rw-r--r--  1 cakidd cakidd     9966 Mar  9 16:43  nbb_darwin_godel_machines.py.pre_mapping
--rw-rw-r--  1 cakidd cakidd      402 Apr 30 14:12  netlify.toml
--rw-rw-r--  1 cakidd cakidd      854 Apr 30 14:12  neuro_adapter.py
-drwxr-xr-x  5 cakidd cakidd     4096 Apr 30 14:12  neurobiological_brain
-drwxrwxr-x 18 cakidd cakidd     4096 Apr 30 14:12  neurobiologicalbrain
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 16 20:18  neurobiologicalbrainicontainersservice
--rw-rw-r--  1 cakidd cakidd     1478 Apr 30 14:12  neurobiological_integration.py
--rw-rw-r--  1 cakidd cakidd     1406 Apr 30 14:12  neurobiological_integration.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd     1090 Apr 30 14:12  neuro_blood_brain_barrier.py
--rwxrwxr-x  1 cakidd cakidd     1156 Apr 30 14:12  neuro_consciousness_containers.py
--rwxrwxr-x  1 cakidd cakidd     1036 Apr 30 14:12  neuro_i_containers.py
--rw-rw-r--  1 cakidd cakidd     1359 Apr 30 14:12  neuro_master_service.py
--rwxrwxr-x  1 cakidd cakidd     1088 Apr 30 14:12  neuro_prefrontal_cortex.py
--rwxrwxr-x  1 cakidd cakidd     1046 Apr 30 14:12  neuro_qualia_engine.py
--rwxrwxr-x  1 cakidd cakidd     1040 Apr 30 14:12  neuro_subconscious.py
--rw-rw-r--  1 cakidd cakidd  1273757 Apr 30 14:12  nohup.out
--rw-rw-r--  1 cakidd cakidd    81642 Apr 30 14:12  npm-deps.json
--rw-rw-r--  1 cakidd cakidd    18435 Apr 30 14:12  npm-packages.txt
--rw-rw-r--  1 cakidd cakidd     1731 Apr 30 14:12  oauth2_callback.py
--rw-rw-r--  1 cakidd cakidd      993 Apr 30 14:12  oauth2_config.json
--rw-rw-r--  1 cakidd cakidd     2119 Apr 30 14:12  oauth2_handler.py
--rw-rw-r--  1 cakidd cakidd    49992 Apr 30 14:12  old_chroma_analysis.json
--rw-rw-r--  1 cakidd cakidd     3739 Apr 30 14:12  ollama_fix.py
--rw-rw-r--  1 cakidd cakidd     2142 Apr 30 14:12  OLLAMA_HEALTH_FEATURES.md
--rw-rw-r--  1 cakidd cakidd      154 Apr 30 14:12  openapitools.json
--rw-rw-r--  1 cakidd cakidd     9344 Apr 30 14:12  open_ports_full.txt
--rw-rw-r--  1 cakidd cakidd    21125 Apr 30 14:12  open_ports.txt
--rw-rw-r--  1 cakidd cakidd     7413 Nov 16 16:09  OPTIMIZED.log
--rw-rw-r--  1 cakidd cakidd      745 Apr 30 14:12  optimized_timeouts.py
--rw-rw-r--  1 cakidd cakidd     3137 Apr 30 14:12  optimize_egeria_complete.py
--rwxrwxr-x  1 cakidd cakidd     2374 Apr 30 14:12  OPTIMIZE_GPU.sh
--rw-rw-r--  1 cakidd cakidd     3032 Apr 30 14:12  optimize_models_for_vram.py
--rw-rw-r--  1 cakidd cakidd      828 Nov 17 09:19  orchestrator.log
--rw-rw-r--  1 cakidd cakidd   883777 Apr 24 18:55  orchestrator_loop.log
--rw-rw-r--  1 cakidd cakidd      875 Apr 30 14:12  otel_tracing.py
--rw-rw-r--  1 cakidd cakidd     1379 Apr 30 14:12  override_launcher.py
--rw-rw-r--  1 cakidd cakidd      729 Apr 30 14:12  package.json
--rw-rw-r--  1 cakidd cakidd   118720 Apr 30 14:12  package-lock.json
--rw-rw-r--  1 cakidd cakidd     1817 Apr 30 14:12  paired_services.txt
--rw-rw-r--  1 cakidd cakidd     4272 Apr 30 14:12  parallel_processing.py
--rw-rw-r--  1 cakidd cakidd     5714 Apr 30 14:12  parse_world_files.py
--rw-rw-r--  1 cakidd cakidd    26082 Apr 30 14:12  performance_optimization_analyzer.py
--rw-rw-r--  1 cakidd cakidd    26012 Apr 30 14:12  performance_optimization_analyzer.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      964 Apr 30 14:12  persona_fix.txt
--rw-rw-r--  1 cakidd cakidd     3010 Apr 30 14:12  phase1_integration.py
--rw-rw-r--  1 cakidd cakidd     2432 Apr 30 14:12  phase2_integration.py
--rw-rw-r--  1 cakidd cakidd     2486 Apr 30 14:12  phase3_integration.py
--rw-rw-r--  1 cakidd cakidd     2582 Apr 30 14:12  phase4_5_integration.py
--rw-rw-r--  1 cakidd cakidd     2401 Apr 30 14:12  phase6_integration.py
--rw-rw-r--  1 cakidd cakidd    24219 Apr 30 14:12  phase7_integration.py
--rw-rw-r--  1 cakidd cakidd    24149 Apr 30 14:12  phase7_integration.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     2030 Apr 30 14:12  pia_event_emitters.py
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  pid_code_backtrace.txt
--rw-rw-r--  1 cakidd cakidd     6901 Apr 30 14:12  pid_dir_map.txt
--rw-rw-r--  1 cakidd cakidd     1627 Apr 30 14:12  pid_port_map.txt
--rw-rw-r--  1 cakidd cakidd     1039 Nov 24 20:49  pituitary_gland.log
--rw-rw-r--  1 cakidd cakidd      767 Apr 30 14:12  pituitary_gland.py
--rw-rw-r--  1 cakidd cakidd     1396 Apr 30 14:12  polling_client.py
--rw-rw-r--  1 cakidd cakidd     3458 Apr 30 14:12  populate_redetermination_tracker.py
--rw-rw-r--  1 cakidd cakidd     4760 Apr 30 14:12  populate_security_layers_test.py
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:20  port_9000_69dgm_bridge_9769.log
--rwxrwxr-x  1 cakidd cakidd    12827 Apr 16 20:18  port_9000_69dgm_bridge.py
--rw-rw-r--  1 cakidd cakidd     7828 Apr 16 20:18  port_9000_academic_extension.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 18 11:20  port_9000_chat_wrapper_69dgm_9641.log
--rw-rw-r--  1 cakidd cakidd     3299 Apr 30 14:12  port_9000_chat_wrapper_69dgm.py
--rw-rw-r--  1 cakidd cakidd     4133 Apr 30 14:12  port_9001_ARCHITECTURE_CORRECT.py
--rw-rw-r--  1 cakidd cakidd      451 Nov 16 16:09  port_9001_FINAL_FIX.log
--rw-rw-r--  1 cakidd cakidd     7894 Apr 30 14:12  port_9001_FINAL_FIX.py
--rw-rw-r--  1 cakidd cakidd      336 Nov 16 16:09  port_9001_FINAL_WORKING.log
--rw-rw-r--  1 cakidd cakidd     9557 Apr 30 14:12  port_9001_FINAL_WORKING.py
--rw-rw-r--  1 cakidd cakidd     5095 Apr 30 14:12  port_9001_ui_DIRECT.py
--rw-rw-r--  1 cakidd cakidd      336 Nov 16 16:09  port_9001_ui_FIXED.log
--rw-rw-r--  1 cakidd cakidd     6091 Apr 30 14:12  port_9001_ui_FIXED.py
--rw-rw-r--  1 cakidd cakidd     9166 Apr 30 14:12  port_9001_ui_MYSQL_PROD.py
--rw-rw-r--  1 cakidd cakidd    10560 Apr 30 14:12  port_9001_ui_MYSQL.py
--rw-rw-r--  1 cakidd cakidd    11404 Apr 30 14:12  port_9001_ui_WITH_CONVERSATIONS.py
--rw-rw-r--  1 cakidd cakidd     5914 Apr 30 14:12  port_9001_ui_WORKING.py
--rw-rw-r--  1 cakidd cakidd     5556 Apr 30 14:12  port_9001_ui_wrapper.py
--rw-rw-r--  1 cakidd cakidd   132603 Apr 24 18:55  PORT_AUDIT_RAW.txt
--rw-rw-r--  1 cakidd cakidd    27980 Dec  2 01:56  PORT_AUDIT_SEG_aa
--rw-rw-r--  1 cakidd cakidd    25998 Nov 17 16:56  PORT_AUDIT_SEG_ab
--rw-rw-r--  1 cakidd cakidd    26502 Dec  2 01:56  PORT_AUDIT_SEG_ac
--rw-rw-r--  1 cakidd cakidd    31293 Apr 24 18:55  PORT_AUDIT_SEG_ad
--rw-rw-r--  1 cakidd cakidd    20830 Dec  2 01:56  PORT_AUDIT_SEG_ae
--rwxrwxr-x  1 cakidd cakidd     5072 Apr 30 14:12  PORT_AUDIT.sh
--rwxrwxr-x  1 cakidd cakidd     3219 Apr 30 14:12  port_manager_fixed.py
--rw-rw-r--  1 cakidd cakidd     3219 Apr 30 14:12  port_manager.py
--rw-rw-r--  1 cakidd cakidd     2647 Apr 30 14:12  port_manager.py.broken_backup
--rw-rw-r--  1 cakidd cakidd     2448 Apr 30 14:12  port_manager.py.broken_v2
--rw-rw-r--  1 cakidd cakidd    67626 Apr 30 14:12  ports_diff_msjarvis.txt
--rw-rw-r--  1 cakidd cakidd    27306 Dec  2 01:56  PORT_SEG_aa
--rw-rw-r--  1 cakidd cakidd    28860 Apr 24 18:55  PORT_SEG_ab
--rw-rw-r--  1 cakidd cakidd    27894 Dec  2 01:56  PORT_SEG_ac
--rw-rw-r--  1 cakidd cakidd     4310 Dec  2 01:56  PORT_SEG_ad
--rwxrwxr-x  1 cakidd cakidd     1612 Apr 30 14:12  PORT_SERVICE_AUDIT.sh
--rw-rw-r--  1 cakidd cakidd   404608 Apr 30 14:12  port_service_audit.txt
--rw-rw-r--  1 cakidd cakidd    88370 Apr 24 18:55  PORTS_REGISTRY_RAW.txt
--rwxrwxr-x  1 cakidd cakidd      578 Apr 30 14:12  post_every_4_hours.sh
--rw-rw-r--  1 cakidd cakidd     5819 Apr 30 14:12  private_identity_ledger.py
--rw-------  1 cakidd cakidd     1704 Apr 30 14:36  privkey.pem
--rw-rw-r--  1 cakidd cakidd      725 Apr 30 14:12  probe_services.py
--rw-rw-r--  1 cakidd cakidd     8531 Apr 30 14:12  process_comprehensive_gis.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  processed_gis
--rw-rw-r--  1 cakidd cakidd     5320 Apr 30 14:12  process_gis_shapefiles.py
--rw-rw-r--  1 cakidd cakidd     5773 Apr 30 14:12  process_statewide_gis_bulk.py
--rw-rw-r--  1 cakidd cakidd      198 Dec 13 13:10  production_chat.log
--rw-rw-r--  1 cakidd cakidd       22 Nov 16 16:09  production_chat_with_cors.log
--rw-rw-r--  1 cakidd cakidd      794 Nov 16 16:10  production_chat_with_gis.log
--rw-rw-r--  1 cakidd cakidd     7766 Apr 30 14:12  PRODUCTION_DEPLOYMENT_COMPLETE.md
--rwxrwxr-x  1 cakidd cakidd    12119 Apr 30 14:12  PRODUCTION_DEPLOYMENT_SUITE.sh
--rwxrwxr-x  1 cakidd cakidd      743 Apr 30 14:12  PRODUCTION_MS_JARVIS_START.sh
--rw-rw-r--  1 cakidd cakidd     1510 Apr 30 14:12  PRODUCTION_STATUS_REPORT.txt
--rw-rw-r--  1 cakidd cakidd      113 Apr 30 14:12  prod.yaml
--rw-rw-r--  1 cakidd cakidd      641 Apr 30 14:12  pronoun_fixer.py
--rw-rw-r--  1 cakidd cakidd     1218 Apr 30 14:12  proxy_8060.py
--rw-rw-r--  1 cakidd cakidd      401 Nov 18 18:45  psychological_rag_domain_9941.log
--rw-r--r--  1 cakidd cakidd     7004 Apr 16 20:18  psychological_rag_domain_psychological_rag_domain.py
--rw-rw-r--  1 cakidd cakidd     7004 Apr 30 14:12  psychological_rag_domain.py
--rw-rw-r--  1 cakidd cakidd     9636 Apr 30 14:12  psychology_integration_adapter.py
--rw-rw-r--  1 cakidd cakidd     2890 Apr 30 14:12  psychology_loop_closer.py
--rw-rw-r--  1 cakidd cakidd      858 Nov 16 16:09  psychology_services.log
--rw-rw-r--  1 cakidd cakidd     2402 Apr 30 14:12  public_form_simplified.py
-drwxr-xr-x  2 root   root       4096 Apr 29 22:57  __pycache__
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  python
--rw-rw-r--  1 cakidd cakidd     5279 Apr 30 14:12  python_commands.txt
--rw-rw-r--  1 cakidd cakidd     9378 Apr 30 14:12  python_ports.txt
--rw-rw-r--  1 cakidd cakidd      849 Apr 30 14:12  qualia_adapter.py
--rw-rw-r--  1 cakidd cakidd     1452 Nov 18 11:20  qualia_email_registration_orchestrator_69dgm_9615.log
--rw-rw-r--  1 cakidd cakidd    11823 Apr 30 14:12  qualia_email_registration_orchestrator_69dgm.py
--rw-rw-r--  1 cakidd cakidd      127 Nov 16 16:09  qualia_engine.log
--rw-rw-r--  1 cakidd cakidd     1068 Nov 18 11:20  qualia_unified_orchestrator_69dgm_9653.log
--rw-rw-r--  1 cakidd cakidd      277 Nov 18 18:45  qualia_unified_orchestrator_69dgm_ACTIVE_9527.log
--rw-rw-r--  1 cakidd cakidd     2747 Dec  2 01:29  qualia_unified_orchestrator_69dgm_ACTIVE.log
--rw-rw-r--  1 cakidd cakidd     4367 Apr 30 14:12  qualia_unified_orchestrator_69dgm_ACTIVE.py
--rw-rw-r--  1 cakidd cakidd     5575 Apr 30 14:12  qualia_unified_orchestrator_69dgm.py
-lrwxrwxrwx  1 cakidd cakidd       36 Apr 30 14:12  qualiaunifiedorchestrator69dgm.py -> qualia_unified_orchestrator_69dgm.py
--rw-rw-r--  1 cakidd cakidd     1560 Nov 18 11:20  qualia_unified_write_orchestrator_69dgm_9921.log
--rw-rw-r--  1 cakidd cakidd     8884 Apr 30 14:12  qualia_unified_write_orchestrator_69dgm.py
--rw-rw-r--  1 cakidd cakidd      351 Apr 30 14:12  quantum_dashboard.py
--rw-rw-r--  1 cakidd cakidd     3419 Apr 30 14:12  quantum_insight_llm.py
--rw-rw-r--  1 cakidd cakidd      341 Dec  1 20:58  quantum_state_engine_7360.log
--rw-rw-r--  1 cakidd cakidd     4482 Apr 30 14:12  quantum_state_engine.py
--rw-rw-r--  1 cakidd cakidd     3084 Apr 30 14:12  query_benefits_system.py
--rwxrwxr-x  1 cakidd cakidd     5078 Apr 30 14:12  query_enhancer.js
--rw-rw-r--  1 cakidd cakidd     2849 Apr 30 14:12  query_imm_and_programs.py
--rw-rw-r--  1 cakidd cakidd     4940 Apr 16 20:18  quick_optimizations.py
--rwxrwxr-x  1 cakidd cakidd     2898 Apr 30 14:12  quick_tone_test.sh
-drwxrwxr-x  3 cakidd cakidd     4096 Apr 30 14:12  rag
--rw-rw-r--  1 cakidd cakidd     4521 Nov 17 00:18  rag_5001_active.log
--rw-rw-r--  1 cakidd cakidd      358 Nov 17 00:16  rag_5001_final.log
--rw-rw-r--  1 cakidd cakidd      208 Nov 17 00:13  rag_5001_fixed.log
--rw-rw-r--  1 cakidd cakidd     6699 Nov 17 00:41  rag_5001_httpclient.log
--rw-rw-r--  1 cakidd cakidd      212 Nov 17 00:11  rag_5001_restart.log
--rw-rw-r--  1 cakidd cakidd     4566 Nov 18 11:20  rag_5100_ensemble_9488.log
--rw-rw-r--  1 cakidd cakidd     4422 Nov 18 11:20  rag_5100_ensemble_fast_9530.log
--rw-rw-r--  1 cakidd cakidd     3164 Apr 30 14:12  rag_5100_ensemble_fast.py
--rw-rw-r--  1 cakidd cakidd     3093 Apr 30 14:12  rag_5100_ensemble_fast.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      923 Apr 30 14:12  rag_5100_ensemble.py
--rw-rw-r--  1 cakidd cakidd      277 Nov 18 18:45  rag_5100_final_9592.log
--rw-rw-r--  1 cakidd cakidd     1112 Apr 30 14:12  rag_5100_final.py
--rw-rw-r--  1 cakidd cakidd     1042 Apr 30 14:12  rag_5100_final.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      859 Nov 17 01:14  rag_5100_live.log
--rw-rw-r--  1 cakidd cakidd     2632 Apr 30 14:12  rag_client.py
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:40  rag_command_module_4011.log
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:20  rag_command_module_9476.log
--rw-rw-r--  1 cakidd cakidd     1283 Apr 30 14:12  rag_command_module.py
--rw-rw-r--  1 cakidd cakidd     1199 Apr 30 14:12  rag_command_module.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd    37473 Dec  2 01:00  rag_direct_debug_8199.log
--rw-rw-r--  1 cakidd cakidd      315 Dec  1 20:40  rag_direct_debug.log
--rw-rw-r--  1 cakidd cakidd     3865 Apr 30 14:12  rag_direct_debug.py
--rw-rw-r--  1 cakidd cakidd      338 Nov 17 01:04  rag_dynamic.log
--rw-rw-r--  1 cakidd cakidd     1271 Nov 17 01:55  rag_ensemble_300s.log
--rw-rw-r--  1 cakidd cakidd      764 Nov 17 01:34  rag_ensemble_fast.log
--rw-rw-r--  1 cakidd cakidd      382 Nov 17 01:29  rag_ensemble_live.log
--rw-rw-r--  1 cakidd cakidd     3177 Apr 30 14:12  rag_evidence_aggregator.py
--rw-rw-r--  1 cakidd cakidd     6699 Nov 17 00:41  rag_final.log
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:20  rag_first_workflow_9869.log
--rw-rw-r--  1 cakidd cakidd     2069 Apr 30 14:12  rag_first_workflow.py
--rw-rw-r--  1 cakidd cakidd     3734 Apr 30 14:12  rag_general.py
--rw-rw-r--  1 cakidd cakidd      850 Apr 30 14:12  rag_geospatial_context.py
--rw-rw-r--  1 cakidd cakidd     7146 Apr 30 14:12  rag_geospatial.py
--rw-rw-r--  1 cakidd cakidd     3463 Apr 30 14:12  rag_grounded_v2.py
--rw-rw-r--  1 cakidd cakidd      848 Apr 30 14:12  rag_heartbeat_monitor.py
--rw-rw-r--  1 cakidd cakidd     6698 Nov 17 00:38  rag_httpclient.log
--rw-rw-r--  1 cakidd cakidd      393 Apr 30 14:12  rag_local_resources.py
--rw-rw-r--  1 cakidd cakidd      338 Nov 17 00:56  rag_mandatory.log
--rw-rw-r--  1 cakidd cakidd     6140 Nov 17 00:44  rag_port5001.log
--rw-rw-r--  1 cakidd cakidd    12411 Apr 30 14:12  rag_query_router.py
--rw-rw-r--  1 cakidd cakidd     5799 Nov 17 08:43  rag_restart.log
--rw-rw-r--  1 cakidd cakidd    21329 Nov 27 17:01  rag_server_8003.log
--rw-rw-r--  1 cakidd cakidd     2962 Nov 27 17:01  rag_server_9005.log
--rw-rw-r--  1 cakidd cakidd     3574 Dec  8 01:49  rag_server.current.log
--rw-rw-r--  1 cakidd cakidd     2710 Nov 27 17:01  rag_server.log
--rw-rw-r--  1 cakidd cakidd     2592 Nov 27 17:01  rag_server_main_9555.log
--rw-rw-r--  1 cakidd cakidd    19517 Apr 30 14:12  rag_server_main.py
--rw-rw-r--  1 cakidd cakidd    11890 Apr 30 14:12  rag_server_main.py.norag.20260119-091256
--rw-rw-r--  1 cakidd cakidd    11890 Apr 30 14:12  rag_server_main.py.RAG_WORKING_20260116
--rw-rw-r--  1 cakidd cakidd    11935 Apr 30 14:12  rag_server_main.py.stub.20260119-091532
--rw-rw-r--  1 cakidd cakidd   302949 Dec 11 07:40  rag_server_min.current.log
--rw-rw-r--  1 cakidd cakidd     6146 Apr 30 14:12  rag_server_min.py
--rw-rw-r--  1 cakidd cakidd      313 Nov 18 11:20  rag_server.psychology_patched_9448.log
--rw-rw-r--  1 cakidd cakidd    18036 Apr 30 14:12  rag_server.py
--rw-rw-r--  1 cakidd cakidd     2673 Nov 27 17:01  rag_server_restored.log
--rw-rw-r--  1 cakidd cakidd     4413 Nov 18 11:40  rag_simple_4011.log
--rw-rw-r--  1 cakidd cakidd     4413 Nov 18 11:20  rag_simple_9831.log
--rw-rw-r--  1 cakidd cakidd      338 Nov 17 00:54  rag_simple_live.log
--rw-rw-r--  1 cakidd cakidd      338 Nov 17 00:52  rag_simple.log
--rw-rw-r--  1 cakidd cakidd     1575 Apr 30 14:12  rag_simple.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      850 Apr 30 14:12  rag_temporal_heartbeat.py
--rw-rw-r--  1 cakidd cakidd     7298 Apr 30 14:12  rag_temporal.py
--rw-rw-r--  1 cakidd cakidd      345 Nov 18 11:21  rag_to_gis_sync_9633.log
--rw-rw-r--  1 cakidd cakidd     2804 Apr 30 14:12  rag_to_gis_sync.py
--rw-rw-r--  1 cakidd cakidd     1467 Apr 30 14:12  rag_topic_router.py
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:21  rag_workflow_9845.log
--rw-rw-r--  1 cakidd cakidd     2840 Apr 30 14:12  rag_workflow.py
--rwxrwxr-x  1 cakidd cakidd      775 Apr 30 14:12  read_architecture_docs.sh
--rwxrwxr-x  1 cakidd cakidd     1749 Apr 30 14:12  read_dgm_architecture.sh
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  real_services_clean.txt
--rw-rw-r--  1 cakidd cakidd     3721 Apr 30 14:12  real_services_detected.txt
--rw-rw-r--  1 cakidd cakidd      607 Apr 30 14:12  real_services_final.txt
--rw-rw-r--  1 cakidd cakidd     3410 Apr 30 14:12  real_services_prod.txt
--rw-rw-r--  1 cakidd cakidd       90 Apr 30 14:12  real_services.txt
--rw-rw-r--  1 cakidd cakidd     3369 Apr 30 14:12  rebuild_query_service.py
--rw-rw-r--  1 cakidd cakidd     2936 Apr 30 14:12  rechunk_oversized.py
--rw-rw-r--  1 cakidd cakidd     1745 Apr 30 14:12  recover_160_queries.py
--rw-rw-r--  1 cakidd cakidd      530 Nov 16 16:09  recover_chromadb_FIXED.log
--rw-rw-r--  1 cakidd cakidd     2106 Apr 30 14:12  recover_chromadb_FIXED.py
--rw-rw-r--  1 cakidd cakidd     1931 Apr 30 14:12  recover_chromadb_to_gisgeodb.py
--rw-rw-r--  1 cakidd cakidd      337 Nov 10 11:38  redirect_4015.log
--rw-rw-r--  1 cakidd cakidd     1597 Apr 30 14:12  redirect_4015_to_4020.py
--rw-rw-r--  1 cakidd cakidd       57 Apr 30 14:12  _redirects
--rw-rw-r--  1 cakidd cakidd    23676 Apr 30 14:12  REFERENCE_windows_swarm.py
--rw-rw-r--  1 cakidd cakidd     1124 Apr 30 14:12  register_agents_from_csv.py
--rwxrwxr-x  1 cakidd cakidd      668 Apr 30 14:12  register_agents_from_csv.sh
--rw-rw-r--  1 cakidd cakidd      738 Apr 30 14:12  register_agents_from_csv_strict.py
--rwxrwxr-x  1 cakidd cakidd     2693 Apr 30 14:12  register_all_services.sh
--rw-rw-r--  1 cakidd cakidd     1303 Apr 30 14:12  register_hilbert_services.py
--rw-rw-r--  1 cakidd cakidd     1230 Apr 30 14:12  register_hilbert_services.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd      336 Apr 30 14:12  register_services.py
--rw-rw-r--  1 cakidd cakidd     1485 Apr 30 14:12  register_to_hilbert_chromadb.py
--rw-rw-r--  1 cakidd cakidd    23707 Apr 30 14:12  registration_biometric_production_final.py
--rw-rw-r--  1 cakidd cakidd     5313 Apr 30 14:12  registration_facebook_form.html
--rw-rw-r--  1 cakidd cakidd    11728 Apr 30 14:12  registration_pipeline.py
--rw-rw-r--  1 cakidd cakidd    10803 Apr 30 14:12  registration_service_clean.py
--rw-rw-r--  1 cakidd cakidd    13642 Apr 30 14:12  registration_service_clean.py.broken
--rw-rw-r--  1 cakidd cakidd     5789 Apr 30 14:12  registration_service.py
--rw-rw-r--  1 cakidd cakidd     3760 Apr 30 14:12  reload_all_knowledge.py
--rw-rw-r--  1 cakidd cakidd    18323 Apr 30 14:12  remaining_services.txt
--rw-rw-r--  1 cakidd cakidd      767 Apr 30 14:12  remove_duplicate_inits.py
--rwxrwxr-x  1 cakidd cakidd     5056 Apr 30 14:12  REMOVE_MODEL_REFERENCES.sh
--rw-rw-r--  1 cakidd cakidd      896 Apr 30 14:12  replace_dolphin_phi.py
--rw-rw-r--  1 cakidd cakidd       98 Apr 30 14:12  requirements.constitutional_guardian.txt
--rw-rw-r--  1 cakidd cakidd     6341 Apr 30 14:12  requirements-freeze.txt
--rw-rw-r--  1 cakidd cakidd       54 Apr 30 14:12  requirements-ingest.txt
--rw-rw-r--  1 cakidd cakidd       13 Apr 21 09:58  requirements-judge.txt
--rw-rw-r--  1 cakidd cakidd    16242 Apr 30 14:12  requirements-list.txt
--rw-rw-r--  1 cakidd cakidd       22 Apr 30 14:12  requirements-rag.txt
--rw-rw-r--  1 cakidd cakidd       22 Apr 30 14:12  requirements_semaphore.txt
--rw-rw-r--  1 cakidd cakidd       57 Apr 30 14:12  requirements_temporal.txt
--rw-rw-r--  1 cakidd cakidd       16 Apr 30 14:12  requirements_toroidal.txt
--rw-rw-r--  1 cakidd cakidd      174 Apr 30 14:12  requirements.txt
--rwxrwxr-x  1 cakidd cakidd     2949 Apr 30 14:12  REROUTE_SERVICES.sh
--rw-rw-r--  1 cakidd cakidd     1631 Apr 30 14:12  response_filter.py
--rw-rw-r--  1 cakidd cakidd      329 Apr 30 14:12  response.json
--rw-rw-r--  1 cakidd cakidd     1273 Apr 30 14:12  response_sanitizer.py
--rwxrwxr-x  1 cakidd cakidd     2156 Apr 30 14:12  restart_all_services.sh
--rwxrwxr-x  1 cakidd cakidd      669 Apr 30 14:12  restart_and_verify_8008.sh
--rwxrwxr-x  1 cakidd cakidd     6337 Apr 30 14:12  restart_ms_jarvis_services.sh
--rw-rw-r--  1 cakidd cakidd      462 Apr 30 14:12  RESTART_PLAN.md
--rw-rw-r--  1 cakidd cakidd   173771 Apr 30 14:12  rest_endpoints.txt
--rw-rw-r--  1 cakidd cakidd     4603 Apr 30 14:12  RESTORATION_CERTIFICATE_CORRECTED.txt
--rw-rw-r--  1 cakidd cakidd     3790 Apr 30 14:12  RESTORATION_CERTIFICATE.txt
--rwxrwxr-x  1 cakidd cakidd     1962 Apr 30 14:12  RESTORE_ALL_INTEGRATIONS.sh
--rw-rw-r--  1 cakidd cakidd 16106495 Apr 30 14:12  restored_documents.json
--rwxrwxr-x  1 cakidd cakidd     6410 Apr 30 14:12  RESTORE_NATURAL_PERSONALITY.sh
--rw-rw-r--  1 cakidd cakidd     1902 Apr 30 14:12  restore_pia_wiring.py
--rw-rw-r--  1 cakidd cakidd     5721 Apr 30 14:12  resume_ingest_gbim_to_chroma.py
--rw-rw-r--  1 cakidd cakidd     2660 Apr 30 14:12  resume_sync_wvgistc_buildings.py
--rw-rw-r--  1 cakidd cakidd     7942 Apr 30 14:12  retrieval_router.py
--rw-rw-r--  1 cakidd cakidd      848 Apr 30 14:12  retrieval_spiritual.py
--rw-rw-r--  1 cakidd cakidd    21934 Apr 30 14:12  roche_llm.py
--rw-rw-r--  1 cakidd cakidd      557 Apr 30 14:12  roche_llm.stub.py
--rwxrwxr-x  1 cakidd cakidd     3095 Apr 30 14:12  rotate_judge_keys.sh
--rw-rw-r--  1 cakidd cakidd    48704 Apr 30 14:12  route_declarations_clean.txt
--rw-rw-r--  1 cakidd cakidd   171835 Apr 30 14:12  route_declarations_raw.txt
-drwxrwxr-x  3 cakidd cakidd     4096 Apr 30 14:12  routes
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  rpm-list.txt
--rwxrwxr-x  1 cakidd cakidd     8457 Apr 30 14:12  run_agi_test_suite.sh
--rw-rw-r--  1 cakidd cakidd      253 Apr 30 14:12  run_autonomous_learner_once.py
--rw-rw-r--  1 cakidd cakidd      535 Apr 30 14:12  run_gateway_with_guards.py
--rw-rw-r--  1 cakidd cakidd     4364 Apr 30 14:12  running_python_services.txt
--rw-rw-r--  1 cakidd cakidd     8808 Nov 16 16:09  running_services.log
--rw-rw-r--  1 cakidd cakidd    52475 Apr 30 14:12  s
--rw-rw-r--  1 cakidd cakidd     4609 Apr 30 14:12  safe_ingest_gbim_to_chroma.py
--rw-rw-r--  1 cakidd cakidd     2694 Apr 30 14:12  SAFE_INTEGRATION_PLAN.md
--rw-rw-r--  1 cakidd cakidd     2463 Apr 30 14:12  safe_integration.py
--rw-rw-r--  1 cakidd cakidd     2393 Apr 30 14:12  safe_integration.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      800 Apr 30 14:12  sanctuary_construction_monitor_gateway.py
--rwxrwxr-x  1 cakidd cakidd     8994 Apr 30 14:12  sanctuary_construction_monitor.py
--rw-rw-r--  1 cakidd cakidd     3831 Apr 30 14:12  SATURDAY_SUMMARY.md
--rw-rw-r--  1 cakidd cakidd     3513 Apr 30 14:12  SCHEDULER_REFERENCE.md
--rw-rw-r--  1 cakidd cakidd     1038 Apr 30 14:12  schema_aware_topic_planner.py
--rw-rw-r--  1 cakidd cakidd     1585 Apr 30 14:12  schema_registry.py
--rw-rw-r--  1 cakidd cakidd      169 Nov 24 09:56  SCRIPT_NAME.log
--rwxrwxr-x  1 cakidd cakidd     2686 Apr 30 14:12  search_different_perspective.sh
--rw-rw-r--  1 cakidd cakidd     1983 Apr 30 14:12  search_metadata.py
--rw-rw-r--  1 cakidd cakidd     1027 Apr 30 14:12  search_metadata.py:
--rwxrwxr-x  1 cakidd cakidd     1411 Apr 30 14:12  search_wsl_backup.sh
--rw-rw-r--  1 cakidd cakidd    13875 Mar 30 18:46  seed_local_resources.sql
--rw-rw-r--  1 cakidd cakidd     4805 Apr 30 14:12  seed_spatial_identity.py
--rwxrwxr-x  1 cakidd cakidd     1025 Apr 30 14:12  serve_full_brain.sh
--rw-rw-r--  1 cakidd cakidd     3224 Apr 30 14:12  server.js
--rw-rw-r--  1 cakidd cakidd     6347 Apr 30 14:12  service_api_check.txt
--rw-rw-r--  1 cakidd cakidd      859 Apr 30 14:12  service_api_report.txt
--rwxrwxr-x  1 cakidd cakidd     3547 Apr 30 14:12  service_discovery_glassbox.py
--rw-rw-r--  1 cakidd cakidd      110 Nov 16 16:10  service_discovery.log
--rw-rw-r--  1 cakidd cakidd     9152 Apr 30 14:12  service_discovery.py
--rw-rw-r--  1 cakidd cakidd      857 Apr 30 14:12  service_endpoints.json
--rw-rw-r--  1 cakidd cakidd    12843 Apr 30 14:12  service_http_check.txt
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  service_pid_directory_map.txt
--rwxrwxr-x  1 cakidd cakidd     4068 Apr 30 14:12  service_registry_client.py
-drwxr-xr-x  2 cakidd cakidd     4096 Feb 15 20:52  services
--rw-rw-r--  1 cakidd cakidd     2012 Apr 30 14:12  services_config.yaml
--rw-rw-r--  1 cakidd cakidd    18323 Apr 30 14:12  services_list.txt
--rw-rw-r--  1 cakidd cakidd     1760 Apr 30 14:12  services_manifest_progress.md
--rw-rw-r--  1 cakidd cakidd      547 Apr 30 14:12  services_msjarvisunifiedgatewayv4_3.py
--rw-rw-r--  1 cakidd cakidd      242 Apr 30 14:12  services_safe.py
--rw-rw-r--  1 cakidd cakidd    13067 Apr 30 14:12 'ses related to Ms. Jarvis'
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  session_sidecar
--rw-rw-r--  1 cakidd cakidd     2782 Apr 30 14:12  session_sidecar_client.py
--rw-rw-r--  1 cakidd cakidd     1986 Apr 30 14:12  set_intelligent_accuracy_scores.py
--rwxrwxr-x  1 cakidd cakidd     4295 Apr 30 14:12  SET_MAX_RESPONSE.sh
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  settings_snippet.txt
--rwxrwxr-x  1 cakidd cakidd     5793 Apr 30 14:12  set_ultra_long_timeout.sh
--rwxrwxr-x  1 cakidd cakidd     4093 Apr 30 14:12  setup_frontend.sh
--rwxrwxr-x  1 cakidd cakidd     7518 Apr 30 14:12  setup_holy_spirit_discovery.sh
--rwxrwxr-x  1 cakidd cakidd     8692 Apr 30 14:12  setup_holy_spirit_email_alert_both.sh
--rwxrwxr-x  1 cakidd cakidd     7678 Apr 30 14:12  setup_rag.sh
--rwxrwxr-x  1 cakidd cakidd     1288 Apr 30 14:12  setup_rag_standalone.sh
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  silence_memory_errors
--rw-rw-r--  1 cakidd cakidd     1037 Apr 30 14:12  silence_memory_errors.py
--rw-rw-r--  1 cakidd cakidd     1368 Apr 30 14:12  simple_orchestrator_fix.py
--rw-rw-r--  1 cakidd cakidd     2027 Apr 30 14:12  simple_prompt_fix.py
--rw-rw-r--  1 cakidd cakidd     3028 Apr 30 14:12  smart_auto_store.py
--rw-rw-r--  1 cakidd cakidd    10722 Apr 30 14:12  SPATIOTEMPORAL_CONSCIOUSNESS.md
--rw-rw-r--  1 cakidd cakidd     5055 Nov 10 11:38  SPATIOTEMPORAL.log
--rw-rw-r--  1 cakidd cakidd      150 Nov 18 11:25  spiritual_4009.log
--rw-rw-r--  1 cakidd cakidd    15643 Apr 30 14:12  spiritual_origins.geojson
--rw-rw-r--  1 cakidd cakidd      401 Nov 18 11:40  spiritual_rag_domain_4009.log
--rw-rw-r--  1 cakidd cakidd      401 Nov 18 11:21  spiritual_rag_domain_9439.log
--rw-rw-r--  1 cakidd cakidd     5760 Apr 30 14:12  spiritual_rag_domain.py
--rw-rw-r--  1 cakidd cakidd     5719 Apr 30 14:12  stage2_biometric_backup.py
--rw-rw-r--  1 cakidd cakidd     7151 Apr 30 14:12  stage2_biometric.py
--rwxrwxr-x  1 cakidd cakidd     6002 Apr 30 14:12  stakeholder_health_access_tests.py
--rw-rw-r--  1 cakidd cakidd     5652 Apr 30 14:12  stakeholder_health_access_tests_v2.py
--rwxrwxr-x  1 cakidd cakidd     1476 Apr 30 14:12  START_19LLM_PRODUCTION.sh
--rwxrwxr-x  1 cakidd cakidd      875 Apr 30 14:12  START_20LLM_FINAL.sh
--rwxrwxr-x  1 cakidd cakidd     1203 Apr 30 14:12  start_all_jarvis_services_manual.sh
--rwxrwxr-x  1 cakidd cakidd     1273 Apr 30 14:12  start_all_msjarvis_services.sh
--rwxrwxr-x  1 cakidd cakidd     1546 Apr 30 14:12  start_all_services.sh
--rwxrwxr-x  1 cakidd cakidd     4301 Apr 30 14:12  start_all_services_with_ports.sh
--rwxrwxr-x  1 cakidd cakidd     1740 Apr 30 14:12  START_ALL_SYSTEMS.sh
--rwxrwxr-x  1 cakidd cakidd     3489 Apr 30 14:12  start_and_integrate_web_research.sh
--rwxrwxr-x  1 cakidd cakidd      964 Apr 30 14:12  start_cloudflare_tunnel.sh
--rwxrwxr-x  1 cakidd cakidd      988 Apr 30 14:12  start_command_orchestrator.sh
--rwxrwxr-x  1 cakidd cakidd     2834 Apr 30 14:12  START_COMPLETE_SYSTEM.sh
--rwxrwxr-x  1 cakidd cakidd      418 Apr 30 14:12  START_CONSCIOUS_COLLECTIVE.sh
--rwxrwxr-x  1 cakidd cakidd      646 Apr 30 14:12  start_critical_msjarvis_services.sh
--rwxrwxr-x  1 cakidd cakidd      890 Apr 30 14:12  start_dgm_woah.sh
--rwxrwxr-x  1 cakidd cakidd      182 Apr 30 14:12  start_egeria_voice_service.sh
--rwxrwxr-x  1 cakidd cakidd      242 Apr 30 14:12  start_email_service_with_env.sh
--rw-rw-r--  1 cakidd cakidd      831 Apr 30 14:12  start_facebook_4021.py
--rw-rw-r--  1 cakidd cakidd    10420 Apr 30 14:12  start_gateway_with_guards.py
--rw-rw-r--  1 cakidd cakidd      541 Apr 30 14:12  start_gateway_with_guards.py.BACKUP
--rw-rw-r--  1 cakidd cakidd    10350 Apr 30 14:12  start_gateway_with_guards.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd      155 Apr 30 14:12  start_hilbert_8235.sh
--rwxrwxr-x  1 cakidd cakidd     3055 Apr 30 14:12  start_mountainshares_deployment.sh
--rwxrwxr-x  1 cakidd cakidd     4263 Apr 30 14:12  start_msjarvis_complete.sh
--rwxrwxr-x  1 cakidd cakidd      978 Apr 30 14:12  START_MS_JARVIS_PRODUCTION.sh
--rwxrwxr-x  1 cakidd cakidd     1100 Apr 30 14:12  start_msjarvis_services_fixed.sh
--rwxrwxr-x  1 cakidd cakidd     1781 Apr 30 14:12  start_services_simple.sh
--rwxrwxr-x  1 cakidd cakidd      221 Apr 30 14:12  start_swap_manager.sh
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 14:12  static
--rwxrwxr-x  1 cakidd cakidd      511 Apr 30 14:12  stop_all_services.sh
--rwxrwxr-x  1 cakidd cakidd      369 Apr 30 14:12  STOP_ALL_SYSTEMS.sh
--rw-rw-r--  1 cakidd cakidd      144 Apr 30 14:12  store_test.json
--rw-rw-r--  1 cakidd cakidd      780 Apr 30 14:12  stripe-config.js
--rw-rw-r--  1 cakidd cakidd     1624 Apr 30 14:12  substack_rss_reader.py
--rw-rw-r--  1 cakidd cakidd     2605 Nov 16 16:10  SUCCESS.log
--rw-rw-r--  1 cakidd cakidd      832 Apr 30 14:12  summarize_docs.py
--rw-rw-r--  1 cakidd cakidd     3086 Apr 30 14:12  swagger_chat_integration.py
--rw-rw-r--  1 cakidd cakidd      331 Apr 30 14:12  swagger-config.json
--rw-rw-r--  1 cakidd cakidd     2061 Apr 30 14:12  SWAGGER_ENDPOINTS.md
--rw-rw-r--  1 cakidd cakidd      336 Nov 16 16:09  swagger_gateway_FIXED.log
--rw-rw-r--  1 cakidd cakidd     1309 Apr 30 14:12  swagger_gateway_FIXED.py
--rw-rw-r--  1 cakidd cakidd     1237 Apr 30 14:12  swagger_gateway_FIXED.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     2936 Apr 30 14:12  swagger_gateway.py.PORT8000_BACKUP
--rw-rw-r--  1 cakidd cakidd     2936 Apr 30 14:12  swagger_gateway.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      881 Apr 30 14:12  swarm_intelligence_main.py
--rw-rw-r--  1 cakidd cakidd   130713 Dec  2 03:03  swarm_watchdog.log
--rw-rw-r--  1 cakidd cakidd      481 Apr 30 14:12  swarm_watchdog.py
--rwxrwxr-x  1 cakidd cakidd     6704 Apr 30 14:12  SWITCH_TO_22LLM_DEFAULT.sh
--rwxrwxr-x  1 cakidd cakidd      282 Apr 30 14:12  switch_to_22llm.sh
--rw-rw-r--  1 cakidd cakidd     1096 Apr 30 14:12  switch_to_small_models.py
--rw-rw-r--  1 cakidd cakidd     8775 Nov 16 16:09  SYSTEM_AUDIT_20251009_233918.txt
--rw-rw-r--  1 cakidd cakidd     7260 Apr 30 14:12  SYSTEM_AUDIT_ANALYSIS.md
--rw-rw-r--  1 cakidd cakidd     8005 Apr 30 14:12  system_dashboard.py
--rw-rw-r--  1 cakidd cakidd     7931 Apr 30 14:12  system_dashboard.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd     3837 Apr 30 14:12  SYSTEM_STATUS_FINAL.md
--rw-rw-r--  1 cakidd cakidd      960 Apr 30 14:12  tag_quantum_gbim.py
--rwxrwxr-x  1 cakidd cakidd     2851 Apr 30 14:12  talk_safely_FIXED.sh
--rwxrwxr-x  1 cakidd cakidd     2932 Apr 30 14:12  talk_safely.sh
--rwxrwxr-x  1 cakidd cakidd      481 Apr 30 14:12  talk.sh
--rw-rw-r--  1 cakidd cakidd       22 Nov 18 11:21  talk_to_jarvis_9216.log
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  talk_to_jarvis.py
--rwxrwxr-x  1 cakidd cakidd      736 Apr 30 14:12  talk_with_save.sh
--rw-rw-r--  1 cakidd cakidd      547 Apr 30 14:12  temporal_consciousness.py
--rw-rw-r--  1 cakidd cakidd      719 Nov 16 16:10  temporal.log
--rwxrwxr-x  1 cakidd cakidd     5082 Apr 30 14:12  test_agi_capabilities.sh
--rwxrwxr-x  1 cakidd cakidd     5129 Apr 30 14:12  test_agi_full_responses.sh
--rwxrwxr-x  1 cakidd cakidd     2706 Apr 30 14:12  test_all_32_services.sh
--rwxrwxr-x  1 cakidd cakidd      653 Apr 30 14:12  test_all_models_fixed.sh
--rwxrwxr-x  1 cakidd cakidd      583 Apr 30 14:12  test_all_models.sh
--rwxrwxr-x  1 cakidd cakidd      417 Apr 30 14:12  test_authentic_voice.sh
--rwxrwxr-x  1 cakidd cakidd     5262 Apr 30 14:12  TEST_CRITICAL_FIXES.sh
--rwxrwxr-x  1 cakidd cakidd      627 Apr 30 14:12  test_email_after_consent.sh
--rw-rw-r--  1 cakidd cakidd     1214 Nov 18 11:21  test_fifth_dgm_integration_9342.log
--rwxrwxr-x  1 cakidd cakidd     2093 Apr 30 14:12  test_final_config.sh
--rwxrwxr-x  1 cakidd cakidd     2288 Apr 30 14:12  test_final_stable.sh
--rw-rw-r--  1 cakidd cakidd     4593 Apr 30 14:12  test_full_brain_integration.py.pre_dynamic_discovery
--rwxrwxr-x  1 cakidd cakidd     1375 Apr 30 14:12  TEST_IMPROVED_RESPONSE.sh
--rw-rw-r--  1 cakidd cakidd     3505 Nov 10 11:38  test_location.log
--rw-rw-r--  1 cakidd cakidd      136 Apr 30 14:12  test.py
--rw-rw-r--  1 cakidd cakidd      254 Nov 18 11:21  test_rag_9790.log
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 16 20:18  tests
--rwxrwxr-x  1 cakidd cakidd     1735 Apr 30 14:12  TEST_WITH_CLEANUP.sh
--rw-rw-r--  1 cakidd cakidd        0 Apr 30 14:12  TODAYS_COMPLETE_ACHIEVEMENT.md
--rw-rw-r--  1 cakidd cakidd     2184 Apr 30 14:12  TODAYS_PROGRESS.md
--rw-rw-r--  1 cakidd cakidd     7503 Apr 30 14:12  token_service.py
-drwxrwxr-x  2 cakidd cakidd     4096 Apr 30 13:31  tools
--rw-rw-r--  1 cakidd cakidd     1376 Apr 16 20:18  topic_entanglement.py
--rw-rw-r--  1 cakidd cakidd     3714 Apr 30 14:12  toroidal_service.py
--rw-rw-r--  1 cakidd cakidd      483 Apr 30 14:12  trigger_entangled_assets.py
--rw-rw-r--  1 cakidd cakidd     5292 Apr 30 14:12  TRUE_BRAIN_ARCHITECTURE.md
--rw-rw-r--  1 cakidd cakidd    16526 Apr 30 14:12  truly_unpaired_services.txt
--rw-rw-r--  1 cakidd cakidd     7635 Apr 30 14:12  truth_filter_bbb_verification.py
--rw-rw-r--  1 cakidd cakidd     5645 Nov 10 11:38  truth_filter.log
--rw-rw-r--  1 cakidd cakidd     1821 Apr 30 14:12  truth_filter_service.py
--rw-rw-r--  1 cakidd cakidd      200 Nov 16 16:09  ucg_production.log
--rw-rw-r--  1 cakidd cakidd    79759 Apr 30 14:12 'udo ss -tulpn | grep -Ei '\''msjarvis|uvicorn|docker-proxy'\'' '
--rw-rw-r--  1 cakidd cakidd     3512 Apr 30 14:12  uei_service.py
--rw-rw-r--  1 cakidd cakidd    17185 Dec 13 18:14  ultimate8050.log
--rw-r-----  1 cakidd cakidd    32434 Dec 13 08:52  ultimate_8051.current.log
--rw-rw-r--  1 cakidd cakidd    36346 Dec 13 14:28  ultimate8051.current.log
--rw-rw-r--  1 cakidd cakidd      906 Dec  8 14:52  ultimate_8055.current.log
--rwxrwxr-x  1 cakidd cakidd    11288 Apr 30 14:12  ultimate_audit_with_scheduler.sh
--rw-rw-r--  1 cakidd cakidd    19046 Apr 30 14:12  ultimate_chat_current.txt
--rw-rw-r--  1 cakidd cakidd     3954 Dec  8 13:35  ultimate.current.log
--rwxrwxr-x  1 cakidd cakidd    12793 Apr 30 14:12  ultimate_msjarvis_audit.sh
--rw-rw-r--  1 cakidd cakidd     7980 Nov 10 11:38  ULTIMATE_PORT_AUDIT_20251010_094847.txt
--rw-rw-r--  1 cakidd cakidd     5793 Apr 30 14:12  ULTIMATE_SESSION_SUMMARY.md
--rw-rw-r--  1 cakidd cakidd    19555 Apr 30 14:12  ultimate_web_orchestrator.py
--rwxrwxr-x  1 cakidd cakidd     3637 Apr 30 14:12  ultra_deep_dgm_search.sh
--rw-rw-r--  1 cakidd cakidd      200 Nov 10 11:38  unifiedconsciousnessgatewayPRODUCTION.log
--rw-rw-r--  1 cakidd cakidd     2831 Apr 30 14:12  unified_consciousness_gateway_PRODUCTION.py
--rw-rw-r--  1 cakidd cakidd     3091 Apr 30 14:12  unifiedconsciousnessgatewayPRODUCTION.py
--rw-rw-r--  1 cakidd cakidd     2761 Apr 30 14:12  unified_consciousness_gateway_PRODUCTION.py.pre_dynamic_discovery
--rw-rw-r--  1 cakidd cakidd      154 Nov 16 16:09  unifiedgateway.log
--rw-rw-r--  1 cakidd cakidd      599 Apr 30 14:12  unified_orchestrator.py
--rw-rw-r--  1 cakidd cakidd      156 Nov 16 16:09  unifiedragbridge.log
--rwxrwxr-x  1 cakidd cakidd      607 Apr 30 14:12  update_chat_endpoint.sh
--rwxrwxr-x  1 cakidd cakidd    10443 Apr 30 14:12  UPDATE_COORDINATOR_FOR_DEEP_MODE.sh
--rwxrwxr-x  1 cakidd cakidd     1308 Apr 30 14:12  UPDATE_JARVIS_PERSONA.sh
--rwxrwxr-x  1 cakidd cakidd     1624 Apr 30 14:12  UPDATE_NAME_TO_EGERIA.sh
--rwxrwxr-x  1 cakidd cakidd     4623 Apr 30 14:12  upgrade_node_and_setup.sh
--rw-rw-r--  1 cakidd cakidd      645 Apr 30 14:12  use_existing_models.py
--rw-rw-r--  1 cakidd cakidd     2038 Apr 30 14:12  user_auth_service.py
--rw-rw-r--  1 cakidd cakidd     5532 Apr 30 14:12  user_dashboard.py
--rw-rw-r--  1 cakidd cakidd     1422 Apr 30 14:12  use_reliable_models_only.py
--rw-rw-r--  1 cakidd cakidd     8345 Apr 30 14:12  user_registration_form.html
--rw-rw-r--  1 cakidd cakidd      225 Nov 16 16:09  vatican_scraper.log
--rw-rw-r--  1 cakidd cakidd     8230 Apr 30 14:12  vatican_scraper_service.py
--rw-rw-r--  1 cakidd cakidd     1759 Apr 30 14:12  vectorize_gis_to_chromadb.py
-drwxr-xr-x 48 root   root       4096 Apr 25 18:35  _vendor
-drwxrwxr-x  5 cakidd cakidd     4096 Feb 15 17:45  .venv
--rwxrwxr-x  1 cakidd cakidd     1795 Apr 30 14:12  verify_facebook_deployment.sh
--rwxrwxr-x  1 cakidd cakidd      747 Apr 30 14:12  view_docs.sh
--rw-rw-r--  1 cakidd cakidd     6240 Apr 30 14:12  wallet_service.py
--rw-rw-r--  1 cakidd cakidd      155 Nov 10 11:38  watchdog.log
--rwxrwxr-x  1 cakidd cakidd      816 Apr 30 14:12  WATCHDOG.sh
--rwxrwxr-x  1 cakidd cakidd     1370 Apr 30 14:12  watch_startup.sh
--rw-rw-r--  1 cakidd cakidd     3029 Nov 16 16:09  web_chat.log
--rw-rw-r--  1 cakidd cakidd     6315 Apr 30 14:12  web_chat_server.py
--rw-rw-r--  1 cakidd cakidd     7906 Apr 30 14:12  web_connectivity_analyzer.py
--rw-rw-r--  1 cakidd cakidd      272 Apr 30 14:12  web_deployer.env
--rw-rw-r--  1 cakidd cakidd     2487 Apr 30 14:12  webhook_notifications.py
--rw-rw-r--  1 cakidd cakidd     1428 Dec  8 13:18  web_page_ingest.current.log
--rw-rw-r--  1 cakidd cakidd     4112 Apr 30 14:12  web_page_ingest.py
--rw-rw-r--  1 cakidd cakidd      621 Apr 16 20:18  web_research_fail_tracker.py
--rw-rw-r--  1 cakidd cakidd        0 Dec  1 19:51  web_research.log
--rw-rw-r--  1 cakidd cakidd      151 Nov 10 11:38  webresearch.log
--rw-rw-r--  1 cakidd cakidd   403048 Dec 10 10:29  web_research_main.current.log
--rw-rw-r--  1 cakidd cakidd      315 Apr 30 14:12  web_research_main.py
--rw-rw-r--  1 cakidd cakidd     3483 Dec  2 03:23  web_research_proxy_8007.log
--rw-rw-r--  1 cakidd cakidd      669 Apr 30 14:12  web_research_proxy_8007.py
--rw-rw-r--  1 cakidd cakidd      699 Apr 30 14:12  web_research.py
--rw-rw-r--  1 cakidd cakidd      104 Apr 30 14:12  web_research_requirements.txt
--rwxrwxr-x  1 cakidd cakidd     6238 Apr 30 14:12  website_deployment_manager.py
--rw-rw-r--  1 cakidd cakidd      322 Nov 18 10:28  web_ui_8051.log
--rw-rw-r--  1 cakidd cakidd      255 Nov 18 10:05  web_ui_final_8051.log
--rw-rw-r--  1 cakidd cakidd     1428 Apr 30 14:12  wire_layers_into_chat.py
--rw-rw-r--  1 cakidd cakidd     1636 Apr 30 14:12  wire_learner_to_gisgeodb.py
--rw-rw-r--  1 cakidd cakidd     1728 Apr 30 14:12  wire_qualia_to_port8001.py
--rw-rw-r--  1 cakidd cakidd     4368 Nov 17 00:41  woah_5003_active.log
--rw-rw-r--  1 cakidd cakidd      219 Nov 17 00:15  woah_5003_final.log
--rw-rw-r--  1 cakidd cakidd      781 Apr 30 14:12  woah_command_module.py
--rw-rw-r--  1 cakidd cakidd    11392 Nov 17 01:56  woah_final.log
--rw-rw-r--  1 cakidd cakidd     1562 Nov 17 00:38  woah_fixed.log
--rw-rw-r--  1 cakidd cakidd      436 Apr 30 14:12  woah_metrics_router.py
--rw-rw-r--  1 cakidd cakidd        0 Dec  1 19:48  woah_optimizer.log
--rw-rw-r--  1 cakidd cakidd      589 Apr 30 14:12  woah_optimizer.py
--rw-rw-r--  1 cakidd cakidd     2003 Apr 30 14:12  woah_policy_update.py
--rw-rw-r--  1 cakidd cakidd      452 Apr 30 14:12  woah_population_state.py
--rw-rw-r--  1 cakidd cakidd      860 Apr 30 14:12  woah_qualia_bridge.py
--rw-rw-r--  1 cakidd cakidd      154 Nov 17 01:58  woah_restart.log
--rw-r--r--  1 cakidd cakidd    11439 Apr 16 20:18  woah_service.py
--rw-rw-r--  1 cakidd cakidd      336 Nov 16 16:09  working_full_pipeline_FINAL_CONSCIOUSNESS.log
--rw-rw-r--  1 cakidd cakidd     8027 Apr 30 14:12  working_full_pipeline_FINAL_CONSCIOUSNESS.py
--rw-rw-r--  1 cakidd cakidd     3585 Apr 30 14:12  working_full_pipeline.py
--rw-rw-r--  1 cakidd cakidd     4936 Apr 30 14:12  working_full_pipeline_WITH_SPATIAL_TEMPORAL.py
--rw-rw-r--  1 cakidd cakidd     2605 Nov 10 11:38  WORKING.log
--rw-rw-r--  1 cakidd cakidd      315 Nov 18 10:55  working_pipeline.log
--rwxrwxr-x  1 cakidd cakidd     2478 Apr 30 14:12  WORKING_START.sh
--rw-rw-r--  1 cakidd cakidd     6429 Apr 30 14:12  wv_gis_mass_downloader.py
--rw-rw-r--  1 cakidd cakidd     7644 Apr 30 14:12  WVU_API_DOCUMENTATION.md
--rw-rw-r--  1 cakidd cakidd     2629 Apr 30 14:12  wvu_ldap_auth.py
--rw-rw-r--  1 cakidd cakidd      105 Apr 30 14:12  yarn-packages.txt
-NO /api/ DIRECTORY
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  api,
+  ApiError,
+  session,
+  ApplicationListItem,
+  MeResponse,
+} from "@/lib/api";
+import { portalApi, BalancesResponse, LedgerEntry, LedgerResponse } from "@/lib/portal";
+import { ChatPanel } from "@/components/ChatPanel";
+import { FounderToken } from "@/components/FounderToken";
+import { MsAllisPortrait } from "@/components/MsAllisPortrait";
+import { HeartOrnament } from "@/components/HeartOrnament";
+import { MountainSilhouette } from "@/components/MountainSilhouette";
+
+type State = "checking" | "ready";
+type Tab = "champion" | "admin";
+
+export default function PortalPage() {
+  const router = useRouter();
+  const [state, setState] = useState<State>("checking");
+  const [me, setMe] = useState<MeResponse | null>(null);
+  const [balances, setBalances] = useState<BalancesResponse | null>(null);
+  const [tab, setTab] = useState<Tab>("champion");
+
+  // Admin tab state
+  const [pending, setPending] = useState<ApplicationListItem[]>([]);
+  const [pendingState, setPendingState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [pendingError, setPendingError] = useState("");
+  const [actingOn, setActingOn] = useState<string | null>(null);
+  const [denyingId, setDenyingId] = useState<string | null>(null);
+  const [denyReason, setDenyReason] = useState("");
+
+  useEffect(() => {
+    if (!session.get()) {
+      router.push("/sign-in");
+      return;
+    }
+    api.me()
+      .then((m) => {
+        setMe(m);
+        setState("ready");
+        // Fetch balances in parallel; fail silently
+        portalApi.myBalances()
+          .then((b) => setBalances(b))
+          .catch(() => setBalances(null));
+      })
+      .catch(() => {
+        session.clear();
+        router.push("/sign-in");
+      });
+  }, [router]);
+
+  const isAdmin = me?.roles?.includes("admin") ?? false;
+
+  useEffect(() => {
+    if (tab !== "admin" || !isAdmin || pendingState !== "idle") return;
+    loadPending();
+  }, [tab, isAdmin, pendingState]);
+
+  async function loadPending() {
+    setPendingState("loading");
+    setPendingError("");
+    try {
+      const result = await api.pending();
+      setPending(result.applications || []);
+      setPendingState("ready");
+    } catch (err) {
+      setPendingError(err instanceof ApiError ? err.detail : "Failed to load");
+      setPendingState("error");
+    }
+  }
+
+  async function handleApprove(id: string) {
+    setActingOn(id);
+    setPendingError("");
+    try {
+      await api.approve(id);
+      await loadPending();
+    } catch (err) {
+      setPendingError(err instanceof ApiError ? err.detail : "Approve failed");
+    }
+    setActingOn(null);
+  }
+
+  async function handleDeny(id: string) {
+    if (denyReason.trim().length < 5) {
+      setPendingError("Denial reason must be at least 5 characters.");
+      return;
+    }
+    setActingOn(id);
+    setPendingError("");
+    try {
+      await api.deny(id, denyReason.trim());
+      setDenyingId(null);
+      setDenyReason("");
+      await loadPending();
+    } catch (err) {
+      setPendingError(err instanceof ApiError ? err.detail : "Deny failed");
+    }
+    setActingOn(null);
+  }
+
+  function handleSignOut() {
+    session.clear();
+    router.push("/");
+  }
+
+  if (state === "checking") {
+    return (
+      <main className="min-h-screen bg-cream flex items-center justify-center">
+        <p className="font-display italic text-ink-fade">Checking your session…</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-cream pb-12">
+      <header className="border-b border-cream-deep bg-bone">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <MsAllisPortrait className="w-10 h-10" />
+            <div>
+              <p className="font-display text-base text-teal-deep">Ms. Allis</p>
+              <p className="font-body text-xs text-ink-fade italic">{me?.userid ?? "—"}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="font-body text-sm text-ink-fade hover:text-terracotta transition-colors underline decoration-cream-deep hover:decoration-terracotta underline-offset-4"
+          >
+            Sign out
+          </button>
+        </div>
+      </header>
+
+      {isAdmin && (
+        <div className="border-b border-cream-deep bg-cream">
+          <div className="max-w-6xl mx-auto px-6 flex">
+            <button
+              onClick={() => setTab("champion")}
+              className={`px-6 py-3 font-display text-sm transition-colors ${
+                tab === "champion" ? "text-teal-deep border-b-2 border-terracotta" : "text-ink-fade hover:text-teal-deep"
+              }`}
+            >
+              My Champion
+            </button>
+            <button
+              onClick={() => setTab("admin")}
+              className={`px-6 py-3 font-display text-sm transition-colors ${
+                tab === "admin" ? "text-teal-deep border-b-2 border-terracotta" : "text-ink-fade hover:text-teal-deep"
+              }`}
+            >
+              Admin
+              {pending.length > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center bg-terracotta text-cream-light text-xs px-2 py-0.5 rounded-full">
+                  {pending.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-6xl mx-auto px-6 pt-10">
+        {tab === "champion" && <ChampionDashboard me={me} balances={balances} isAdmin={isAdmin} />}
+
+        {tab === "admin" && isAdmin && (
+          <AdminQueue
+            applications={pending}
+            state={pendingState}
+            error={pendingError}
+            actingOn={actingOn}
+            denyingId={denyingId}
+            denyReason={denyReason}
+            setDenyingId={setDenyingId}
+            setDenyReason={setDenyReason}
+            onApprove={handleApprove}
+            onDeny={handleDeny}
+            onClearError={() => setPendingError("")}
+          />
+        )}
+      </div>
+
+      <div className="mt-16">
+        <MountainSilhouette className="text-forest" />
+      </div>
+    </main>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Champion dashboard — data first, identity collapsed at bottom
+// ────────────────────────────────────────────────────────────────────
+
+function ChampionDashboard({
+  me,
+  balances,
+  isAdmin,
+}: {
+  me: MeResponse | null;
+  balances: BalancesResponse | null;
+  isAdmin: boolean;
+}) {
+  const [showIdentity, setShowIdentity] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [showLedger, setShowLedger] = useState(false);
+  const [ledger, setLedger] = useState<LedgerResponse | null>(null);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+
+  async function loadLedger(offset: number = 0) {
+    setLedgerLoading(true);
+    try {
+      const data = await portalApi.myLedger(50, offset);
+      setLedger(data);
+    } catch {
+      // fail silently — non-critical
+    }
+    setLedgerLoading(false);
+  }
+
+  const ems = balances?.ems_balance ?? 0;
+  const pms = balances?.pms_balance ?? 0;
+
+  return (
+    <>
+      {/* Hero — smaller than before */}
+      <div className="text-center mb-10">
+        <div className="flex justify-center mb-4">
+          <HeartOrnament className="w-6 h-6 text-terracotta" />
+        </div>
+        <h1 className="font-display italic text-3xl md:text-4xl text-teal-deep mb-1">
+          Welcome, {me?.userid ?? ""}
+        </h1>
+        <p className="font-body text-sm text-ink-fade italic">
+          {me?.county ? `${me.county} County` : "—"}
+          {me?.county ? " · " : ""}Community Champion
+        </p>
+      </div>
+
+      {/* Founder Token + Balances row */}
+      <section className="grid md:grid-cols-3 gap-4 mb-6">
+        <div className="surface p-6 flex flex-col items-center justify-center text-center">
+          {balances?.founder_token ? (
+            <>
+              <FounderToken
+                serialNumber={balances.founder_token.serial_number}
+                mintedAt={balances.founder_token.minted_at}
+                cohort={balances.founder_token.cohort}
+                size={112}
+              />
+              <p className="font-display text-base text-teal-deep mt-3">
+                {balances.founder_token.display}
+              </p>
+              <p className="font-body text-xs text-ink-fade italic">Phase 0 token holder</p>
+            </>
+          ) : (
+            <>
+              <div
+                className="rounded-full bg-cream-deep flex items-center justify-center"
+                style={{ width: 112, height: 112 }}
+              >
+                <span className="font-display text-xs text-ink-fade italic">No token yet</span>
+              </div>
+              <p className="font-display text-base text-ink-fade mt-3 italic">Founder Token</p>
+              <p className="font-body text-xs text-ink-fade italic">Coming soon</p>
+            </>
+          )}
+        </div>
+
+        <BalanceCard
+          label="Earned MountainShares"
+          shortLabel="EMS"
+          amount={ems}
+          accent="teal"
+        />
+
+        <BalanceCard
+          label="Purchased MountainShares"
+          shortLabel="PMS"
+          amount={pms}
+          accent="terracotta"
+        />
+      </section>
+
+      {/* Region scaffolding row */}
+      <section className="grid md:grid-cols-3 gap-4 mb-6">
+        <PlaceholderCard
+          title="Local businesses"
+          subtitle={me?.county ? `${me.county} County directory` : "Your county"}
+          note="Coming soon"
+        />
+        <PlaceholderCard
+          title="Weather"
+          subtitle="Real-time conditions"
+          note="Coming soon"
+        />
+        <PlaceholderCard
+          title="County resources"
+          subtitle="Public services & support"
+          note="Coming soon"
+        />
+      </section>
+
+      {/* Action buttons */}
+      <section className="flex flex-col sm:flex-row gap-3 mb-8 justify-center">
+        <button
+          onClick={() => setShowChat((v) => !v)}
+          className="btn-primary"
+        >
+          {showChat ? "Hide Ms. Allis" : "Talk to Ms. Allis →"}
+        </button>
+        <a
+          href="/commons"
+          className="font-display text-sm bg-bone border border-cream-deep text-teal-deep py-3 px-6 hover:bg-cream-deep transition-colors text-center"
+        >
+          Enter The Commons →
+        </a>
+      </section>
+
+      {/* Chat panel — toggles open/closed */}
+      {showChat && (
+        <section className="mb-6">
+          <ChatPanel userId={me?.userid ?? ""} isAdmin={isAdmin} />
+        </section>
+      )}
+
+      {/* Transaction history */}
+      <section className="surface mt-4">
+        <button
+          onClick={() => { setShowLedger(v => !v); if (!showLedger) loadLedger(); }}
+          className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-bone transition-colors"
+        >
+          <span className="font-display text-base text-teal-deep">Transaction history</span>
+          <span className="font-body text-xs text-ink-fade italic">
+            {showLedger ? "▼ Hide" : "▶ Show"}{ledger ? ` · ${ledger.total} entries` : ""}
+          </span>
+        </button>
+        {showLedger && (
+          <div className="px-6 pb-6 border-t border-cream-deep">
+            {ledgerLoading ? (
+              <p className="font-body text-sm text-ink-fade italic mt-4">Loading…</p>
+            ) : ledger && ledger.entries.length > 0 ? (
+<>
+                <div className="mt-4 mb-4 flex flex-wrap items-end gap-3 print:hidden">
+                  <div>
+                    <label className="block font-body text-xs text-ink-fade italic mb-1">From</label>
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="px-2 py-1 bg-bone border border-cream-deep focus:border-teal focus:outline-none font-body text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-body text-xs text-ink-fade italic mb-1">To</label>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="px-2 py-1 bg-bone border border-cream-deep focus:border-teal focus:outline-none font-body text-sm"
+                    />
+                  </div>
+                  {(dateFrom || dateTo) && (
+                    <button
+                      type="button"
+                      onClick={() => { setDateFrom(""); setDateTo(""); }}
+                      className="font-body text-xs text-ink-fade hover:text-terracotta transition-colors underline decoration-cream-deep hover:decoration-terracotta underline-offset-4"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <div className="ml-auto">
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="font-display text-sm bg-teal-deep text-cream-light px-4 py-1.5 hover:bg-teal transition-colors"
+                    >
+                      Print
+                    </button>
+                  </div>
+                </div>
+                {(() => {
+                  const filteredEntries = ledger.entries.filter((e) => {
+                    if (!dateFrom && !dateTo) return true;
+                    const ts = new Date(e.created_at).getTime();
+                    if (dateFrom) {
+                      const fromTs = new Date(dateFrom + "T00:00:00").getTime();
+                      if (ts < fromTs) return false;
+                    }
+                    if (dateTo) {
+                      const toTs = new Date(dateTo + "T23:59:59").getTime();
+                      if (ts > toTs) return false;
+                    }
+                    return true;
+                  });
+                  return filteredEntries.length === 0 ? (
+                    <p className="font-body text-sm text-ink-fade italic">
+                      No transactions in this date range.
+                    </p>
+                  ) : (
+                    <div id="ledger-print-area">
+                      <div className="hidden print:block mb-4">
+                        <h2 className="font-display text-xl text-teal-deep">Transaction history</h2>
+                        <p className="font-body text-xs text-ink-fade italic">
+                          {me?.userid ?? ""} {dateFrom || dateTo ? `· ${dateFrom || "earliest"} to ${dateTo || "latest"}` : ""}
+                        </p>
+                      </div>
+                      <table className="w-full font-body text-sm">
+                        <thead>
+                          <tr className="text-left text-ink-fade text-xs uppercase tracking-wider border-b border-cream-deep">
+                            <th className="pb-2 pr-4">Date</th>
+                            <th className="pb-2 pr-4">Type</th>
+                            <th className="pb-2 pr-4">Token</th>
+                            <th className="pb-2 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredEntries.map((e) => (
+                            <tr key={e.id} className="border-b border-cream-deep/50 hover:bg-bone transition-colors">
+                              <td className="py-2 pr-4 text-ink-fade text-xs">
+                                {new Date(e.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                              </td>
+                              <td className="py-2 pr-4 text-ink italic">{e.transaction_type.replace(/_/g, " ")}</td>
+                              <td className="py-2 pr-4">
+                                <span className={e.token_class === "EMS" ? "text-teal-deep font-display text-xs" : "text-terracotta font-display text-xs"}>
+                                  {e.token_class}
+                                </span>
+                              </td>
+                              <td className="py-2 text-right font-mono text-xs text-ink">
+                                +{parseFloat(e.amount).toLocaleString(undefined, { minimumFractionDigits: 4 })}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {(dateFrom || dateTo) && (
+                        <p className="font-body text-xs text-ink-fade italic mt-3">
+                          Showing {filteredEntries.length} of {ledger.entries.length} transactions in selected range.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </>
+            ) : (
+              <p className="font-body text-sm text-ink-fade italic mt-4">No transactions yet.</p>
+            )}
+            {ledger && ledger.total > ledger.limit && (
+              <div className="flex items-center justify-between mt-4 print:hidden">
+                <p className="font-body text-xs text-ink-fade italic">
+                  Page {Math.floor(ledger.offset / ledger.limit) + 1} of {Math.ceil(ledger.total / ledger.limit)}
+                  {" · "}
+                  showing {ledger.offset + 1}–{Math.min(ledger.offset + ledger.entries.length, ledger.total)} of {ledger.total}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => loadLedger(Math.max(0, ledger.offset - ledger.limit))}
+                    disabled={ledgerLoading || ledger.offset === 0}
+                    className="font-display text-sm bg-bone border border-cream-deep text-teal-deep px-3 py-1 hover:bg-cream-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    « Prev
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => loadLedger(ledger.offset + ledger.limit)}
+                    disabled={ledgerLoading || ledger.offset + ledger.entries.length >= ledger.total}
+                    className="font-display text-sm bg-bone border border-cream-deep text-teal-deep px-3 py-1 hover:bg-cream-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Next »
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Identity — collapsed accordion at bottom */}
+      <section className="surface mt-4">
+        <button
+          onClick={() => setShowIdentity((v) => !v)}
+          className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-bone transition-colors"
+        >
+          <span className="font-display text-base text-teal-deep">Your identity</span>
+          <span className="font-body text-xs text-ink-fade italic">
+            {showIdentity ? "▼ Hide" : "▶ Show"}
+          </span>
+        </button>
+        {showIdentity && (
+          <div className="px-6 pb-6 border-t border-cream-deep">
+            <dl className="grid sm:grid-cols-2 gap-4 mt-4 font-body text-sm">
+              <Field label="Userid" value={me?.userid ?? "—"} mono />
+              <Field label="UEID" value={me?.uei || "—"} mono small />
+              <Field label="County" value={me?.county ?? "—"} />
+              <Field label="Roles" value={me?.roles?.join(", ") || "user"} />
+              {balances?.balance_last_updated && (
+                <Field
+                  label="Balances updated"
+                  value={new Date(balances.balance_last_updated).toLocaleString()}
+                  small
+                />
+              )}
+            </dl>
+            <p className="font-body text-xs text-ink-fade italic mt-4 leading-relaxed">
+              Your data is private. Only you can see this — no other Champion or admin
+              can view your balances, UEID, or wallet. If anything looks wrong, email{" "}
+              <a
+                href="mailto:kiddstechnical@gmail.com"
+                className="text-terracotta hover:text-terracotta-deep underline decoration-terracotta/30 hover:decoration-terracotta underline-offset-4 transition-colors"
+              >
+                kiddstechnical@gmail.com
+              </a>.
+            </p>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
+function BalanceCard({
+  label,
+  shortLabel,
+  amount,
+  accent,
+}: {
+  label: string;
+  shortLabel: string;
+  amount: number;
+  accent: "teal" | "terracotta";
+}) {
+  const color = accent === "teal" ? "text-teal-deep" : "text-terracotta-deep";
+  const formatted = amount.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  });
+  return (
+    <div className="surface p-6 flex flex-col items-center justify-center text-center">
+      <p className="font-body text-xs text-ink-fade italic uppercase tracking-wider">
+        {shortLabel}
+      </p>
+      <p className={`font-display italic text-5xl ${color} my-2`}>{formatted}</p>
+      <p className="font-body text-xs text-ink-fade italic">{label}</p>
+    </div>
+  );
+}
+
+function PlaceholderCard({
+  title,
+  subtitle,
+  note,
+}: {
+  title: string;
+  subtitle: string;
+  note: string;
+}) {
+  return (
+    <div className="surface p-6 flex flex-col items-center justify-center text-center opacity-60">
+      <p className="font-display text-base text-teal-deep">{title}</p>
+      <p className="font-body text-xs text-ink-fade italic mt-1">{subtitle}</p>
+      <p className="font-body text-xs text-terracotta/70 italic mt-3">{note}</p>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  mono = false,
+  small = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  small?: boolean;
+}) {
+  return (
+    <div>
+      <dt className="text-ink-fade italic text-xs uppercase tracking-wider">{label}</dt>
+      <dd className={`text-ink ${mono ? "font-mono" : ""} ${small ? "text-xs break-all" : ""}`}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Admin queue — unchanged from previous version
+// ────────────────────────────────────────────────────────────────────
+
+function AdminQueue({
+  applications,
+  state,
+  error,
+  actingOn,
+  denyingId,
+  denyReason,
+  setDenyingId,
+  setDenyReason,
+  onApprove,
+  onDeny,
+  onClearError,
+}: {
+  applications: ApplicationListItem[];
+  state: "idle" | "loading" | "ready" | "error";
+  error: string;
+  actingOn: string | null;
+  denyingId: string | null;
+  denyReason: string;
+  setDenyingId: (id: string | null) => void;
+  setDenyReason: (r: string) => void;
+  onApprove: (id: string) => void;
+  onDeny: (id: string) => void;
+  onClearError: () => void;
+}) {
+  return (
+    <>
+      <div className="flex justify-center mb-6">
+        <HeartOrnament className="w-7 h-7 text-terracotta" />
+      </div>
+      <h1 className="font-display italic text-display text-teal-deep text-center mb-2">
+        Pending applications
+      </h1>
+      <p className="font-body text-sm text-ink-fade text-center mb-10 italic">
+        {state === "loading"
+          ? "Loading…"
+          : applications.length === 0
+            ? "Nothing waiting right now."
+            : applications.length === 1
+              ? "1 application waiting"
+              : `${applications.length} applications waiting`}
+      </p>
+
+      {error && (
+        <div className="max-w-2xl mx-auto mb-6 font-body text-sm text-terracotta-deep bg-terracotta/10 border border-terracotta/30 p-3 italic flex items-baseline justify-between">
+          <span>{error}</span>
+          <button onClick={onClearError} className="text-xs text-terracotta-deep hover:underline ml-3">
+            dismiss
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-6 max-w-3xl mx-auto">
+        {applications.map((a) => (
+          <div key={a.application_id} className="surface p-6">
+            <div className="flex items-baseline justify-between mb-4">
+              <div>
+                <h2 className="font-display text-xl text-teal-deep">{a.name}</h2>
+                <p className="font-body text-sm text-ink-fade italic">
+                  {a.county} County ·{" "}
+                  {new Date(a.submitted_at).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+              <p className="font-body text-xs text-ink-fade font-mono">
+                {a.application_id.slice(0, 8)}…
+              </p>
+            </div>
+
+            <p className="font-body text-sm text-ink mb-1">{a.email}</p>
+            <p className="font-body text-xs text-ink-fade mb-4 font-mono">
+              proposed_userid: {a.proposed_userid} · {a.agreement_version}
+            </p>
+
+            {a.county_warning && (
+              <div className="bg-terracotta/10 border border-terracotta/30 px-4 py-2 mb-4 font-body text-xs text-terracotta-deep italic">
+                {a.county_warning}
+              </div>
+            )}
+
+            <div className="bg-bone border border-cream-deep p-4 mb-4">
+              <p className="font-display text-sm text-teal-deep mb-1">Why they want to participate</p>
+              <p className="font-body text-sm text-ink leading-relaxed whitespace-pre-wrap">
+                {a.motivation}
+              </p>
+            </div>
+
+            {denyingId === a.application_id ? (
+              <div className="space-y-3">
+                <textarea
+                  value={denyReason}
+                  onChange={(e) => setDenyReason(e.target.value)}
+                  placeholder="Reason for denial (5+ characters)…"
+                  className="w-full px-3 py-2 bg-bone border border-cream-deep focus:border-terracotta focus:outline-none font-body text-sm"
+                  rows={3}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => onDeny(a.application_id)}
+                    disabled={actingOn === a.application_id}
+                    className="btn-terracotta text-sm flex-1"
+                  >
+                    Confirm deny
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDenyingId(null);
+                      setDenyReason("");
+                      onClearError();
+                    }}
+                    className="btn-secondary text-sm flex-1"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => onApprove(a.application_id)}
+                  disabled={actingOn === a.application_id}
+                  className="btn-primary"
+                >
+                  {actingOn === a.application_id ? "Approving…" : "Approve"}
+                </button>
+                <button
+                  onClick={() => {
+                    setDenyingId(a.application_id);
+                    onClearError();
+                  }}
+                  disabled={actingOn !== null}
+                  className="font-display text-sm text-ink-fade hover:text-terracotta transition-colors underline decoration-cream-deep hover:decoration-terracotta underline-offset-4 px-4"
+                >
+                  Deny
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild/services$ find ~/msjarvis-rebuild-working/ms-allis-frontend/app \
+  -name "*.tsx" -o -name "*.ts" | sort
+/home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/apply/page.tsx
+/home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/commons/category/[slug]/page.tsx
+/home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/commons/how-it-works/page.tsx
+/home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/commons/page.tsx
+/home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/commons/trade-guidelines/page.tsx
+/home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/first-login/page.tsx
+/home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/layout.tsx
+/home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/page.tsx
+/home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/portal/page.tsx
+/home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/sign-in/page.tsx
+(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild/services$ for f in \
+  ~/msjarvis-rebuild-working/ms-allis-frontend/app/portal/page.tsx \
+  ~/msjarvis-rebuild-working/ms-allis-frontend/app/commons/how-it-works/page.tsx \
+  ~/msjarvis-rebuild-working/ms-allis-frontend/app/sign-in/page.tsx; do
+  echo "=== $f ==="; cat "$f" 2>/dev/null || echo "MISSING"; echo
+done
+=== /home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/portal/page.tsx ===
+// app/portal/page.tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  api,
+  ApiError,
+  session,
+  ApplicationListItem,
+  MeResponse,
+} from "@/lib/api";
+import { portalApi, BalancesResponse, LedgerEntry, LedgerResponse } from "@/lib/portal";
+import { ChatPanel } from "@/components/ChatPanel";
+import { FounderToken } from "@/components/FounderToken";
+import { MsAllisPortrait } from "@/components/MsAllisPortrait";
+import { HeartOrnament } from "@/components/HeartOrnament";
+import { MountainSilhouette } from "@/components/MountainSilhouette";
+
+type State = "checking" | "ready";
+type Tab = "champion" | "admin";
+
+export default function PortalPage() {
+  const router = useRouter();
+  const [state, setState] = useState<State>("checking");
+  const [me, setMe] = useState<MeResponse | null>(null);
+  const [balances, setBalances] = useState<BalancesResponse | null>(null);
+  const [tab, setTab] = useState<Tab>("champion");
+
+  // Admin tab state
+  const [pending, setPending] = useState<ApplicationListItem[]>([]);
+  const [pendingState, setPendingState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [pendingError, setPendingError] = useState("");
+  const [actingOn, setActingOn] = useState<string | null>(null);
+  const [denyingId, setDenyingId] = useState<string | null>(null);
+  const [denyReason, setDenyReason] = useState("");
+
+  useEffect(() => {
+    if (!session.get()) {
+      router.push("/sign-in");
+      return;
+    }
+    api.me()
+      .then((m) => {
+        setMe(m);
+        setState("ready");
+        // Fetch balances in parallel; fail silently
+        portalApi.myBalances()
+          .then((b) => setBalances(b))
+          .catch(() => setBalances(null));
+      })
+      .catch(() => {
+        session.clear();
+        router.push("/sign-in");
+      });
+  }, [router]);
+
+  const isAdmin = me?.roles?.includes("admin") ?? false;
+
+  useEffect(() => {
+    if (tab !== "admin" || !isAdmin || pendingState !== "idle") return;
+    loadPending();
+  }, [tab, isAdmin, pendingState]);
+
+  async function loadPending() {
+    setPendingState("loading");
+    setPendingError("");
+    try {
+      const result = await api.pending();
+      setPending(result.applications || []);
+      setPendingState("ready");
+    } catch (err) {
+      setPendingError(err instanceof ApiError ? err.detail : "Failed to load");
+      setPendingState("error");
+    }
+  }
+
+  async function handleApprove(id: string) {
+    setActingOn(id);
+    setPendingError("");
+    try {
+      await api.approve(id);
+      await loadPending();
+    } catch (err) {
+      setPendingError(err instanceof ApiError ? err.detail : "Approve failed");
+    }
+    setActingOn(null);
+  }
+
+  async function handleDeny(id: string) {
+    if (denyReason.trim().length < 5) {
+      setPendingError("Denial reason must be at least 5 characters.");
+      return;
+    }
+    setActingOn(id);
+    setPendingError("");
+    try {
+      await api.deny(id, denyReason.trim());
+      setDenyingId(null);
+      setDenyReason("");
+      await loadPending();
+    } catch (err) {
+      setPendingError(err instanceof ApiError ? err.detail : "Deny failed");
+    }
+    setActingOn(null);
+  }
+
+  function handleSignOut() {
+    session.clear();
+    router.push("/");
+  }
+
+  if (state === "checking") {
+    return (
+      <main className="min-h-screen bg-cream flex items-center justify-center">
+        <p className="font-display italic text-ink-fade">Checking your session…</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-cream pb-12">
+      <header className="border-b border-cream-deep bg-bone">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <MsAllisPortrait className="w-10 h-10" />
+            <div>
+              <p className="font-display text-base text-teal-deep">Ms. Allis</p>
+              <p className="font-body text-xs text-ink-fade italic">{me?.userid ?? "—"}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="font-body text-sm text-ink-fade hover:text-terracotta transition-colors underline decoration-cream-deep hover:decoration-terracotta underline-offset-4"
+          >
+            Sign out
+          </button>
+        </div>
+      </header>
+
+      {isAdmin && (
+        <div className="border-b border-cream-deep bg-cream">
+          <div className="max-w-6xl mx-auto px-6 flex">
+            <button
+              onClick={() => setTab("champion")}
+              className={`px-6 py-3 font-display text-sm transition-colors ${
+                tab === "champion" ? "text-teal-deep border-b-2 border-terracotta" : "text-ink-fade hover:text-teal-deep"
+              }`}
+            >
+              My Champion
+            </button>
+            <button
+              onClick={() => setTab("admin")}
+              className={`px-6 py-3 font-display text-sm transition-colors ${
+                tab === "admin" ? "text-teal-deep border-b-2 border-terracotta" : "text-ink-fade hover:text-teal-deep"
+              }`}
+            >
+              Admin
+              {pending.length > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center bg-terracotta text-cream-light text-xs px-2 py-0.5 rounded-full">
+                  {pending.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-6xl mx-auto px-6 pt-10">
+        {tab === "champion" && <ChampionDashboard me={me} balances={balances} isAdmin={isAdmin} />}
+
+        {tab === "admin" && isAdmin && (
+          <AdminQueue
+            applications={pending}
+            state={pendingState}
+            error={pendingError}
+            actingOn={actingOn}
+            denyingId={denyingId}
+            denyReason={denyReason}
+            setDenyingId={setDenyingId}
+            setDenyReason={setDenyReason}
+            onApprove={handleApprove}
+            onDeny={handleDeny}
+            onClearError={() => setPendingError("")}
+          />
+        )}
+      </div>
+
+      <div className="mt-16">
+        <MountainSilhouette className="text-forest" />
+      </div>
+    </main>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Champion dashboard — data first, identity collapsed at bottom
+// ────────────────────────────────────────────────────────────────────
+
+function ChampionDashboard({
+  me,
+  balances,
+  isAdmin,
+}: {
+  me: MeResponse | null;
+  balances: BalancesResponse | null;
+  isAdmin: boolean;
+}) {
+  const [showIdentity, setShowIdentity] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [showLedger, setShowLedger] = useState(false);
+  const [ledger, setLedger] = useState<LedgerResponse | null>(null);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+
+  async function loadLedger(offset: number = 0) {
+    setLedgerLoading(true);
+    try {
+      const data = await portalApi.myLedger(50, offset);
+      setLedger(data);
+    } catch {
+      // fail silently — non-critical
+    }
+    setLedgerLoading(false);
+  }
+
+  const ems = balances?.ems_balance ?? 0;
+  const pms = balances?.pms_balance ?? 0;
+
+  return (
+    <>
+      {/* Hero — smaller than before */}
+      <div className="text-center mb-10">
+        <div className="flex justify-center mb-4">
+          <HeartOrnament className="w-6 h-6 text-terracotta" />
+        </div>
+        <h1 className="font-display italic text-3xl md:text-4xl text-teal-deep mb-1">
+          Welcome, {me?.userid ?? ""}
+        </h1>
+        <p className="font-body text-sm text-ink-fade italic">
+          {me?.county ? `${me.county} County` : "—"}
+          {me?.county ? " · " : ""}Community Champion
+        </p>
+      </div>
+
+      {/* Founder Token + Balances row */}
+      <section className="grid md:grid-cols-3 gap-4 mb-6">
+        <div className="surface p-6 flex flex-col items-center justify-center text-center">
+          {balances?.founder_token ? (
+            <>
+              <FounderToken
+                serialNumber={balances.founder_token.serial_number}
+                mintedAt={balances.founder_token.minted_at}
+                cohort={balances.founder_token.cohort}
+                size={112}
+              />
+              <p className="font-display text-base text-teal-deep mt-3">
+                {balances.founder_token.display}
+              </p>
+              <p className="font-body text-xs text-ink-fade italic">Phase 0 token holder</p>
+            </>
+          ) : (
+            <>
+              <div
+                className="rounded-full bg-cream-deep flex items-center justify-center"
+                style={{ width: 112, height: 112 }}
+              >
+                <span className="font-display text-xs text-ink-fade italic">No token yet</span>
+              </div>
+              <p className="font-display text-base text-ink-fade mt-3 italic">Founder Token</p>
+              <p className="font-body text-xs text-ink-fade italic">Coming soon</p>
+            </>
+          )}
+        </div>
+
+        <BalanceCard
+          label="Earned MountainShares"
+          shortLabel="EMS"
+          amount={ems}
+          accent="teal"
+        />
+
+        <BalanceCard
+          label="Purchased MountainShares"
+          shortLabel="PMS"
+          amount={pms}
+          accent="terracotta"
+        />
+      </section>
+
+      {/* Region scaffolding row */}
+      <section className="grid md:grid-cols-3 gap-4 mb-6">
+        <PlaceholderCard
+          title="Local businesses"
+          subtitle={me?.county ? `${me.county} County directory` : "Your county"}
+          note="Coming soon"
+        />
+        <PlaceholderCard
+          title="Weather"
+          subtitle="Real-time conditions"
+          note="Coming soon"
+        />
+        <PlaceholderCard
+          title="County resources"
+          subtitle="Public services & support"
+          note="Coming soon"
+        />
+      </section>
+
+      {/* Action buttons */}
+      <section className="flex flex-col sm:flex-row gap-3 mb-8 justify-center">
+        <button
+          onClick={() => setShowChat((v) => !v)}
+          className="btn-primary"
+        >
+          {showChat ? "Hide Ms. Allis" : "Talk to Ms. Allis →"}
+        </button>
+        <a
+          href="/commons"
+          className="font-display text-sm bg-bone border border-cream-deep text-teal-deep py-3 px-6 hover:bg-cream-deep transition-colors text-center"
+        >
+          Enter The Commons →
+        </a>
+      </section>
+
+      {/* Chat panel — toggles open/closed */}
+      {showChat && (
+        <section className="mb-6">
+          <ChatPanel userId={me?.userid ?? ""} isAdmin={isAdmin} />
+        </section>
+      )}
+
+      {/* Transaction history */}
+      <section className="surface mt-4">
+        <button
+          onClick={() => { setShowLedger(v => !v); if (!showLedger) loadLedger(); }}
+          className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-bone transition-colors"
+        >
+          <span className="font-display text-base text-teal-deep">Transaction history</span>
+          <span className="font-body text-xs text-ink-fade italic">
+            {showLedger ? "▼ Hide" : "▶ Show"}{ledger ? ` · ${ledger.total} entries` : ""}
+          </span>
+        </button>
+        {showLedger && (
+          <div className="px-6 pb-6 border-t border-cream-deep">
+            {ledgerLoading ? (
+              <p className="font-body text-sm text-ink-fade italic mt-4">Loading…</p>
+            ) : ledger && ledger.entries.length > 0 ? (
+<>
+                <div className="mt-4 mb-4 flex flex-wrap items-end gap-3 print:hidden">
+                  <div>
+                    <label className="block font-body text-xs text-ink-fade italic mb-1">From</label>
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="px-2 py-1 bg-bone border border-cream-deep focus:border-teal focus:outline-none font-body text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-body text-xs text-ink-fade italic mb-1">To</label>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="px-2 py-1 bg-bone border border-cream-deep focus:border-teal focus:outline-none font-body text-sm"
+                    />
+                  </div>
+                  {(dateFrom || dateTo) && (
+                    <button
+                      type="button"
+                      onClick={() => { setDateFrom(""); setDateTo(""); }}
+                      className="font-body text-xs text-ink-fade hover:text-terracotta transition-colors underline decoration-cream-deep hover:decoration-terracotta underline-offset-4"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <div className="ml-auto">
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="font-display text-sm bg-teal-deep text-cream-light px-4 py-1.5 hover:bg-teal transition-colors"
+                    >
+                      Print
+                    </button>
+                  </div>
+                </div>
+                {(() => {
+                  const filteredEntries = ledger.entries.filter((e) => {
+                    if (!dateFrom && !dateTo) return true;
+                    const ts = new Date(e.created_at).getTime();
+                    if (dateFrom) {
+                      const fromTs = new Date(dateFrom + "T00:00:00").getTime();
+                      if (ts < fromTs) return false;
+                    }
+                    if (dateTo) {
+                      const toTs = new Date(dateTo + "T23:59:59").getTime();
+                      if (ts > toTs) return false;
+                    }
+                    return true;
+                  });
+                  return filteredEntries.length === 0 ? (
+                    <p className="font-body text-sm text-ink-fade italic">
+                      No transactions in this date range.
+                    </p>
+                  ) : (
+                    <div id="ledger-print-area">
+                      <div className="hidden print:block mb-4">
+                        <h2 className="font-display text-xl text-teal-deep">Transaction history</h2>
+                        <p className="font-body text-xs text-ink-fade italic">
+                          {me?.userid ?? ""} {dateFrom || dateTo ? `· ${dateFrom || "earliest"} to ${dateTo || "latest"}` : ""}
+                        </p>
+                      </div>
+                      <table className="w-full font-body text-sm">
+                        <thead>
+                          <tr className="text-left text-ink-fade text-xs uppercase tracking-wider border-b border-cream-deep">
+                            <th className="pb-2 pr-4">Date</th>
+                            <th className="pb-2 pr-4">Type</th>
+                            <th className="pb-2 pr-4">Token</th>
+                            <th className="pb-2 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredEntries.map((e) => (
+                            <tr key={e.id} className="border-b border-cream-deep/50 hover:bg-bone transition-colors">
+                              <td className="py-2 pr-4 text-ink-fade text-xs">
+                                {new Date(e.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                              </td>
+                              <td className="py-2 pr-4 text-ink italic">{e.transaction_type.replace(/_/g, " ")}</td>
+                              <td className="py-2 pr-4">
+                                <span className={e.token_class === "EMS" ? "text-teal-deep font-display text-xs" : "text-terracotta font-display text-xs"}>
+                                  {e.token_class}
+                                </span>
+                              </td>
+                              <td className="py-2 text-right font-mono text-xs text-ink">
+                                +{parseFloat(e.amount).toLocaleString(undefined, { minimumFractionDigits: 4 })}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {(dateFrom || dateTo) && (
+                        <p className="font-body text-xs text-ink-fade italic mt-3">
+                          Showing {filteredEntries.length} of {ledger.entries.length} transactions in selected range.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </>
+            ) : (
+              <p className="font-body text-sm text-ink-fade italic mt-4">No transactions yet.</p>
+            )}
+            {ledger && ledger.total > ledger.limit && (
+              <div className="flex items-center justify-between mt-4 print:hidden">
+                <p className="font-body text-xs text-ink-fade italic">
+                  Page {Math.floor(ledger.offset / ledger.limit) + 1} of {Math.ceil(ledger.total / ledger.limit)}
+                  {" · "}
+                  showing {ledger.offset + 1}–{Math.min(ledger.offset + ledger.entries.length, ledger.total)} of {ledger.total}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => loadLedger(Math.max(0, ledger.offset - ledger.limit))}
+                    disabled={ledgerLoading || ledger.offset === 0}
+                    className="font-display text-sm bg-bone border border-cream-deep text-teal-deep px-3 py-1 hover:bg-cream-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    « Prev
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => loadLedger(ledger.offset + ledger.limit)}
+                    disabled={ledgerLoading || ledger.offset + ledger.entries.length >= ledger.total}
+                    className="font-display text-sm bg-bone border border-cream-deep text-teal-deep px-3 py-1 hover:bg-cream-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Next »
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Identity — collapsed accordion at bottom */}
+      <section className="surface mt-4">
+        <button
+          onClick={() => setShowIdentity((v) => !v)}
+          className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-bone transition-colors"
+        >
+          <span className="font-display text-base text-teal-deep">Your identity</span>
+          <span className="font-body text-xs text-ink-fade italic">
+            {showIdentity ? "▼ Hide" : "▶ Show"}
+          </span>
+        </button>
+        {showIdentity && (
+          <div className="px-6 pb-6 border-t border-cream-deep">
+            <dl className="grid sm:grid-cols-2 gap-4 mt-4 font-body text-sm">
+              <Field label="Userid" value={me?.userid ?? "—"} mono />
+              <Field label="UEID" value={me?.uei || "—"} mono small />
+              <Field label="County" value={me?.county ?? "—"} />
+              <Field label="Roles" value={me?.roles?.join(", ") || "user"} />
+              {balances?.balance_last_updated && (
+                <Field
+                  label="Balances updated"
+                  value={new Date(balances.balance_last_updated).toLocaleString()}
+                  small
+                />
+              )}
+            </dl>
+            <p className="font-body text-xs text-ink-fade italic mt-4 leading-relaxed">
+              Your data is private. Only you can see this — no other Champion or admin
+              can view your balances, UEID, or wallet. If anything looks wrong, email{" "}
+              <a
+                href="mailto:kiddstechnical@gmail.com"
+                className="text-terracotta hover:text-terracotta-deep underline decoration-terracotta/30 hover:decoration-terracotta underline-offset-4 transition-colors"
+              >
+                kiddstechnical@gmail.com
+              </a>.
+            </p>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
+function BalanceCard({
+  label,
+  shortLabel,
+  amount,
+  accent,
+}: {
+  label: string;
+  shortLabel: string;
+  amount: number;
+  accent: "teal" | "terracotta";
+}) {
+  const color = accent === "teal" ? "text-teal-deep" : "text-terracotta-deep";
+  const formatted = amount.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  });
+  return (
+    <div className="surface p-6 flex flex-col items-center justify-center text-center">
+      <p className="font-body text-xs text-ink-fade italic uppercase tracking-wider">
+        {shortLabel}
+      </p>
+      <p className={`font-display italic text-5xl ${color} my-2`}>{formatted}</p>
+      <p className="font-body text-xs text-ink-fade italic">{label}</p>
+    </div>
+  );
+}
+
+function PlaceholderCard({
+  title,
+  subtitle,
+  note,
+}: {
+  title: string;
+  subtitle: string;
+  note: string;
+}) {
+  return (
+    <div className="surface p-6 flex flex-col items-center justify-center text-center opacity-60">
+      <p className="font-display text-base text-teal-deep">{title}</p>
+      <p className="font-body text-xs text-ink-fade italic mt-1">{subtitle}</p>
+      <p className="font-body text-xs text-terracotta/70 italic mt-3">{note}</p>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  mono = false,
+  small = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  small?: boolean;
+}) {
+  return (
+    <div>
+      <dt className="text-ink-fade italic text-xs uppercase tracking-wider">{label}</dt>
+      <dd className={`text-ink ${mono ? "font-mono" : ""} ${small ? "text-xs break-all" : ""}`}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Admin queue — unchanged from previous version
+// ────────────────────────────────────────────────────────────────────
+
+function AdminQueue({
+  applications,
+  state,
+  error,
+  actingOn,
+  denyingId,
+  denyReason,
+  setDenyingId,
+  setDenyReason,
+  onApprove,
+  onDeny,
+  onClearError,
+}: {
+  applications: ApplicationListItem[];
+  state: "idle" | "loading" | "ready" | "error";
+  error: string;
+  actingOn: string | null;
+  denyingId: string | null;
+  denyReason: string;
+  setDenyingId: (id: string | null) => void;
+  setDenyReason: (r: string) => void;
+  onApprove: (id: string) => void;
+  onDeny: (id: string) => void;
+  onClearError: () => void;
+}) {
+  return (
+    <>
+      <div className="flex justify-center mb-6">
+        <HeartOrnament className="w-7 h-7 text-terracotta" />
+      </div>
+      <h1 className="font-display italic text-display text-teal-deep text-center mb-2">
+        Pending applications
+      </h1>
+      <p className="font-body text-sm text-ink-fade text-center mb-10 italic">
+        {state === "loading"
+          ? "Loading…"
+          : applications.length === 0
+            ? "Nothing waiting right now."
+            : applications.length === 1
+              ? "1 application waiting"
+              : `${applications.length} applications waiting`}
+      </p>
+
+      {error && (
+        <div className="max-w-2xl mx-auto mb-6 font-body text-sm text-terracotta-deep bg-terracotta/10 border border-terracotta/30 p-3 italic flex items-baseline justify-between">
+          <span>{error}</span>
+          <button onClick={onClearError} className="text-xs text-terracotta-deep hover:underline ml-3">
+            dismiss
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-6 max-w-3xl mx-auto">
+        {applications.map((a) => (
+          <div key={a.application_id} className="surface p-6">
+            <div className="flex items-baseline justify-between mb-4">
+              <div>
+                <h2 className="font-display text-xl text-teal-deep">{a.name}</h2>
+                <p className="font-body text-sm text-ink-fade italic">
+                  {a.county} County ·{" "}
+                  {new Date(a.submitted_at).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+              <p className="font-body text-xs text-ink-fade font-mono">
+                {a.application_id.slice(0, 8)}…
+              </p>
+            </div>
+
+            <p className="font-body text-sm text-ink mb-1">{a.email}</p>
+            <p className="font-body text-xs text-ink-fade mb-4 font-mono">
+              proposed_userid: {a.proposed_userid} · {a.agreement_version}
+            </p>
+
+            {a.county_warning && (
+              <div className="bg-terracotta/10 border border-terracotta/30 px-4 py-2 mb-4 font-body text-xs text-terracotta-deep italic">
+                {a.county_warning}
+              </div>
+            )}
+
+            <div className="bg-bone border border-cream-deep p-4 mb-4">
+              <p className="font-display text-sm text-teal-deep mb-1">Why they want to participate</p>
+              <p className="font-body text-sm text-ink leading-relaxed whitespace-pre-wrap">
+                {a.motivation}
+              </p>
+            </div>
+
+            {denyingId === a.application_id ? (
+              <div className="space-y-3">
+                <textarea
+                  value={denyReason}
+                  onChange={(e) => setDenyReason(e.target.value)}
+                  placeholder="Reason for denial (5+ characters)…"
+                  className="w-full px-3 py-2 bg-bone border border-cream-deep focus:border-terracotta focus:outline-none font-body text-sm"
+                  rows={3}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => onDeny(a.application_id)}
+                    disabled={actingOn === a.application_id}
+                    className="btn-terracotta text-sm flex-1"
+                  >
+                    Confirm deny
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDenyingId(null);
+                      setDenyReason("");
+                      onClearError();
+                    }}
+                    className="btn-secondary text-sm flex-1"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => onApprove(a.application_id)}
+                  disabled={actingOn === a.application_id}
+                  className="btn-primary"
+                >
+                  {actingOn === a.application_id ? "Approving…" : "Approve"}
+                </button>
+                <button
+                  onClick={() => {
+                    setDenyingId(a.application_id);
+                    onClearError();
+                  }}
+                  disabled={actingOn !== null}
+                  className="font-display text-sm text-ink-fade hover:text-terracotta transition-colors underline decoration-cream-deep hover:decoration-terracotta underline-offset-4 px-4"
+                >
+                  Deny
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+=== /home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/commons/how-it-works/page.tsx ===
+// app/commons/how-it-works/page.tsx
+"use client";
+
+import Link from "next/link";
+import { HeartOrnament } from "@/components/HeartOrnament";
+import { MountainSilhouette } from "@/components/MountainSilhouette";
+import { MsAllisPortrait } from "@/components/MsAllisPortrait";
+
+export default function HowItWorksPage() {
+  return (
+    <main className="min-h-screen bg-cream">
+      {/* Header */}
+      <header className="border-b border-cream-deep bg-bone">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link href="/commons" className="flex items-center gap-3">
+            <MsAllisPortrait className="w-10 h-10" />
+            <div>
+              <p className="font-display text-base text-teal-deep">The Commons</p>
+              <p className="font-body text-xs text-ink-fade italic">a MountainShares marketplace</p>
+            </div>
+          </Link>
+          <nav className="flex items-center gap-5">
+            <Link href="/commons" className="font-body text-sm text-ink-fade hover:text-terracotta transition-colors">
+              ← Categories
+            </Link>
+            <Link href="/portal" className="font-body text-sm text-ink-fade hover:text-terracotta transition-colors">
+              Portal
+            </Link>
+            <Link href="/sign-in" className="font-display text-sm bg-teal-deep text-cream-light px-4 py-1.5 hover:bg-teal transition-colors">
+              Sign in
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="max-w-3xl mx-auto px-6 pt-14 pb-10 text-center">
+        <div className="flex justify-center mb-4">
+          <HeartOrnament className="w-7 h-7 text-terracotta" />
+        </div>
+        <h1 className="font-display italic text-4xl md:text-5xl text-teal-deep mb-3">
+          How The Commons works
+        </h1>
+        <p className="font-body text-base text-ink-fade italic max-w-2xl mx-auto leading-relaxed">
+          A neighbor-to-neighbor marketplace, governed by West Virginia trade and
+          barter law, run by your county's Champions.
+        </p>
+      </section>
+
+      <div className="max-w-4xl mx-auto px-6 pb-16 space-y-14">
+
+        {/* Section 1 — What makes this different */}
+        <section>
+          <h2 className="font-display text-2xl text-teal-deep mb-2">
+            Three things that make this different
+          </h2>
+          <p className="font-body text-sm text-ink-fade italic mb-6">
+            We didn't build another classifieds site. We built the marketplace Appalachia deserves.
+          </p>
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div className="surface p-5">
+              <p className="font-display text-base text-teal-deep mb-2">Champion-verified</p>
+              <p className="font-body text-sm text-ink leading-relaxed">
+                Every seller is a real person — identity-verified, vouched for by their county.
+                No anonymous accounts. No fake profiles.
+              </p>
+            </div>
+            <div className="surface p-5">
+              <p className="font-display text-base text-teal-deep mb-2">Local, not regional</p>
+              <p className="font-body text-sm text-ink leading-relaxed">
+                A listing in Fayette County stays in Fayette County. We don't &ldquo;boost&rdquo;
+                listings to neighboring cities to inflate views.
+              </p>
+            </div>
+            <div className="surface p-5">
+              <p className="font-display text-base text-teal-deep mb-2">Pay your way</p>
+              <p className="font-body text-sm text-ink leading-relaxed">
+                Dollars, MountainShares, or trade. Whichever works for both sides of the
+                deal — under West Virginia law.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 2 — For Buyers */}
+        <section>
+          <h2 className="font-display text-2xl text-teal-deep mb-6">For Buyers</h2>
+          <ol className="space-y-5">
+            <li className="flex gap-4">
+              <span className="font-display italic text-3xl text-terracotta leading-none flex-shrink-0 w-12">01</span>
+              <div>
+                <p className="font-display text-base text-teal-deep mb-1">Browse by category or county</p>
+                <p className="font-body text-sm text-ink leading-relaxed">
+                  Find what you need close to home. Filter by your county, browse all 30 categories,
+                  or search across The Commons.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-4">
+              <span className="font-display italic text-3xl text-terracotta leading-none flex-shrink-0 w-12">02</span>
+              <div>
+                <p className="font-display text-base text-teal-deep mb-1">Talk to the seller directly</p>
+                <p className="font-body text-sm text-ink leading-relaxed">
+                  Use the contact details on the listing. No middleman, no platform messaging
+                  delays. You and the seller work it out the way neighbors always have.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-4">
+              <span className="font-display italic text-3xl text-terracotta leading-none flex-shrink-0 w-12">03</span>
+              <div>
+                <p className="font-display text-base text-teal-deep mb-1">Make the deal</p>
+                <p className="font-body text-sm text-ink leading-relaxed">
+                  Meet up, inspect, agree, complete. The Commons takes no commission, holds
+                  no funds, and stays out of the way.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        {/* Section 3 — For Sellers */}
+        <section>
+          <h2 className="font-display text-2xl text-teal-deep mb-6">For Sellers</h2>
+          <ol className="space-y-5">
+            <li className="flex gap-4">
+              <span className="font-display italic text-3xl text-terracotta leading-none flex-shrink-0 w-12">01</span>
+              <div>
+                <p className="font-display text-base text-teal-deep mb-1">Become a Champion first</p>
+                <p className="font-body text-sm text-ink leading-relaxed">
+                  Apply through{" "}
+                  <Link href="/apply" className="text-terracotta hover:text-terracotta-deep underline decoration-terracotta/30 hover:decoration-terracotta underline-offset-4">
+                    /apply
+                  </Link>
+                  , verify your identity, and — if Phase 0 is still open — receive a Founder Token.
+                  Champions are the only people who can post listings.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-4">
+              <span className="font-display italic text-3xl text-terracotta leading-none flex-shrink-0 w-12">02</span>
+              <div>
+                <p className="font-display text-base text-teal-deep mb-1">Post your listing</p>
+                <p className="font-body text-sm text-ink leading-relaxed">
+                  Title, photos, county, description, and price (dollars, MountainShares,
+                  trade-only, or no price). It takes about a minute.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-4">
+              <span className="font-display italic text-3xl text-terracotta leading-none flex-shrink-0 w-12">03</span>
+              <div>
+                <p className="font-display text-base text-teal-deep mb-1">Connect with a real neighbor</p>
+                <p className="font-body text-sm text-ink leading-relaxed">
+                  Buyers reach out directly. You set the terms. The Commons takes no
+                  commission and adds no hidden fees.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        {/* Section 4 — Pay your way */}
+        <section className="surface p-8">
+          <h2 className="font-display text-2xl text-teal-deep mb-2">
+            Pay your way: dollars, MountainShares, or trade
+          </h2>
+          <p className="font-body text-sm text-ink-fade italic mb-6">
+            Three real options, every one of them legal in West Virginia.
+          </p>
+
+          <div className="space-y-5">
+            <div>
+              <p className="font-display text-base text-teal-deep mb-1">Dollars</p>
+              <p className="font-body text-sm text-ink leading-relaxed">
+                Standard cash, check, Venmo, whatever the buyer and seller agree on.
+                Handled directly between the two of you. The Commons doesn't touch the money.
+              </p>
+            </div>
+
+            <div>
+              <p className="font-display text-base text-teal-deep mb-1">MountainShares (EMS &amp; PMS)</p>
+              <p className="font-body text-sm text-ink leading-relaxed">
+                Earned MountainShares (EMS) come from community work — verified hours,
+                Champion contributions, recognized service. Purchased MountainShares (PMS)
+                are bought through Harmony for Hope. Both spend here at face value when
+                a seller chooses to accept them.
+              </p>
+            </div>
+
+            <div>
+              <p className="font-display text-base text-teal-deep mb-1">Trade &amp; Barter</p>
+              <p className="font-body text-sm text-ink leading-relaxed">
+                Trade is legal economic activity in West Virginia and a long Appalachian
+                tradition. A truck for a tractor weekend. Firewood splitting for canned
+                preserves. Sewing work for a side of beef. Both parties are responsible for
+                their own tax obligations on the fair-market value of what they receive — barter
+                income is taxable under federal and state law.
+              </p>
+              <p className="font-body text-sm text-ink leading-relaxed mt-2">
+                Some categories have specific legal restrictions on what can be traded.{" "}
+                <Link href="/commons/trade-guidelines" className="text-terracotta hover:text-terracotta-deep underline decoration-terracotta/30 hover:decoration-terracotta underline-offset-4">
+                  Read our Trade Guidelines
+                </Link>
+                {" "}before you list anything you're unsure about.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 5 — More than buying and selling */}
+        <section>
+          <h2 className="font-display text-2xl text-teal-deep mb-2">
+            More than buying and selling
+          </h2>
+          <p className="font-body text-sm text-ink-fade italic mb-6">
+            Some of what neighbors do for each other doesn't have a price.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="surface p-5">
+              <p className="font-display text-base text-teal-deep mb-1">Wanted</p>
+              <p className="font-body text-sm text-ink leading-relaxed">
+                Ask for what you need — a hay rake, a babysitter, a 1968 service manual —
+                and see who responds.
+              </p>
+            </div>
+            <div className="surface p-5">
+              <p className="font-display text-base text-teal-deep mb-1">Free / Giveaways</p>
+              <p className="font-body text-sm text-ink leading-relaxed">
+                Pay it forward. Move what you can't use to someone who can.
+              </p>
+            </div>
+            <div className="surface p-5">
+              <p className="font-display text-base text-teal-deep mb-1">Lost &amp; Found</p>
+              <p className="font-body text-sm text-ink leading-relaxed">
+                A lost dog, a missing tool, a found wallet. Mountain mutual aid.
+              </p>
+            </div>
+            <div className="surface p-5">
+              <p className="font-display text-base text-teal-deep mb-1">Jobs</p>
+              <p className="font-body text-sm text-ink leading-relaxed">
+                Local hiring, gig work, trades wanted. Both directions: looking for help,
+                looking for work.
+              </p>
+            </div>
+            <div className="surface p-5 sm:col-span-2">
+              <p className="font-display text-base text-teal-deep mb-1">Community Bulletin</p>
+              <p className="font-body text-sm text-ink leading-relaxed">
+                Church suppers, benefit dinners, road closures, county events.
+                Things your neighbors should know.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 6 — Your responsibility, our limits */}
+        <section className="bg-bone border border-cream-deep p-8">
+          <h2 className="font-display text-2xl text-teal-deep mb-2">
+            Your responsibility, our limits
+          </h2>
+          <p className="font-body text-sm text-ink-fade italic mb-6">
+            We're being upfront about this part.
+          </p>
+          <p className="font-body text-base text-ink leading-relaxed mb-5">
+            The Commons is a place for neighbors to find each other. We don't broker deals,
+            hold funds, take commission, or guarantee transactions. That means a few things
+            you should know up front:
+          </p>
+
+          <ul className="space-y-4 font-body text-sm text-ink leading-relaxed">
+            <li className="flex gap-3">
+              <span className="text-terracotta font-display flex-shrink-0">·</span>
+              <div>
+                <strong className="font-display text-teal-deep">You're responsible for your own listings.</strong>{" "}
+                Be honest about condition, ownership, and exactly what's being offered. Misrepresentation
+                can get your Champion status revoked.
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="text-terracotta font-display flex-shrink-0">·</span>
+              <div>
+                <strong className="font-display text-teal-deep">Some categories have legal requirements.</strong>{" "}
+                West Virginia restricts the sale or barter of wildlife (§20-2-11), alcohol, controlled substances,
+                and certain bedding and upholstery (§47-1A-11). Vehicles and real estate require formal title transfer
+                regardless of how payment changes hands. See our{" "}
+                <Link href="/commons/trade-guidelines" className="text-terracotta hover:text-terracotta-deep underline decoration-terracotta/30 hover:decoration-terracotta underline-offset-4">
+                  Trade Guidelines
+                </Link>
+                {" "}for details.
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="text-terracotta font-display flex-shrink-0">·</span>
+              <div>
+                <strong className="font-display text-teal-deep">Both parties are responsible for taxes.</strong>{" "}
+                Whether paid in dollars, MountainShares, or trade, the IRS and the West Virginia State Tax
+                Department may treat the value of what's exchanged as income. The Commons is not a tax advisor.
+                Consult yours.
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="text-terracotta font-display flex-shrink-0">·</span>
+              <div>
+                <strong className="font-display text-teal-deep">If something feels wrong, tell us.</strong>{" "}
+                Fraud, misrepresentation, illegal listings — email{" "}
+                <a href="mailto:kiddstechnical@gmail.com" className="text-terracotta hover:text-terracotta-deep underline decoration-terracotta/30 hover:decoration-terracotta underline-offset-4">
+                  kiddstechnical@gmail.com
+                </a>
+                . Champion status can be revoked. Trust on The Commons is community-enforced.
+              </div>
+            </li>
+          </ul>
+
+          <p className="font-body text-xs text-ink-fade italic mt-6">
+            The Commons and Harmony for Hope, Inc. don't provide legal or tax advice. The information here
+            is general guidance, not a substitute for talking to a lawyer or accountant about your specific
+            situation.
+          </p>
+        </section>
+
+        {/* Section 7 — Help / Contact */}
+        <section className="text-center">
+          <h2 className="font-display italic text-2xl text-teal-deep mb-3">
+            Questions? Trouble?
+          </h2>
+          <p className="font-body text-base text-ink leading-relaxed mb-6">
+            Email{" "}
+            <a href="mailto:kiddstechnical@gmail.com" className="text-terracotta hover:text-terracotta-deep underline decoration-terracotta/30 hover:decoration-terracotta underline-offset-4">
+              kiddstechnical@gmail.com
+            </a>
+            . Real person. Reads every message.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/apply" className="btn-primary">
+              Apply to be a Champion
+            </Link>
+            <Link href="/commons" className="font-display text-sm bg-bone border border-cream-deep text-teal-deep px-6 py-3 hover:bg-cream-deep transition-colors">
+              Browse The Commons
+            </Link>
+          </div>
+        </section>
+
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-cream border-t border-cream-deep py-8">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="font-body text-xs text-ink-fade italic">
+            The Commons · a project of{" "}
+            <a href="https://harmonyforhope.org" className="text-terracotta hover:text-terracotta-deep underline decoration-terracotta/30 hover:decoration-terracotta underline-offset-4">
+              Harmony for Hope, Inc.
+            </a>
+            {" "}· Mount Hope, WV
+          </p>
+          <p className="font-body text-xs text-ink-fade italic">
+            Earn your share. Trade your worth.
+          </p>
+        </div>
+      </footer>
+
+      <MountainSilhouette className="text-forest" />
+    </main>
+  );
+}
+
+=== /home/cakidd/msjarvis-rebuild-working/ms-allis-frontend/app/sign-in/page.tsx ===
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { api, ApiError, session } from "@/lib/api";
+import { MsAllisPortrait } from "@/components/MsAllisPortrait";
+import { HeartOrnament } from "@/components/HeartOrnament";
+
+export default function SignInPage() {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (!username || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = await api.signIn(username.trim(), password);
+      session.set(result.access_token, username);
+      router.push("/portal");
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.detail : "Something went wrong.";
+      setError(msg);
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-cream flex items-start justify-center pt-20 pb-12 px-6">
+      <div className="w-full max-w-md">
+        <div className="flex justify-center mb-8">
+          <MsAllisPortrait className="w-32 h-32" />
+        </div>
+
+        <div className="flex justify-center mb-6">
+          <HeartOrnament className="w-7 h-7 text-terracotta" />
+        </div>
+
+        <h1 className="font-display italic text-display text-teal-deep text-center mb-2">
+          Sign in
+        </h1>
+        <p className="font-body text-sm text-ink-fade text-center mb-8 italic">
+          Welcome back, Champion. Sign in with your username.
+        </p>
+
+        <form onSubmit={handleSignIn} className="space-y-5">
+          <div>
+            <label className="block font-display text-sm text-teal-deep mb-1.5">
+              Username
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full px-4 py-3 bg-bone border border-cream-deep focus:border-teal focus:outline-none font-body"
+              autoComplete="username"
+              autoFocus
+              required
+            />
+            <p className="font-body text-xs text-ink-fade italic mt-1">
+              Enter the username you were assigned (e.g. carrie_kidd).
+            </p>
+          </div>
+
+          <div>
+            <label className="block font-display text-sm text-teal-deep mb-1.5">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 bg-bone border border-cream-deep focus:border-teal focus:outline-none font-body"
+              autoComplete="current-password"
+              required
+            />
+          </div>
+
+          {error && (
+            <div className="font-body text-sm text-terracotta-deep bg-terracotta/10 border border-terracotta/30 p-3 italic">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn-primary w-full"
+          >
+            {submitting ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+
+        <div className="text-center mt-6 space-y-3">
+          <p className="font-body text-sm text-ink-fade italic">
+            Just got an approval email?{" "}
+            <Link href="/first-login" className="text-terracotta hover:text-terracotta-deep underline decoration-terracotta/30 hover:decoration-terracotta underline-offset-4 transition-colors">
+              First-time setup
+            </Link>
+          </p>
+          <p className="font-body text-sm text-ink-fade italic">
+            Not yet a Champion?{" "}
+            <Link href="/apply" className="text-terracotta hover:text-terracotta-deep underline decoration-terracotta/30 hover:decoration-terracotta underline-offset-4 transition-colors">
+              Apply here
+            </Link>
+          </p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 (crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild/services$ 
 
