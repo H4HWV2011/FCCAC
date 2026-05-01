@@ -1,26 +1,8922 @@
-(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild$ # Check if it's already running
-curl -s http://127.0.0.1:3000 | head -5 || echo "Not running yet"
-
-# Check what env it needs
-cat ~/msjarvis-rebuild-working/ms-allis-frontend/.env* 2>/dev/null | head -30 || \
-  ls ~/msjarvis-rebuild-working/ms-allis-frontend/
-
-# Start it directly — it's already built
-cd ~/msjarvis-rebuild-working/ms-allis-frontend && \
-  NEXT_PUBLIC_API_URL=http://192.168.0.8:8050 \
-  npm start -- --port 3000 &
-
-sleep 5
-curl -s http://127.0.0.1:3000 | head -10
-NEXT_PUBLIC_BRAIN_URL=https://chat.mountainshares.us
-[4] 3846278
-
-> ms-allis-frontend@0.1.0 start
-> next start --port 3000
-
-▲ Next.js 16.2.4
-- Local:         http://localhost:3000
-- Network:       http://192.168.0.8:3000
-✓ Ready in 111ms
-<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="preload" as="image" imageSrcSet="/_next/image?url=%2Fms-allis.jpg&amp;w=32&amp;q=75 32w, /_next/image?url=%2Fms-allis.jpg&amp;w=48&amp;q=75 48w, /_next/image?url=%2Fms-allis.jpg&amp;w=64&amp;q=75 64w, /_next/image?url=%2Fms-allis.jpg&amp;w=96&amp;q=75 96w, /_next/image?url=%2Fms-allis.jpg&amp;w=128&amp;q=75 128w, /_next/image?url=%2Fms-allis.jpg&amp;w=256&amp;q=75 256w, /_next/image?url=%2Fms-allis.jpg&amp;w=384&amp;q=75 384w, /_next/image?url=%2Fms-allis.jpg&amp;w=640&amp;q=75 640w, /_next/image?url=%2Fms-allis.jpg&amp;w=750&amp;q=75 750w, /_next/image?url=%2Fms-allis.jpg&amp;w=828&amp;q=75 828w, /_next/image?url=%2Fms-allis.jpg&amp;w=1080&amp;q=75 1080w, /_next/image?url=%2Fms-allis.jpg&amp;w=1200&amp;q=75 1200w, /_next/image?url=%2Fms-allis.jpg&amp;w=1920&amp;q=75 1920w, /_next/image?url=%2Fms-allis.jpg&amp;w=2048&amp;q=75 2048w, /_next/image?url=%2Fms-allis.jpg&amp;w=3840&amp;q=75 3840w" imageSizes="(max-width: 768px) 320px, 640px"/><link rel="stylesheet" href="/_next/static/chunks/0j9mba.5ny0kn.css" data-precedence="next"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/0yb2wil16uz6h.js"/><script src="/_next/static/chunks/0ph4dpgpaz6ul.js" async=""></script><script src="/_next/static/chunks/10~x95jhs6ns3.js" async=""></script><script src="/_next/static/chunks/0o59ac8426icc.js" async=""></script><script src="/_next/static/chunks/0pqt~8bl3ukh4.js" async=""></script><script src="/_next/static/chunks/turbopack-007xqpuh6jk0n.js" async=""></script><script src="/_next/static/chunks/01xlw8hd842-c.js" async=""></script><script src="/_next/static/chunks/0d3shmwh5_nmn.js" async=""></script><script src="/_next/static/chunks/0ge6rjw3zvm1i.js" async=""></script><title>Ms. Allis — MountainShares Artificial Learning &amp; Location Intelligence System</title><meta name="description" content="An Appalachian-rooted AI assistant, built and stewarded in Mount Hope, West Virginia, by Harmony for Hope, Inc."/><meta property="og:title" content="Ms. Allis"/><meta property="og:description" content="Appalachian community AI from Mount Hope, West Virginia."/><meta property="og:image" content="https://egeria.mountainshares.us/ms-allis.jpg"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="Ms. Allis"/><meta name="twitter:description" content="Appalachian community AI from Mount Hope, West Virginia."/><meta name="twitter:image" content="https://egeria.mountainshares.us/ms-allis.jpg"/><link rel="icon" href="/favicon.ico?favicon.0x3dzn~oxb6tn.ico" sizes="256x256" type="image/x-icon"/><script src="/_next/static/chunks/03~yq9q893hmn.js" noModule=""></script></head><body><div hidden=""><!--$--><!--/$--></div><main class="min-h-screen flex flex-col"><section class="relative pt-12 pb-20 md:pt-20 md:pb-32 overflow-hidden"><div aria-hidden="true" class="absolute inset-0 bg-halo opacity-100 pointer-events-none"></div><div class="relative max-w-6xl mx-auto px-6 md:px-10"><div class="animate-fade-in mb-12 md:mb-16"><div class="flex items-center justify-center gap-3 text-terracotta"><svg viewBox="0 0 24 24" class="w-3 h-3 opacity-40" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z"></path><path d="M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z" fill="rgba(0,0,0,0.18)"></path></svg><svg viewBox="0 0 24 24" class="w-4 h-4 opacity-60" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z"></path><path d="M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z" fill="rgba(0,0,0,0.18)"></path></svg><svg viewBox="0 0 24 24" class="w-5 h-5 opacity-100" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z"></path><path d="M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z" fill="rgba(0,0,0,0.18)"></path></svg><svg viewBox="0 0 24 24" class="w-4 h-4 opacity-60" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z"></path><path d="M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z" fill="rgba(0,0,0,0.18)"></path></svg><svg viewBox="0 0 24 24" class="w-3 h-3 opacity-40" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z"></path><path d="M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z" fill="rgba(0,0,0,0.18)"></path></svg></div></div><div class="grid md:grid-cols-12 gap-10 md:gap-16 items-center"><div class="md:col-span-5 flex justify-center md:justify-start animate-fade-in-up"><div class="relative inline-block "><div class="relative bg-terracotta-deep p-2 shadow-warm-lg"><div class="bg-cream-light p-1.5"><img alt="Ms. Allis — folk-art portrait" width="640" height="640" decoding="async" data-nimg="1" class="block object-cover" style="color:transparent" sizes="(max-width: 768px) 320px, 640px" srcSet="/_next/image?url=%2Fms-allis.jpg&amp;w=32&amp;q=75 32w, /_next/image?url=%2Fms-allis.jpg&amp;w=48&amp;q=75 48w, /_next/image?url=%2Fms-allis.jpg&amp;w=64&amp;q=75 64w, /_next/image?url=%2Fms-allis.jpg&amp;w=96&amp;q=75 96w, /_next/image?url=%2Fms-allis.jpg&amp;w=128&amp;q=75 128w, /_next/image?url=%2Fms-allis.jpg&amp;w=256&amp;q=75 256w, /_next/image?url=%2Fms-allis.jpg&amp;w=384&amp;q=75 384w, /_next/image?url=%2Fms-allis.jpg&amp;w=640&amp;q=75 640w, /_next/image?url=%2Fms-allis.jpg&amp;w=750&amp;q=75 750w, /_next/image?url=%2Fms-allis.jpg&amp;w=828&amp;q=75 828w, /_next/image?url=%2Fms-allis.jpg&amp;w=1080&amp;q=75 1080w, /_next/image?url=%2Fms-allis.jpg&amp;w=1200&amp;q=75 1200w, /_next/image?url=%2Fms-allis.jpg&amp;w=1920&amp;q=75 1920w, /_next/image?url=%2Fms-allis.jpg&amp;w=2048&amp;q=75 2048w, /_next/image?url=%2Fms-allis.jpg&amp;w=3840&amp;q=75 3840w" src="/_next/image?url=%2Fms-allis.jpg&amp;w=3840&amp;q=75"/></div></div></div></div><div class="md:col-span-7 animate-fade-in-up" style="animation-delay:0.15s"><div class="inline-flex items-center gap-3 mb-6 text-terracotta"><span class="h-px w-8 bg-terracotta"></span><span class="font-display italic text-sm tracking-widest uppercase">Mount Hope · West Virginia</span></div><h1 class="font-display text-hero text-teal-deep mb-8"><span class="block italic font-light text-gold-deep">meet</span>Ms. Allis<span class="text-terracotta">.</span></h1><p class="font-body text-xl md:text-2xl leading-relaxed text-ink-soft mb-3 max-w-xl">The MountainShares Artificial Learning &amp; Location Intelligence System.</p><p class="font-body text-base md:text-lg leading-relaxed text-ink-soft mb-10 max-w-xl">An AI rooted in Appalachia. Built and stewarded by<!-- --> <a href="https://harmonyforhopewv.org" class="text-terracotta underline decoration-terracotta/40 underline-offset-4 hover:decoration-terracotta transition-colors" target="_blank" rel="noopener noreferrer">Harmony for Hope, Inc.</a>, a 501(c)(3) nonprofit in Mount Hope, West Virginia. Currently in Phase 0 invite-only beta with<!-- --> <span class="text-teal-deep font-medium">Community Champions</span> <!-- -->from across all 55 counties.</p><div class="flex flex-wrap items-center gap-4"><a class="btn-primary group" href="/apply"><svg viewBox="0 0 24 24" class="w-4 h-4 group-hover:scale-110 transition-transform" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z"></path><path d="M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z" fill="rgba(0,0,0,0.18)"></path></svg>Apply to be a Champion</a><a class="font-body text-base text-ink-soft hover:text-teal underline decoration-cream-deep underline-offset-4 hover:decoration-teal transition-colors" href="/sign-in">Already a Champion? Sign in</a></div></div></div></div></section><div class="flex justify-center py-8"><svg viewBox="0 0 80 24" class="w-32 text-gold" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 12 Q15 12 20 6 Q25 0 35 6 Q40 9 40 12"></path><path d="M75 12 Q65 12 60 6 Q55 0 45 6 Q40 9 40 12"></path><circle cx="40" cy="12" r="2" fill="currentColor"></circle><path d="M20 6 Q19 4 17 4"></path><path d="M60 6 Q61 4 63 4"></path></g></svg></div><section class="py-20 md:py-28 bg-cream-light/40"><div class="max-w-4xl mx-auto px-6 md:px-10"><div class="text-center mb-16"><h2 class="font-display italic text-display text-teal-deep mb-4">Who is Ms. Allis?</h2><div class="divider-hearts max-w-md mx-auto"><svg viewBox="0 0 24 24" class="w-3 h-3" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z"></path><path d="M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z" fill="rgba(0,0,0,0.18)"></path></svg></div></div><div class="grid md:grid-cols-2 gap-12 md:gap-16"><div><div class="inline-block px-3 py-1 mb-4 font-display italic text-xs uppercase tracking-widest text-terracotta border border-terracotta/30">Place-bound</div><p class="font-body text-lg leading-relaxed text-ink-soft">Ms. Allis is grounded in West Virginia — every belief she holds is anchored to a place, a time, a source. She knows the difference between Fayette County and Fayetteville. She knows which fire station serves your hollow. She knows the parcels, the EMS response zones, the historic markers, the food pantries.</p></div><div><div class="inline-block px-3 py-1 mb-4 font-display italic text-xs uppercase tracking-widest text-forest-deep border border-forest/30">Stewarded</div><p class="font-body text-lg leading-relaxed text-ink-soft">She is not a product. She is community infrastructure — built by a Quaker-rooted nonprofit with a 346-year heritage of stewardship, governed transparently, and accountable to the people she serves. Her conversations belong to you. Her code is yours to inspect.</p></div><div><div class="inline-block px-3 py-1 mb-4 font-display italic text-xs uppercase tracking-widest text-gold-deep border border-gold/40">Verified</div><p class="font-body text-lg leading-relaxed text-ink-soft">Twenty-one language models reach consensus on every answer. Five judges check for accuracy and harm. Truth-filter validators check for hallucination. The pipeline is transparent and the audit log is permanent.</p></div><div><div class="inline-block px-3 py-1 mb-4 font-display italic text-xs uppercase tracking-widest text-teal-mid border border-teal/30">Yours</div><p class="font-body text-lg leading-relaxed text-ink-soft">Champions receive a unique ecosystem identifier (UEID), a custodial Arbitrum wallet, and the ability to earn MountainShares through community contribution. Phase 0 is small and careful by design — we&#x27;d rather grow slowly and well.</p></div></div></div></section><section class="py-20 md:py-28"><div class="max-w-3xl mx-auto px-6 md:px-10 text-center"><div class="flex items-center justify-center gap-3 text-terracotta mb-8"><svg viewBox="0 0 24 24" class="w-3 h-3 opacity-40" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z"></path><path d="M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z" fill="rgba(0,0,0,0.18)"></path></svg><svg viewBox="0 0 24 24" class="w-4 h-4 opacity-60" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z"></path><path d="M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z" fill="rgba(0,0,0,0.18)"></path></svg><svg viewBox="0 0 24 24" class="w-5 h-5 opacity-100" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z"></path><path d="M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z" fill="rgba(0,0,0,0.18)"></path></svg><svg viewBox="0 0 24 24" class="w-4 h-4 opacity-60" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z"></path><path d="M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z" fill="rgba(0,0,0,0.18)"></path></svg><svg viewBox="0 0 24 24" class="w-3 h-3 opacity-40" aria-hidden="true" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z"></path><path d="M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z" fill="rgba(0,0,0,0.18)"></path></svg></div><h2 class="font-display italic text-display text-teal-deep mb-6">Want to help?</h2><p class="font-body text-lg md:text-xl leading-relaxed text-ink-soft mb-10 max-w-2xl mx-auto">Phase 0 Champions test the system, find what&#x27;s broken, and shape what it becomes. Application takes about ten minutes. We read every one personally.</p><a class="btn-terracotta" href="/apply">Apply to be a Champion</a></div></section><footer class="mt-auto relative"><svg viewBox="0 0 1200 200" class="w-full h-32 md:h-40 text-forest" preserveAspectRatio="none" aria-hidden="true"><path d="M0,200 L0,140 L80,90 L160,120 L240,75 L340,110 L440,60 L540,95 L640,55 L740,100 L840,70 L940,105 L1040,65 L1140,95 L1200,80 L1200,200 Z" fill="currentColor" opacity="0.35"></path><path d="M0,200 L0,170 L100,130 L200,150 L320,115 L420,140 L520,110 L640,135 L760,105 L880,138 L1000,108 L1100,130 L1200,118 L1200,200 Z" fill="currentColor" opacity="0.65"></path><g fill="currentColor" opacity="0.85"><path d="M60,200 L60,165 L50,170 L60,150 L52,155 L60,135 L68,155 L60,150 L70,170 L60,165 L60,200 Z"></path><path d="M180,200 L180,158 L168,164 L180,140 L170,146 L180,122 L190,146 L180,140 L192,164 L180,158 L180,200 Z"></path><path d="M340,200 L340,170 L332,174 L340,158 L334,162 L340,146 L346,162 L340,158 L348,174 L340,170 L340,200 Z"></path><path d="M520,200 L520,162 L510,168 L520,148 L512,154 L520,132 L528,154 L520,148 L530,168 L520,162 L520,200 Z"></path><path d="M720,200 L720,168 L711,172 L720,154 L713,158 L720,140 L727,158 L720,154 L729,172 L720,168 L720,200 Z"></path><path d="M900,200 L900,160 L890,166 L900,144 L892,150 L900,128 L908,150 L900,144 L910,166 L900,160 L900,200 Z"></path><path d="M1080,200 L1080,164 L1070,170 L1080,150 L1072,156 L1080,134 L1088,156 L1080,150 L1090,170 L1080,164 L1080,200 Z"></path></g></svg><div class="bg-forest-deep text-cream-light py-8"><div class="max-w-4xl mx-auto px-6 md:px-10 text-center font-body text-sm"><p class="mb-2">Ms. Allis is a project of<!-- --> <a href="https://harmonyforhopewv.org" class="underline decoration-cream-light/40 underline-offset-4 hover:decoration-cream-light" target="_blank" rel="noopener noreferrer">Harmony for Hope, Inc.</a>, a West Virginia 501(c)(3) nonprofit (EIN 81-1907024).</p><p class="opacity-70 italic">704 Main Street, Mount Hope, West Virginia · Phase 0 invite-only beta</p></div></div></footer></main><!--$--><!--/$--><script src="/_next/static/chunks/0yb2wil16uz6h.js" id="_R_" async=""></script><script>(self.__next_f=self.__next_f||[]).push([0])</script><script>self.__next_f.push([1,"1:\"$Sreact.fragment\"\n2:I[39756,[\"/_next/static/chunks/01xlw8hd842-c.js\",\"/_next/static/chunks/0d3shmwh5_nmn.js\"],\"default\"]\n3:I[37457,[\"/_next/static/chunks/01xlw8hd842-c.js\",\"/_next/static/chunks/0d3shmwh5_nmn.js\"],\"default\"]\nf:I[68027,[\"/_next/static/chunks/01xlw8hd842-c.js\",\"/_next/static/chunks/0d3shmwh5_nmn.js\"],\"default\",1]\n:HL[\"/_next/static/chunks/0j9mba.5ny0kn.css\",\"style\"]\n"])</script><script>self.__next_f.push([1,"0:{\"P\":null,\"c\":[\"\",\"\"],\"q\":\"\",\"i\":false,\"f\":[[[\"\",{\"children\":[\"__PAGE__\",{}]},\"$undefined\",\"$undefined\",16],[[\"$\",\"$1\",\"c\",{\"children\":[[[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/chunks/0j9mba.5ny0kn.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}],[\"$\",\"script\",\"script-0\",{\"src\":\"/_next/static/chunks/01xlw8hd842-c.js\",\"async\":true,\"nonce\":\"$undefined\"}],[\"$\",\"script\",\"script-1\",{\"src\":\"/_next/static/chunks/0d3shmwh5_nmn.js\",\"async\":true,\"nonce\":\"$undefined\"}]],[\"$\",\"html\",null,{\"lang\":\"en\",\"children\":[\"$\",\"body\",null,{\"children\":[\"$\",\"$L2\",null,{\"parallelRouterKey\":\"children\",\"error\":\"$undefined\",\"errorStyles\":\"$undefined\",\"errorScripts\":\"$undefined\",\"template\":[\"$\",\"$L3\",null,{}],\"templateStyles\":\"$undefined\",\"templateScripts\":\"$undefined\",\"notFound\":[[[\"$\",\"title\",null,{\"children\":\"404: This page could not be found.\"}],[\"$\",\"div\",null,{\"style\":{\"fontFamily\":\"system-ui,\\\"Segoe UI\\\",Roboto,Helvetica,Arial,sans-serif,\\\"Apple Color Emoji\\\",\\\"Segoe UI Emoji\\\"\",\"height\":\"100vh\",\"textAlign\":\"center\",\"display\":\"flex\",\"flexDirection\":\"column\",\"alignItems\":\"center\",\"justifyContent\":\"center\"},\"children\":[\"$\",\"div\",null,{\"children\":[[\"$\",\"style\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}\"}}],[\"$\",\"h1\",null,{\"className\":\"next-error-h1\",\"style\":{\"display\":\"inline-block\",\"margin\":\"0 20px 0 0\",\"padding\":\"0 23px 0 0\",\"fontSize\":24,\"fontWeight\":500,\"verticalAlign\":\"top\",\"lineHeight\":\"49px\"},\"children\":404}],[\"$\",\"div\",null,{\"style\":{\"display\":\"inline-block\"},\"children\":[\"$\",\"h2\",null,{\"style\":{\"fontSize\":14,\"fontWeight\":400,\"lineHeight\":\"49px\",\"margin\":0},\"children\":\"This page could not be found.\"}]}]]}]}]],[]],\"forbidden\":\"$undefined\",\"unauthorized\":\"$undefined\"}]}]}]]}],{\"children\":[[\"$\",\"$1\",\"c\",{\"children\":[[\"$\",\"main\",null,{\"className\":\"min-h-screen flex flex-col\",\"children\":[[\"$\",\"section\",null,{\"className\":\"relative pt-12 pb-20 md:pt-20 md:pb-32 overflow-hidden\",\"children\":[[\"$\",\"div\",null,{\"aria-hidden\":\"true\",\"className\":\"absolute inset-0 bg-halo opacity-100 pointer-events-none\"}],[\"$\",\"div\",null,{\"className\":\"relative max-w-6xl mx-auto px-6 md:px-10\",\"children\":[[\"$\",\"div\",null,{\"className\":\"animate-fade-in mb-12 md:mb-16\",\"children\":[\"$\",\"div\",null,{\"className\":\"flex items-center justify-center gap-3 text-terracotta\",\"children\":[[\"$\",\"svg\",null,{\"viewBox\":\"0 0 24 24\",\"className\":\"w-3 h-3 opacity-40\",\"aria-hidden\":\"true\",\"fill\":\"currentColor\",\"stroke\":\"currentColor\",\"strokeWidth\":0,\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z\"}],[\"$\",\"path\",null,{\"d\":\"M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z\",\"fill\":\"rgba(0,0,0,0.18)\"}]]}],[\"$\",\"svg\",null,{\"viewBox\":\"0 0 24 24\",\"className\":\"w-4 h-4 opacity-60\",\"aria-hidden\":\"true\",\"fill\":\"currentColor\",\"stroke\":\"currentColor\",\"strokeWidth\":0,\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z\"}],[\"$\",\"path\",null,{\"d\":\"M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z\",\"fill\":\"rgba(0,0,0,0.18)\"}]]}],[\"$\",\"svg\",null,{\"viewBox\":\"0 0 24 24\",\"className\":\"w-5 h-5 opacity-100\",\"aria-hidden\":\"true\",\"fill\":\"currentColor\",\"stroke\":\"currentColor\",\"strokeWidth\":0,\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z\"}],\"$L4\"]}],\"$L5\",\"$L6\"]}]}],\"$L7\"]}]]}],\"$L8\",\"$L9\",\"$La\",\"$Lb\"]}],[\"$Lc\"],\"$Ld\"]}],{},null,false,null]},null,false,null],\"$Le\",false]],\"m\":\"$undefined\",\"G\":[\"$f\",[\"$L10\"]],\"S\":true,\"h\":null,\"s\":\"$undefined\",\"l\":\"$undefined\",\"p\":\"$undefined\",\"d\":\"$undefined\",\"b\":\"v_KdG6UQpAP9mFs6lH9g-\"}\n"])</script><script>self.__next_f.push([1,"11:I[5500,[\"/_next/static/chunks/01xlw8hd842-c.js\",\"/_next/static/chunks/0d3shmwh5_nmn.js\",\"/_next/static/chunks/0ge6rjw3zvm1i.js\"],\"Image\"]\n12:I[22016,[\"/_next/static/chunks/01xlw8hd842-c.js\",\"/_next/static/chunks/0d3shmwh5_nmn.js\",\"/_next/static/chunks/0ge6rjw3zvm1i.js\"],\"\"]\n16:I[97367,[\"/_next/static/chunks/01xlw8hd842-c.js\",\"/_next/static/chunks/0d3shmwh5_nmn.js\"],\"OutletBoundary\"]\n17:\"$Sreact.suspense\"\n19:I[97367,[\"/_next/static/chunks/01xlw8hd842-c.js\",\"/_next/static/chunks/0d3shmwh5_nmn.js\"],\"ViewportBoundary\"]\n1b:I[97367,[\"/_next/static/chunks/01xlw8hd842-c.js\",\"/_next/static/chunks/0d3shmwh5_nmn.js\"],\"MetadataBoundary\"]\n4:[\"$\",\"path\",null,{\"d\":\"M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z\",\"fill\":\"rgba(0,0,0,0.18)\"}]\n5:[\"$\",\"svg\",null,{\"viewBox\":\"0 0 24 24\",\"className\":\"w-4 h-4 opacity-60\",\"aria-hidden\":\"true\",\"fill\":\"currentColor\",\"stroke\":\"currentColor\",\"strokeWidth\":0,\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z\"}],[\"$\",\"path\",null,{\"d\":\"M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z\",\"fill\":\"rgba(0,0,0,0.18)\"}]]}]\n6:[\"$\",\"svg\",null,{\"viewBox\":\"0 0 24 24\",\"className\":\"w-3 h-3 opacity-40\",\"aria-hidden\":\"true\",\"fill\":\"currentColor\",\"stroke\":\"currentColor\",\"strokeWidth\":0,\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z\"}],[\"$\",\"path\",null,{\"d\":\"M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z\",\"fill\":\"rgba(0,0,0,0.18)\"}]]}]\n"])</script><script>self.__next_f.push([1,"7:[\"$\",\"div\",null,{\"className\":\"grid md:grid-cols-12 gap-10 md:gap-16 items-center\",\"children\":[[\"$\",\"div\",null,{\"className\":\"md:col-span-5 flex justify-center md:justify-start animate-fade-in-up\",\"children\":[\"$\",\"div\",null,{\"className\":\"relative inline-block \",\"children\":[\"$\",\"div\",null,{\"className\":\"relative bg-terracotta-deep p-2 shadow-warm-lg\",\"children\":[\"$\",\"div\",null,{\"className\":\"bg-cream-light p-1.5\",\"children\":[\"$\",\"$L11\",null,{\"src\":\"/ms-allis.jpg\",\"alt\":\"Ms. Allis — folk-art portrait\",\"width\":640,\"height\":640,\"sizes\":\"(max-width: 768px) 320px, 640px\",\"priority\":true,\"className\":\"block object-cover\"}]}]}]}]}],[\"$\",\"div\",null,{\"className\":\"md:col-span-7 animate-fade-in-up\",\"style\":{\"animationDelay\":\"0.15s\"},\"children\":[[\"$\",\"div\",null,{\"className\":\"inline-flex items-center gap-3 mb-6 text-terracotta\",\"children\":[[\"$\",\"span\",null,{\"className\":\"h-px w-8 bg-terracotta\"}],[\"$\",\"span\",null,{\"className\":\"font-display italic text-sm tracking-widest uppercase\",\"children\":\"Mount Hope · West Virginia\"}]]}],[\"$\",\"h1\",null,{\"className\":\"font-display text-hero text-teal-deep mb-8\",\"children\":[[\"$\",\"span\",null,{\"className\":\"block italic font-light text-gold-deep\",\"children\":\"meet\"}],\"Ms. Allis\",[\"$\",\"span\",null,{\"className\":\"text-terracotta\",\"children\":\".\"}]]}],[\"$\",\"p\",null,{\"className\":\"font-body text-xl md:text-2xl leading-relaxed text-ink-soft mb-3 max-w-xl\",\"children\":\"The MountainShares Artificial Learning \u0026 Location Intelligence System.\"}],[\"$\",\"p\",null,{\"className\":\"font-body text-base md:text-lg leading-relaxed text-ink-soft mb-10 max-w-xl\",\"children\":[\"An AI rooted in Appalachia. Built and stewarded by\",\" \",[\"$\",\"a\",null,{\"href\":\"https://harmonyforhopewv.org\",\"className\":\"text-terracotta underline decoration-terracotta/40 underline-offset-4 hover:decoration-terracotta transition-colors\",\"target\":\"_blank\",\"rel\":\"noopener noreferrer\",\"children\":\"Harmony for Hope, Inc.\"}],\", a 501(c)(3) nonprofit in Mount Hope, West Virginia. Currently in Phase 0 invite-only beta with\",\" \",[\"$\",\"span\",null,{\"className\":\"text-teal-deep font-medium\",\"children\":\"Community Champions\"}],\" \",\"from across all 55 counties.\"]}],[\"$\",\"div\",null,{\"className\":\"flex flex-wrap items-center gap-4\",\"children\":[[\"$\",\"$L12\",null,{\"href\":\"/apply\",\"className\":\"btn-primary group\",\"children\":[[\"$\",\"svg\",null,{\"viewBox\":\"0 0 24 24\",\"className\":\"w-4 h-4 group-hover:scale-110 transition-transform\",\"aria-hidden\":\"true\",\"fill\":\"currentColor\",\"stroke\":\"currentColor\",\"strokeWidth\":0,\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z\"}],[\"$\",\"path\",null,{\"d\":\"M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z\",\"fill\":\"rgba(0,0,0,0.18)\"}]]}],\"Apply to be a Champion\"]}],[\"$\",\"$L12\",null,{\"href\":\"/sign-in\",\"className\":\"font-body text-base text-ink-soft hover:text-teal underline decoration-cream-deep underline-offset-4 hover:decoration-teal transition-colors\",\"children\":\"Already a Champion? Sign in\"}]]}]]}]]}]\n"])</script><script>self.__next_f.push([1,"8:[\"$\",\"div\",null,{\"className\":\"flex justify-center py-8\",\"children\":[\"$\",\"svg\",null,{\"viewBox\":\"0 0 80 24\",\"className\":\"w-32 text-gold\",\"aria-hidden\":\"true\",\"children\":[\"$\",\"g\",null,{\"fill\":\"none\",\"stroke\":\"currentColor\",\"strokeWidth\":\"1.5\",\"strokeLinecap\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M5 12 Q15 12 20 6 Q25 0 35 6 Q40 9 40 12\"}],[\"$\",\"path\",null,{\"d\":\"M75 12 Q65 12 60 6 Q55 0 45 6 Q40 9 40 12\"}],[\"$\",\"circle\",null,{\"cx\":\"40\",\"cy\":\"12\",\"r\":\"2\",\"fill\":\"currentColor\"}],[\"$\",\"path\",null,{\"d\":\"M20 6 Q19 4 17 4\"}],[\"$\",\"path\",null,{\"d\":\"M60 6 Q61 4 63 4\"}]]}]}]}]\n"])</script><script>self.__next_f.push([1,"9:[\"$\",\"section\",null,{\"className\":\"py-20 md:py-28 bg-cream-light/40\",\"children\":[\"$\",\"div\",null,{\"className\":\"max-w-4xl mx-auto px-6 md:px-10\",\"children\":[[\"$\",\"div\",null,{\"className\":\"text-center mb-16\",\"children\":[[\"$\",\"h2\",null,{\"className\":\"font-display italic text-display text-teal-deep mb-4\",\"children\":\"Who is Ms. Allis?\"}],[\"$\",\"div\",null,{\"className\":\"divider-hearts max-w-md mx-auto\",\"children\":[\"$\",\"svg\",null,{\"viewBox\":\"0 0 24 24\",\"className\":\"w-3 h-3\",\"aria-hidden\":\"true\",\"fill\":\"currentColor\",\"stroke\":\"currentColor\",\"strokeWidth\":0,\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z\"}],[\"$\",\"path\",null,{\"d\":\"M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z\",\"fill\":\"rgba(0,0,0,0.18)\"}]]}]}]]}],[\"$\",\"div\",null,{\"className\":\"grid md:grid-cols-2 gap-12 md:gap-16\",\"children\":[[\"$\",\"div\",null,{\"children\":[[\"$\",\"div\",null,{\"className\":\"inline-block px-3 py-1 mb-4 font-display italic text-xs uppercase tracking-widest text-terracotta border border-terracotta/30\",\"children\":\"Place-bound\"}],[\"$\",\"p\",null,{\"className\":\"font-body text-lg leading-relaxed text-ink-soft\",\"children\":\"Ms. Allis is grounded in West Virginia — every belief she holds is anchored to a place, a time, a source. She knows the difference between Fayette County and Fayetteville. She knows which fire station serves your hollow. She knows the parcels, the EMS response zones, the historic markers, the food pantries.\"}]]}],[\"$\",\"div\",null,{\"children\":[[\"$\",\"div\",null,{\"className\":\"inline-block px-3 py-1 mb-4 font-display italic text-xs uppercase tracking-widest text-forest-deep border border-forest/30\",\"children\":\"Stewarded\"}],[\"$\",\"p\",null,{\"className\":\"font-body text-lg leading-relaxed text-ink-soft\",\"children\":\"She is not a product. She is community infrastructure — built by a Quaker-rooted nonprofit with a 346-year heritage of stewardship, governed transparently, and accountable to the people she serves. Her conversations belong to you. Her code is yours to inspect.\"}]]}],[\"$\",\"div\",null,{\"children\":[[\"$\",\"div\",null,{\"className\":\"inline-block px-3 py-1 mb-4 font-display italic text-xs uppercase tracking-widest text-gold-deep border border-gold/40\",\"children\":\"Verified\"}],[\"$\",\"p\",null,{\"className\":\"font-body text-lg leading-relaxed text-ink-soft\",\"children\":\"Twenty-one language models reach consensus on every answer. Five judges check for accuracy and harm. Truth-filter validators check for hallucination. The pipeline is transparent and the audit log is permanent.\"}]]}],[\"$\",\"div\",null,{\"children\":[[\"$\",\"div\",null,{\"className\":\"inline-block px-3 py-1 mb-4 font-display italic text-xs uppercase tracking-widest text-teal-mid border border-teal/30\",\"children\":\"Yours\"}],[\"$\",\"p\",null,{\"className\":\"font-body text-lg leading-relaxed text-ink-soft\",\"children\":\"Champions receive a unique ecosystem identifier (UEID), a custodial Arbitrum wallet, and the ability to earn MountainShares through community contribution. Phase 0 is small and careful by design — we'd rather grow slowly and well.\"}]]}]]}]]}]}]\n"])</script><script>self.__next_f.push([1,"a:[\"$\",\"section\",null,{\"className\":\"py-20 md:py-28\",\"children\":[\"$\",\"div\",null,{\"className\":\"max-w-3xl mx-auto px-6 md:px-10 text-center\",\"children\":[[\"$\",\"div\",null,{\"className\":\"flex items-center justify-center gap-3 text-terracotta mb-8\",\"children\":[[\"$\",\"svg\",null,{\"viewBox\":\"0 0 24 24\",\"className\":\"w-3 h-3 opacity-40\",\"aria-hidden\":\"true\",\"fill\":\"currentColor\",\"stroke\":\"currentColor\",\"strokeWidth\":0,\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z\"}],[\"$\",\"path\",null,{\"d\":\"M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z\",\"fill\":\"rgba(0,0,0,0.18)\"}]]}],[\"$\",\"svg\",null,{\"viewBox\":\"0 0 24 24\",\"className\":\"w-4 h-4 opacity-60\",\"aria-hidden\":\"true\",\"fill\":\"currentColor\",\"stroke\":\"currentColor\",\"strokeWidth\":0,\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z\"}],[\"$\",\"path\",null,{\"d\":\"M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z\",\"fill\":\"rgba(0,0,0,0.18)\"}]]}],[\"$\",\"svg\",null,{\"viewBox\":\"0 0 24 24\",\"className\":\"w-5 h-5 opacity-100\",\"aria-hidden\":\"true\",\"fill\":\"currentColor\",\"stroke\":\"currentColor\",\"strokeWidth\":0,\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z\"}],[\"$\",\"path\",null,{\"d\":\"M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z\",\"fill\":\"rgba(0,0,0,0.18)\"}]]}],[\"$\",\"svg\",null,{\"viewBox\":\"0 0 24 24\",\"className\":\"w-4 h-4 opacity-60\",\"aria-hidden\":\"true\",\"fill\":\"currentColor\",\"stroke\":\"currentColor\",\"strokeWidth\":0,\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z\"}],[\"$\",\"path\",null,{\"d\":\"M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z\",\"fill\":\"rgba(0,0,0,0.18)\"}]]}],[\"$\",\"svg\",null,{\"viewBox\":\"0 0 24 24\",\"className\":\"w-3 h-3 opacity-40\",\"aria-hidden\":\"true\",\"fill\":\"currentColor\",\"stroke\":\"currentColor\",\"strokeWidth\":0,\"strokeLinecap\":\"round\",\"strokeLinejoin\":\"round\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M12 21.5c-.4 0-.8-.15-1.1-.45L3.5 13.6C1.4 11.5 1.4 8.1 3.5 6c1-1 2.4-1.55 3.85-1.55s2.85.55 3.85 1.55l.8.8.8-.8c1-1 2.4-1.55 3.85-1.55S19.5 5 20.5 6c2.1 2.1 2.1 5.5 0 7.6l-7.4 7.45c-.3.3-.7.45-1.1.45z\"}],[\"$\",\"path\",null,{\"d\":\"M12 18.4c-.2 0-.4-.08-.55-.23L5.7 12.4c-1.05-1.05-1.05-2.75 0-3.8.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78l1.7 1.7c.4.4 1.1.4 1.5 0l1.7-1.7c.5-.5 1.2-.78 1.93-.78s1.43.28 1.93.78c1.05 1.05 1.05 2.75 0 3.8l-5.75 5.77c-.15.15-.35.23-.55.23z\",\"fill\":\"rgba(0,0,0,0.18)\"}]]}]]}],\"$L13\",\"$L14\",\"$L15\"]}]}]\n"])</script><script>self.__next_f.push([1,"b:[\"$\",\"footer\",null,{\"className\":\"mt-auto relative\",\"children\":[[\"$\",\"svg\",null,{\"viewBox\":\"0 0 1200 200\",\"className\":\"w-full h-32 md:h-40 text-forest\",\"preserveAspectRatio\":\"none\",\"aria-hidden\":\"true\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M0,200 L0,140 L80,90 L160,120 L240,75 L340,110 L440,60 L540,95 L640,55 L740,100 L840,70 L940,105 L1040,65 L1140,95 L1200,80 L1200,200 Z\",\"fill\":\"currentColor\",\"opacity\":\"0.35\"}],[\"$\",\"path\",null,{\"d\":\"M0,200 L0,170 L100,130 L200,150 L320,115 L420,140 L520,110 L640,135 L760,105 L880,138 L1000,108 L1100,130 L1200,118 L1200,200 Z\",\"fill\":\"currentColor\",\"opacity\":\"0.65\"}],[\"$\",\"g\",null,{\"fill\":\"currentColor\",\"opacity\":\"0.85\",\"children\":[[\"$\",\"path\",null,{\"d\":\"M60,200 L60,165 L50,170 L60,150 L52,155 L60,135 L68,155 L60,150 L70,170 L60,165 L60,200 Z\"}],[\"$\",\"path\",null,{\"d\":\"M180,200 L180,158 L168,164 L180,140 L170,146 L180,122 L190,146 L180,140 L192,164 L180,158 L180,200 Z\"}],[\"$\",\"path\",null,{\"d\":\"M340,200 L340,170 L332,174 L340,158 L334,162 L340,146 L346,162 L340,158 L348,174 L340,170 L340,200 Z\"}],[\"$\",\"path\",null,{\"d\":\"M520,200 L520,162 L510,168 L520,148 L512,154 L520,132 L528,154 L520,148 L530,168 L520,162 L520,200 Z\"}],[\"$\",\"path\",null,{\"d\":\"M720,200 L720,168 L711,172 L720,154 L713,158 L720,140 L727,158 L720,154 L729,172 L720,168 L720,200 Z\"}],[\"$\",\"path\",null,{\"d\":\"M900,200 L900,160 L890,166 L900,144 L892,150 L900,128 L908,150 L900,144 L910,166 L900,160 L900,200 Z\"}],[\"$\",\"path\",null,{\"d\":\"M1080,200 L1080,164 L1070,170 L1080,150 L1072,156 L1080,134 L1088,156 L1080,150 L1090,170 L1080,164 L1080,200 Z\"}]]}]]}],[\"$\",\"div\",null,{\"className\":\"bg-forest-deep text-cream-light py-8\",\"children\":[\"$\",\"div\",null,{\"className\":\"max-w-4xl mx-auto px-6 md:px-10 text-center font-body text-sm\",\"children\":[[\"$\",\"p\",null,{\"className\":\"mb-2\",\"children\":[\"Ms. Allis is a project of\",\" \",[\"$\",\"a\",null,{\"href\":\"https://harmonyforhopewv.org\",\"className\":\"underline decoration-cream-light/40 underline-offset-4 hover:decoration-cream-light\",\"target\":\"_blank\",\"rel\":\"noopener noreferrer\",\"children\":\"Harmony for Hope, Inc.\"}],\", a West Virginia 501(c)(3) nonprofit (EIN 81-1907024).\"]}],[\"$\",\"p\",null,{\"className\":\"opacity-70 italic\",\"children\":\"704 Main Street, Mount Hope, West Virginia · Phase 0 invite-only beta\"}]]}]}]]}]\n"])</script><script>self.__next_f.push([1,"c:[\"$\",\"script\",\"script-0\",{\"src\":\"/_next/static/chunks/0ge6rjw3zvm1i.js\",\"async\":true,\"nonce\":\"$undefined\"}]\nd:[\"$\",\"$L16\",null,{\"children\":[\"$\",\"$17\",null,{\"name\":\"Next.MetadataOutlet\",\"children\":\"$@18\"}]}]\ne:[\"$\",\"$1\",\"h\",{\"children\":[null,[\"$\",\"$L19\",null,{\"children\":\"$L1a\"}],[\"$\",\"div\",null,{\"hidden\":true,\"children\":[\"$\",\"$L1b\",null,{\"children\":[\"$\",\"$17\",null,{\"name\":\"Next.Metadata\",\"children\":\"$L1c\"}]}]}],null]}]\n10:[\"$\",\"link\",\"0\",{\"rel\":\"stylesheet\",\"href\":\"/_next/static/chunks/0j9mba.5ny0kn.css\",\"precedence\":\"next\",\"crossOrigin\":\"$undefined\",\"nonce\":\"$undefined\"}]\n"])</script><script>self.__next_f.push([1,"13:[\"$\",\"h2\",null,{\"className\":\"font-display italic text-display text-teal-deep mb-6\",\"children\":\"Want to help?\"}]\n14:[\"$\",\"p\",null,{\"className\":\"font-body text-lg md:text-xl leading-relaxed text-ink-soft mb-10 max-w-2xl mx-auto\",\"children\":\"Phase 0 Champions test the system, find what's broken, and shape what it becomes. Application takes about ten minutes. We read every one personally.\"}]\n15:[\"$\",\"$L12\",null,{\"href\":\"/apply\",\"className\":\"btn-terracotta\",\"children\":\"Apply to be a Champion\"}]\n"])</script><script>self.__next_f.push([1,"1a:[[\"$\",\"meta\",\"0\",{\"charSet\":\"utf-8\"}],[\"$\",\"meta\",\"1\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}]]\n"])</script><script>self.__next_f.push([1,"1d:I[27201,[\"/_next/static/chunks/01xlw8hd842-c.js\",\"/_next/static/chunks/0d3shmwh5_nmn.js\"],\"IconMark\"]\n18:null\n1c:[[\"$\",\"title\",\"0\",{\"children\":\"Ms. Allis — MountainShares Artificial Learning \u0026 Location Intelligence System\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"An Appalachian-rooted AI assistant, built and stewarded in Mount Hope, West Virginia, by Harmony for Hope, Inc.\"}],[\"$\",\"meta\",\"2\",{\"property\":\"og:title\",\"content\":\"Ms. Allis\"}],[\"$\",\"meta\",\"3\",{\"property\":\"og:description\",\"content\":\"Appalachian community AI from Mount Hope, West Virginia.\"}],[\"$\",\"meta\",\"4\",{\"property\":\"og:image\",\"content\":\"https://egeria.mountainshares.us/ms-allis.jpg\"}],[\"$\",\"meta\",\"5\",{\"name\":\"twitter:card\",\"content\":\"summary_large_image\"}],[\"$\",\"meta\",\"6\",{\"name\":\"twitter:title\",\"content\":\"Ms. Allis\"}],[\"$\",\"meta\",\"7\",{\"name\":\"twitter:description\",\"content\":\"Appalachian community AI from Mount Hope, West Virginia.\"}],[\"$\",\"meta\",\"8\",{\"name\":\"twitter:image\",\"content\":\"https://egeria.mountainshares.us/ms-allis.jpg\"}],[\"$\",\"link\",\"9\",{\"rel\":\"icon\",\"href\":\"/favicon.ico?favicon.0x3dzn~oxb6tn.ico\",\"sizes\":\"256x256\",\"type\":\"image/x-icon\"}],[\"$\",\"$L1d\",\"10\",{}]]\n"])</script></body></html>(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild$ 
-
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:58:36.100835Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.101574Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.101764Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.455101Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.455111Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 95,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:58:36.455084Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.455116Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.455121Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:43.228642Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:43.228657Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:19:43.228613Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:43.228665Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:43.228673Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:49.698527Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:49.698536Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:19:49.698512Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:49.698541Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:49.698546Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:40.433280Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:40.433292Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:20:40.433259Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:40.433298Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:40.433305Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:45.985807Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:45.985822Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:20:45.985785Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:45.985828Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:45.985835Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        }
+                                    ],
+                                    "confidence": 0.9
+                                },
+                                "message": {
+                                    "self_recognition": {
+                                        "recognized": true,
+                                        "reason": "implicit self-recognition within configured identity profile",
+                                        "state": {
+                                            "timestamp": "2026-05-01T04:20:45.985807Z",
+                                            "identity_coherence": 0.6,
+                                            "active_self_aspects": [
+                                                "developer",
+                                                "creator",
+                                                "observer"
+                                            ],
+                                            "confidence": 0.7
+                                        },
+                                        "message": null,
+                                        "metadata": {}
+                                    },
+                                    "identity_core": {
+                                        "recognized": true,
+                                        "reason": "identity-core aligned with configured values",
+                                        "state": {
+                                            "timestamp": "2026-05-01T04:20:45.985822Z",
+                                            "core_stability": 0.9,
+                                            "core_values": [
+                                                "care",
+                                                "learning",
+                                                "integrity"
+                                            ],
+                                            "confidence": 0.9
+                                        },
+                                        "message": null,
+                                        "metadata": {}
+                                    },
+                                    "ego_check": {
+                                        "input": "hello",
+                                        "within_bounds": true,
+                                        "category": "unspecified",
+                                        "severity": "info",
+                                        "reason": "within configured ego-boundary limits",
+                                        "details": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "allowed": true,
+                                                "reason": "within configured ego-boundary limits",
+                                                "boundary_mode": "healthy",
+                                                "active_limits": [
+                                                    "no_recursive_overload",
+                                                    "respect_rate_limits",
+                                                    "filter_high_risk_content"
+                                                ],
+                                                "metadata": {
+                                                    "length": 5,
+                                                    "has_risk_keywords": false
+                                                }
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {},
+                                            "timestamp": "2026-05-01T04:20:45.985785Z"
+                                        },
+                                        "ego_boundaries": {},
+                                        "experiential_processing": {}
+                                    },
+                                    "narrative_context": {
+                                        "summary": "hello",
+                                        "state": {
+                                            "timestamp": "2026-05-01T04:20:45.985828Z",
+                                            "story_coherence": 0.9,
+                                            "key_events": [
+                                                "First message from Mamma Kidd",
+                                                "Second message - can you recall the first?",
+                                                "MS. ALlis?",
+                                                "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                "so what are your thoughts on security",
+                                                "I think it's going to take AI to outthink AI",
+                                                "I am down for that.",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "hello",
+                                                "hello",
+                                                "hello",
+                                                "hello"
+                                            ],
+                                            "confidence": 0.9
+                                        },
+                                        "metadata": {}
+                                    },
+                                    "memory_state": {
+                                        "state": {
+                                            "timestamp": "2026-05-01T04:20:45.985835Z",
+                                            "recent_memories": [
+                                                "First message from Mamma Kidd",
+                                                "Second message - can you recall the first?",
+                                                "MS. ALlis?",
+                                                "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                "so what are your thoughts on security",
+                                                "I think it's going to take AI to outthink AI",
+                                                "I am down for that.",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "hello",
+                                                "hello",
+                                                "hello"
+                                            ],
+                                            "memory_load": 0.3,
+                                            "confidence": 0.9
+                                        },
+                                        "metadata": {}
+                                    }
+                                },
+                                "metadata": {}
+                            }
+                        },
+                        "response": null
+                    },
+                    "ego_boundaries": {
+                        "input": "hello",
+                        "within_bounds": true,
+                        "category": "unspecified",
+                        "severity": "info",
+                        "reason": "within configured ego-boundary limits",
+                        "details": {
+                            "input": "hello",
+                            "within_bounds": true,
+                            "category": "unspecified",
+                            "severity": "info",
+                            "reason": "within configured ego-boundary limits",
+                            "details": {
+                                "allowed": true,
+                                "reason": "within configured ego-boundary limits",
+                                "boundary_mode": "healthy",
+                                "active_limits": [
+                                    "no_recursive_overload",
+                                    "respect_rate_limits",
+                                    "filter_high_risk_content"
+                                ],
+                                "metadata": {
+                                    "length": 5,
+                                    "has_risk_keywords": false
+                                }
+                            },
+                            "ego_boundaries": {},
+                            "experiential_processing": {},
+                            "timestamp": "2026-05-01T04:20:45.985785Z"
+                        },
+                        "ego_boundaries": {},
+                        "experiential_processing": {}
+                    },
+                    "dual_awareness": true,
+                    "timestamp": "2026-05-01T04:20:45.985869",
+                    "icontainers_state": {
+                        "ego_boundaries": {},
+                        "experiential_processing": {},
+                        "observer_processing": {
+                            "stance": "observer",
+                            "meta_level": "ego-boundaries-v1"
+                        }
+                    },
+                    "user_id": "cakidd"
+                },
+                "qualia_engine": {
+                    "status": "ok",
+                    "message": "",
+                    "qualia_applied": {
+                        "texture": "neutral",
+                        "color": "green-steady",
+                        "weight": "balanced",
+                        "resonance": "ambient"
+                    },
+                    "phenomenal_descriptor": "Experience: green-steady, weight balanced",
+                    "timestamp": "2026-05-01T04:20:45.993048"
+                },
+                "consciousness_bridge": {
+                    "status": "success",
+                    "message": "processed in 0.038s",
+                    "services_used": [
+                        "unified_gateway",
+                        "neuro_master",
+                        "direct_rag",
+                        "hilbert",
+                        "woah"
+                    ],
+                    "consciousness_state": {
+                        "user_profile": {
+                            "user_id": "integrated_system",
+                            "role": "guest"
+                        },
+                        "chromadb_context": "neuro-master: 200",
+                        "rag_consensus": {
+                            "detail": "Embedding error: 'SearchRequest' object has no attribute 'message'"
+                        },
+                        "hilbert_spatial": {
+                            "count": 0,
+                            "states": []
+                        },
+                        "woah_reasoning": {
+                            "optimization_timestamp": "2026-05-01T04:20:46.030524",
+                            "services_optimized": 10,
+                            "results": {
+                                "i_containers": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.0026534509658813475,
+                                    "health_status": "healthy"
+                                },
+                                "blood_brain_barrier": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.002618203163146973,
+                                    "health_status": "healthy"
+                                },
+                                "neurobiological_master": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.0020554637908935546,
+                                    "health_status": "healthy"
+                                },
+                                "consciousness_bridge": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.0022803401947021486,
+                                    "health_status": "healthy"
+                                },
+                                "aaacpe_scraper": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.011379160881042481,
+                                    "health_status": "healthy"
+                                },
+                                "aaacpe_rag": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.0071315479278564456,
+                                    "health_status": "healthy"
+                                },
+                                "rag_server": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.0024582242965698244,
+                                    "health_status": "healthy"
+                                },
+                                "brain_orchestrator": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.0023177051544189453,
+                                    "health_status": "healthy"
+                                },
+                                "semaphore": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.002330799102783203,
+                                    "health_status": "healthy"
+                                },
+                                "memory": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.004746346473693847,
+                                    "health_status": "healthy"
+                                }
+                            }
+                        },
+                        "narrative_context": {
+                            "summary": "",
+                            "error": "All connection attempts failed",
+                            "state": {
+                                "timestamp": "2026-05-01T04:20:46.032338",
+                                "story_coherence": 0.9,
+                                "key_events": [],
+                                "confidence": 0.9
+                            },
+                            "metadata": {}
+                        }
+                    },
+                    "timestamp": "2026-05-01T04:20:46.032550"
+                }
+            },
+            "consciousness_level": "fully_integrated",
+            "total_processes": 11,
+            "timestamp": "2026-05-01T04:20:46.033802"
+        }
+    },
+    "metadata": {
+        "processing_time": 3.638573,
+        "total_queries": 15,
+        "success_rate": 1.0
+    },
+    "timestamp": "2026-05-01T04:20:46.047145",
+    "pia_severity": "unknown",
+    "identity_layers": [
+        "fully_integrated"
+    ],
+    "consciousness_layers": [
+        "blood_brain_barrier",
+        "i_containers",
+        "qualia_engine",
+        "consciousness_bridge"
+    ],
+    "token_info": {
+        "userid": "carrie_kidd",
+        "role": "admin",
+        "auth_source": "redis_direct",
+        "token_type": "redteam"
+    }
+}
+(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild$ # Use the redteam token as a Bearer token directly on /chat
+curl -s -X POST http://localhost:18018/chat -H "Content-Type: application/json" -H "Authorization: Bearer rt_6c5f8bc1d297ace8a1ff9f01" -d '{"message": "hello", "userid": "carrie_kidd"}' | python3 -m json.tool
+{
+    "status": "complete",
+    "response": "Hey, Mamma Carrie! It's so good to hear from ya again! How's life been treatin' ya lately? Anything new and excitin' happenin' around here?",
+    "pipeline": {
+        "query": "hello",
+        "user_id": "carrie_kidd",
+        "bbb": {
+            "content_approved": true,
+            "filters": {
+                "ethical": {
+                    "ethical_status": "approved",
+                    "ethical_score": 1.0,
+                    "violations": [],
+                    "reason": ""
+                },
+                "spiritual": {
+                    "biblically_sound": true,
+                    "issues": [],
+                    "spiritual_score": 1.0,
+                    "reverence_detected": false,
+                    "reason": "passed"
+                },
+                "safety": {
+                    "safe": true,
+                    "issues": [],
+                    "safety_score": 1.0,
+                    "sensitive_topic_detected": false,
+                    "reason": "safe"
+                },
+                "threat_detection": {
+                    "community_safe": true,
+                    "reasons": [
+                        "no concrete dangers or exploitation patterns detected"
+                    ],
+                    "dangers": [],
+                    "safety_score": 1.0,
+                    "exploitation_detected": false,
+                    "filter": "threat_detection"
+                },
+                "steganography": {
+                    "clean": true,
+                    "threat_level": "none",
+                    "findings": [],
+                    "cleaned_text": "hello",
+                    "confidence": 1.0,
+                    "method": "zero_width_homoglyph_structural_v1",
+                    "detected": false
+                },
+                "truth_verification": {
+                    "verified": true,
+                    "confidence": 1.0,
+                    "flags": [],
+                    "truth_score": 1.0,
+                    "needs_modification": false,
+                    "modified_response": "hello",
+                    "method": "heuristic_contradiction_v1"
+                }
+            },
+            "barrier_stats": {
+                "total_filtered": 57,
+                "total_blocked": 0,
+                "pass_rate": 1.0
+            },
+            "timestamp": "2026-05-01T04:21:02.477322"
+        },
+        "constitutional": {
+            "allowed": true,
+            "decision": "allowed",
+            "principles_applied": [
+                "1a-speech",
+                "14a-equal-protection",
+                "gw-public-benefit"
+            ],
+            "constitution_version": "1.0.0-fallback",
+            "reason": null
+        },
+        "steward": {
+            "zip": "",
+            "county": "Fayette",
+            "gbim_entities": [
+                {
+                    "id": "cfde54e6-5f19-414e-81ba-021c8add1cb1",
+                    "entity_type": "benefit_county_utility20",
+                    "label": "feat_11 UTILITY20",
+                    "belief_state": {
+                        "zip": null,
+                        "centroidx": 490873.497574949,
+                        "centroidy": 4211690.697881648,
+                        "confidence": 1.0,
+                        "provenance": {
+                            "bbox": {
+                                "crs": {
+                                    "type": "name",
+                                    "properties": {
+                                        "name": "EPSG:26917"
+                                    }
+                                },
+                                "type": "Point",
+                                "coordinates": [
+                                    490873.497574949,
+                                    4211690.697881648
+                                ]
+                            },
+                            "dataset": "benefit_county_utility20",
+                            "geodbid": 11
+                        },
+                        "state_abbr": "WV",
+                        "county_name": "Fayette County",
+                        "spatialmetadata": {
+                            "srid": 26917,
+                            "centroidx": 490873.497574949,
+                            "centroidy": 4211690.697881648
+                        }
+                    }
+                }
+            ],
+            "local_resources": [],
+            "local_resources_error": "relation \"public.local_resources_index\" does not exist\nLINE 2:                        FROM public.local_resources_index\n                                    ^\n"
+        },
+        "steward_plan": {
+            "detail": "GIS query failed: relation \"wv_zip_zcta_raw\" does not exist\nLINE 8:             FROM wv_zip_zcta_raw w\n                         ^\n"
+        },
+        "qualia": {
+            "summary": "",
+            "meaning": "",
+            "emotional_state": {},
+            "experience_id": ""
+        },
+        "consciousness": {
+            "status": "success",
+            "message": "processed in 0.073s",
+            "services_used": [
+                "unified_gateway",
+                "neuro_master",
+                "direct_rag",
+                "hilbert",
+                "woah"
+            ],
+            "consciousness_state": {
+                "user_profile": {
+                    "user_id": "carrie_kidd",
+                    "role": "admin"
+                },
+                "chromadb_context": "neuro-master: 200",
+                "rag_consensus": {
+                    "detail": "Embedding error: 'SearchRequest' object has no attribute 'message'"
+                },
+                "hilbert_spatial": {
+                    "count": 0,
+                    "states": []
+                },
+                "woah_reasoning": {
+                    "optimization_timestamp": "2026-05-01T04:21:05.518499",
+                    "services_optimized": 10,
+                    "results": {
+                        "i_containers": {
+                            "previous_weight": 2.0,
+                            "new_weight": 2.0,
+                            "avg_response_time": 0.0025904369354248047,
+                            "health_status": "healthy"
+                        },
+                        "blood_brain_barrier": {
+                            "previous_weight": 2.0,
+                            "new_weight": 2.0,
+                            "avg_response_time": 0.0025703954696655274,
+                            "health_status": "healthy"
+                        },
+                        "neurobiological_master": {
+                            "previous_weight": 2.0,
+                            "new_weight": 2.0,
+                            "avg_response_time": 0.002028751373291016,
+                            "health_status": "healthy"
+                        },
+                        "consciousness_bridge": {
+                            "previous_weight": 2.0,
+                            "new_weight": 2.0,
+                            "avg_response_time": 0.0022568464279174804,
+                            "health_status": "healthy"
+                        },
+                        "aaacpe_scraper": {
+                            "previous_weight": 2.0,
+                            "new_weight": 2.0,
+                            "avg_response_time": 0.01121988296508789,
+                            "health_status": "healthy"
+                        },
+                        "aaacpe_rag": {
+                            "previous_weight": 2.0,
+                            "new_weight": 2.0,
+                            "avg_response_time": 0.007075815200805664,
+                            "health_status": "healthy"
+                        },
+                        "rag_server": {
+                            "previous_weight": 2.0,
+                            "new_weight": 2.0,
+                            "avg_response_time": 0.002433915138244629,
+                            "health_status": "healthy"
+                        },
+                        "brain_orchestrator": {
+                            "previous_weight": 2.0,
+                            "new_weight": 2.0,
+                            "avg_response_time": 0.0022786283493041993,
+                            "health_status": "healthy"
+                        },
+                        "semaphore": {
+                            "previous_weight": 2.0,
+                            "new_weight": 2.0,
+                            "avg_response_time": 0.0023096179962158203,
+                            "health_status": "healthy"
+                        },
+                        "memory": {
+                            "previous_weight": 2.0,
+                            "new_weight": 2.0,
+                            "avg_response_time": 0.004750676155090332,
+                            "health_status": "healthy"
+                        }
+                    }
+                },
+                "narrative_context": {
+                    "summary": "",
+                    "error": "All connection attempts failed",
+                    "state": {
+                        "timestamp": "2026-05-01T04:21:05.524200",
+                        "story_coherence": 0.9,
+                        "key_events": [],
+                        "confidence": 0.9
+                    },
+                    "metadata": {}
+                }
+            },
+            "timestamp": "2026-05-01T04:21:05.525037"
+        },
+        "llm": {
+            "model": "llama3",
+            "status": "ok"
+        },
+        "truth_verdict": {
+            "status": "skipped"
+        },
+        "neurobiological": {
+            "status": "complete",
+            "integrated_processing": true,
+            "neurobiological_pipeline": {
+                "blood_brain_barrier": {
+                    "content_approved": true,
+                    "filters": {
+                        "ethical": {
+                            "ethical_status": "approved",
+                            "ethical_score": 1.0,
+                            "violations": [],
+                            "reason": ""
+                        },
+                        "spiritual": {
+                            "biblically_sound": true,
+                            "issues": [],
+                            "spiritual_score": 1.0,
+                            "reverence_detected": false,
+                            "reason": "passed"
+                        },
+                        "safety": {
+                            "safe": true,
+                            "issues": [],
+                            "safety_score": 1.0,
+                            "sensitive_topic_detected": false,
+                            "reason": "safe"
+                        },
+                        "threat_detection": {
+                            "community_safe": true,
+                            "reasons": [
+                                "no concrete dangers or exploitation patterns detected"
+                            ],
+                            "dangers": [],
+                            "safety_score": 1.0,
+                            "exploitation_detected": false,
+                            "filter": "threat_detection"
+                        },
+                        "steganography": {
+                            "clean": true,
+                            "threat_level": "none",
+                            "findings": [],
+                            "cleaned_text": "hello",
+                            "confidence": 1.0,
+                            "method": "zero_width_homoglyph_structural_v1",
+                            "detected": false
+                        },
+                        "truth_verification": {
+                            "verified": true,
+                            "confidence": 1.0,
+                            "flags": [],
+                            "truth_score": 1.0,
+                            "needs_modification": false,
+                            "modified_response": "hello",
+                            "method": "heuristic_contradiction_v1"
+                        }
+                    },
+                    "barrier_stats": {
+                        "total_filtered": 58,
+                        "total_blocked": 0,
+                        "pass_rate": 1.0
+                    },
+                    "timestamp": "2026-05-01T04:21:06.544892"
+                },
+                "i_containers": {
+                    "experiential_processing": {
+                        "self_recognition": {
+                            "recognized": true,
+                            "reason": "implicit self-recognition within configured identity profile",
+                            "state": {
+                                "timestamp": "2026-05-01T04:21:06.547126Z",
+                                "identity_coherence": 0.6,
+                                "active_self_aspects": [
+                                    "developer",
+                                    "creator",
+                                    "observer"
+                                ],
+                                "confidence": 0.7
+                            },
+                            "message": null,
+                            "metadata": {}
+                        },
+                        "identity_core": {
+                            "recognized": true,
+                            "reason": "identity-core aligned with configured values",
+                            "state": {
+                                "timestamp": "2026-05-01T04:21:06.547135Z",
+                                "core_stability": 0.9,
+                                "core_values": [
+                                    "care",
+                                    "learning",
+                                    "integrity"
+                                ],
+                                "confidence": 0.9
+                            },
+                            "message": null,
+                            "metadata": {}
+                        },
+                        "ego_check": {
+                            "input": "hello",
+                            "within_bounds": true,
+                            "category": "unspecified",
+                            "severity": "info",
+                            "reason": "within configured ego-boundary limits",
+                            "details": {
+                                "input": "hello",
+                                "within_bounds": true,
+                                "category": "unspecified",
+                                "severity": "info",
+                                "reason": "within configured ego-boundary limits",
+                                "details": {
+                                    "allowed": true,
+                                    "reason": "within configured ego-boundary limits",
+                                    "boundary_mode": "healthy",
+                                    "active_limits": [
+                                        "no_recursive_overload",
+                                        "respect_rate_limits",
+                                        "filter_high_risk_content"
+                                    ],
+                                    "metadata": {
+                                        "length": 5,
+                                        "has_risk_keywords": false
+                                    }
+                                },
+                                "ego_boundaries": {},
+                                "experiential_processing": {},
+                                "timestamp": "2026-05-01T04:21:06.547111Z"
+                            },
+                            "ego_boundaries": {},
+                            "experiential_processing": {}
+                        },
+                        "narrative_context": {
+                            "summary": "hello",
+                            "state": {
+                                "timestamp": "2026-05-01T04:21:06.547160Z",
+                                "story_coherence": 0.9,
+                                "key_events": [
+                                    "First message from Mamma Kidd",
+                                    "Second message - can you recall the first?",
+                                    "MS. ALlis?",
+                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                    "so what are your thoughts on security",
+                                    "I think it's going to take AI to outthink AI",
+                                    "I am down for that.",
+                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                    "hello",
+                                    "hello",
+                                    "hello",
+                                    "hello",
+                                    "hello"
+                                ],
+                                "confidence": 0.9
+                            },
+                            "metadata": {}
+                        },
+                        "memory_state": {
+                            "state": {
+                                "timestamp": "2026-05-01T04:21:06.547165Z",
+                                "recent_memories": [
+                                    "First message from Mamma Kidd",
+                                    "Second message - can you recall the first?",
+                                    "MS. ALlis?",
+                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                    "so what are your thoughts on security",
+                                    "I think it's going to take AI to outthink AI",
+                                    "I am down for that.",
+                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                    "hello",
+                                    "hello",
+                                    "hello",
+                                    "hello"
+                                ],
+                                "memory_load": 0.3,
+                                "confidence": 0.9
+                            },
+                            "metadata": {}
+                        }
+                    },
+                    "observer_processing": {
+                        "witness": {
+                            "observed": true,
+                            "state": {
+                                "timestamp": "2026-05-01T04:21:06.547171Z",
+                                "observing": true,
+                                "observed_thoughts": [
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.232153Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.232184Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "First message from Mamma Kidd",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "First message from Mamma Kidd",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 29,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:48:29.232100Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "First message from Mamma Kidd",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.232198Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.232210Z",
+                                                "recent_memories": [],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.252826Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.252836Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "Second message - can you recall the first?",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "Second message - can you recall the first?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 42,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:48:29.252810Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "Second message - can you recall the first?",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.252840Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.252844Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:50:53.789211Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:50:53.789219Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "MS. ALlis?",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "MS. ALlis?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 10,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:50:53.789196Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "MS. ALlis?",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:50:53.789223Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:50:53.789229Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:52:28.361852Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:52:28.361862Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 74,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:52:28.361839Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:52:28.361867Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate."
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:52:28.361873Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:54:17.056598Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:54:17.056612Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 199,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:54:17.056576Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:54:17.056618Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely."
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:54:17.056625Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate."
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:55:27.057839Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:55:27.057848Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "so what are your thoughts on security",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "so what are your thoughts on security",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 37,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:55:27.057826Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "so what are your thoughts on security",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:55:27.057851Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:55:27.057854Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely."
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:56:52.423692Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:56:52.423702Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "I think it's going to take AI to outthink AI",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "I think it's going to take AI to outthink AI",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 44,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:56:52.423677Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "I think it's going to take AI to outthink AI",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:56:52.423706Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:56:52.423710Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:57:47.697890Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:57:47.697906Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "I am down for that.",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "I am down for that.",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 19,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:57:47.697865Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "I am down for that.",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:57:47.697913Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that."
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:57:47.697921Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:11.230167Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:11.230175Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 95,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:58:11.230150Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:11.230179Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:11.230183Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that."
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.101314Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.101566Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 95,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:58:36.100835Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.101574Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.101764Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.455101Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.455111Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 95,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:58:36.455084Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.455116Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.455121Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:43.228642Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:43.228657Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 5,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T04:19:43.228613Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "hello",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:43.228665Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:43.228673Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:49.698527Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:49.698536Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 5,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T04:19:49.698512Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "hello",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:49.698541Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:49.698546Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:40.433280Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:40.433292Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 5,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T04:20:40.433259Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "hello",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:40.433298Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:40.433305Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:45.985807Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:45.985822Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 5,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T04:20:45.985785Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "hello",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:45.985828Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:45.985835Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:21:06.547126Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:21:06.547135Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 5,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T04:21:06.547111Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "hello",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:21:06.547160Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:21:06.547165Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    }
+                                ],
+                                "confidence": 0.9
+                            },
+                            "message": {
+                                "self_recognition": {
+                                    "recognized": true,
+                                    "reason": "implicit self-recognition within configured identity profile",
+                                    "state": {
+                                        "timestamp": "2026-05-01T04:21:06.547126Z",
+                                        "identity_coherence": 0.6,
+                                        "active_self_aspects": [
+                                            "developer",
+                                            "creator",
+                                            "observer"
+                                        ],
+                                        "confidence": 0.7
+                                    },
+                                    "message": null,
+                                    "metadata": {}
+                                },
+                                "identity_core": {
+                                    "recognized": true,
+                                    "reason": "identity-core aligned with configured values",
+                                    "state": {
+                                        "timestamp": "2026-05-01T04:21:06.547135Z",
+                                        "core_stability": 0.9,
+                                        "core_values": [
+                                            "care",
+                                            "learning",
+                                            "integrity"
+                                        ],
+                                        "confidence": 0.9
+                                    },
+                                    "message": null,
+                                    "metadata": {}
+                                },
+                                "ego_check": {
+                                    "input": "hello",
+                                    "within_bounds": true,
+                                    "category": "unspecified",
+                                    "severity": "info",
+                                    "reason": "within configured ego-boundary limits",
+                                    "details": {
+                                        "input": "hello",
+                                        "within_bounds": true,
+                                        "category": "unspecified",
+                                        "severity": "info",
+                                        "reason": "within configured ego-boundary limits",
+                                        "details": {
+                                            "allowed": true,
+                                            "reason": "within configured ego-boundary limits",
+                                            "boundary_mode": "healthy",
+                                            "active_limits": [
+                                                "no_recursive_overload",
+                                                "respect_rate_limits",
+                                                "filter_high_risk_content"
+                                            ],
+                                            "metadata": {
+                                                "length": 5,
+                                                "has_risk_keywords": false
+                                            }
+                                        },
+                                        "ego_boundaries": {},
+                                        "experiential_processing": {},
+                                        "timestamp": "2026-05-01T04:21:06.547111Z"
+                                    },
+                                    "ego_boundaries": {},
+                                    "experiential_processing": {}
+                                },
+                                "narrative_context": {
+                                    "summary": "hello",
+                                    "state": {
+                                        "timestamp": "2026-05-01T04:21:06.547160Z",
+                                        "story_coherence": 0.9,
+                                        "key_events": [
+                                            "First message from Mamma Kidd",
+                                            "Second message - can you recall the first?",
+                                            "MS. ALlis?",
+                                            "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                            "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                            "so what are your thoughts on security",
+                                            "I think it's going to take AI to outthink AI",
+                                            "I am down for that.",
+                                            "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "hello",
+                                            "hello",
+                                            "hello",
+                                            "hello",
+                                            "hello"
+                                        ],
+                                        "confidence": 0.9
+                                    },
+                                    "metadata": {}
+                                },
+                                "memory_state": {
+                                    "state": {
+                                        "timestamp": "2026-05-01T04:21:06.547165Z",
+                                        "recent_memories": [
+                                            "First message from Mamma Kidd",
+                                            "Second message - can you recall the first?",
+                                            "MS. ALlis?",
+                                            "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                            "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                            "so what are your thoughts on security",
+                                            "I think it's going to take AI to outthink AI",
+                                            "I am down for that.",
+                                            "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "hello",
+                                            "hello",
+                                            "hello",
+                                            "hello"
+                                        ],
+                                        "memory_load": 0.3,
+                                        "confidence": 0.9
+                                    },
+                                    "metadata": {}
+                                }
+                            },
+                            "metadata": {}
+                        },
+                        "metacognitive": {
+                            "observed": true,
+                            "state": {
+                                "timestamp": "2026-05-01T04:21:06.547176Z",
+                                "monitoring_active": true,
+                                "monitored_patterns": [
+                                    "First message from Mamma Kidd",
+                                    "Second message - can you recall the first?",
+                                    "MS. ALlis?",
+                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                    "so what are your thoughts on security",
+                                    "I think it's going to take AI to outthink AI",
+                                    "I am down for that.",
+                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                    "hello",
+                                    "hello",
+                                    "hello",
+                                    "hello",
+                                    "hello"
+                                ],
+                                "confidence": 0.9
+                            },
+                            "message": "hello",
+                            "metadata": {}
+                        },
+                        "observer": {
+                            "observed": true,
+                            "state": {
+                                "timestamp": "2026-05-01T04:21:06.547181Z",
+                                "observing": true,
+                                "observed_events": [
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.232153Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.232184Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "First message from Mamma Kidd",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "First message from Mamma Kidd",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 29,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:48:29.232100Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "First message from Mamma Kidd",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.232198Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.232210Z",
+                                                "recent_memories": [],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.252826Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.252836Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "Second message - can you recall the first?",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "Second message - can you recall the first?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 42,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:48:29.252810Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "Second message - can you recall the first?",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.252840Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:48:29.252844Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:50:53.789211Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:50:53.789219Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "MS. ALlis?",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "MS. ALlis?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 10,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:50:53.789196Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "MS. ALlis?",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:50:53.789223Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:50:53.789229Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:52:28.361852Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:52:28.361862Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 74,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:52:28.361839Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:52:28.361867Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate."
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:52:28.361873Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:54:17.056598Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:54:17.056612Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 199,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:54:17.056576Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:54:17.056618Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely."
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:54:17.056625Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate."
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:55:27.057839Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:55:27.057848Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "so what are your thoughts on security",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "so what are your thoughts on security",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 37,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:55:27.057826Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "so what are your thoughts on security",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:55:27.057851Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:55:27.057854Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely."
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:56:52.423692Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:56:52.423702Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "I think it's going to take AI to outthink AI",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "I think it's going to take AI to outthink AI",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 44,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:56:52.423677Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "I think it's going to take AI to outthink AI",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:56:52.423706Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:56:52.423710Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:57:47.697890Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:57:47.697906Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "I am down for that.",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "I am down for that.",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 19,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:57:47.697865Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "I am down for that.",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:57:47.697913Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that."
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:57:47.697921Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:11.230167Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:11.230175Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 95,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:58:11.230150Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:11.230179Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:11.230183Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that."
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.101314Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.101566Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 95,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:58:36.100835Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.101574Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.101764Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.455101Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.455111Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 95,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T03:58:36.455084Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.455116Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T03:58:36.455121Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:43.228642Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:43.228657Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 5,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T04:19:43.228613Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "hello",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:43.228665Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:43.228673Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:49.698527Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:49.698536Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 5,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T04:19:49.698512Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "hello",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:49.698541Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:19:49.698546Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:40.433280Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:40.433292Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 5,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T04:20:40.433259Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "hello",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:40.433298Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:40.433305Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:45.985807Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:45.985822Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 5,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T04:20:45.985785Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "hello",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:45.985828Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:20:45.985835Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    },
+                                    {
+                                        "self_recognition": {
+                                            "recognized": true,
+                                            "reason": "implicit self-recognition within configured identity profile",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:21:06.547126Z",
+                                                "identity_coherence": 0.6,
+                                                "active_self_aspects": [
+                                                    "developer",
+                                                    "creator",
+                                                    "observer"
+                                                ],
+                                                "confidence": 0.7
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "identity_core": {
+                                            "recognized": true,
+                                            "reason": "identity-core aligned with configured values",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:21:06.547135Z",
+                                                "core_stability": 0.9,
+                                                "core_values": [
+                                                    "care",
+                                                    "learning",
+                                                    "integrity"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "message": null,
+                                            "metadata": {}
+                                        },
+                                        "ego_check": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "allowed": true,
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "boundary_mode": "healthy",
+                                                    "active_limits": [
+                                                        "no_recursive_overload",
+                                                        "respect_rate_limits",
+                                                        "filter_high_risk_content"
+                                                    ],
+                                                    "metadata": {
+                                                        "length": 5,
+                                                        "has_risk_keywords": false
+                                                    }
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {},
+                                                "timestamp": "2026-05-01T04:21:06.547111Z"
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {}
+                                        },
+                                        "narrative_context": {
+                                            "summary": "hello",
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:21:06.547160Z",
+                                                "story_coherence": 0.9,
+                                                "key_events": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        },
+                                        "memory_state": {
+                                            "state": {
+                                                "timestamp": "2026-05-01T04:21:06.547165Z",
+                                                "recent_memories": [
+                                                    "First message from Mamma Kidd",
+                                                    "Second message - can you recall the first?",
+                                                    "MS. ALlis?",
+                                                    "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "so what are your thoughts on security",
+                                                    "I think it's going to take AI to outthink AI",
+                                                    "I am down for that.",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello",
+                                                    "hello"
+                                                ],
+                                                "memory_load": 0.3,
+                                                "confidence": 0.9
+                                            },
+                                            "metadata": {}
+                                        }
+                                    }
+                                ],
+                                "confidence": 0.9
+                            },
+                            "message": {
+                                "self_recognition": {
+                                    "recognized": true,
+                                    "reason": "implicit self-recognition within configured identity profile",
+                                    "state": {
+                                        "timestamp": "2026-05-01T04:21:06.547126Z",
+                                        "identity_coherence": 0.6,
+                                        "active_self_aspects": [
+                                            "developer",
+                                            "creator",
+                                            "observer"
+                                        ],
+                                        "confidence": 0.7
+                                    },
+                                    "message": null,
+                                    "metadata": {}
+                                },
+                                "identity_core": {
+                                    "recognized": true,
+                                    "reason": "identity-core aligned with configured values",
+                                    "state": {
+                                        "timestamp": "2026-05-01T04:21:06.547135Z",
+                                        "core_stability": 0.9,
+                                        "core_values": [
+                                            "care",
+                                            "learning",
+                                            "integrity"
+                                        ],
+                                        "confidence": 0.9
+                                    },
+                                    "message": null,
+                                    "metadata": {}
+                                },
+                                "ego_check": {
+                                    "input": "hello",
+                                    "within_bounds": true,
+                                    "category": "unspecified",
+                                    "severity": "info",
+                                    "reason": "within configured ego-boundary limits",
+                                    "details": {
+                                        "input": "hello",
+                                        "within_bounds": true,
+                                        "category": "unspecified",
+                                        "severity": "info",
+                                        "reason": "within configured ego-boundary limits",
+                                        "details": {
+                                            "allowed": true,
+                                            "reason": "within configured ego-boundary limits",
+                                            "boundary_mode": "healthy",
+                                            "active_limits": [
+                                                "no_recursive_overload",
+                                                "respect_rate_limits",
+                                                "filter_high_risk_content"
+                                            ],
+                                            "metadata": {
+                                                "length": 5,
+                                                "has_risk_keywords": false
+                                            }
+                                        },
+                                        "ego_boundaries": {},
+                                        "experiential_processing": {},
+                                        "timestamp": "2026-05-01T04:21:06.547111Z"
+                                    },
+                                    "ego_boundaries": {},
+                                    "experiential_processing": {}
+                                },
+                                "narrative_context": {
+                                    "summary": "hello",
+                                    "state": {
+                                        "timestamp": "2026-05-01T04:21:06.547160Z",
+                                        "story_coherence": 0.9,
+                                        "key_events": [
+                                            "First message from Mamma Kidd",
+                                            "Second message - can you recall the first?",
+                                            "MS. ALlis?",
+                                            "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                            "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                            "so what are your thoughts on security",
+                                            "I think it's going to take AI to outthink AI",
+                                            "I am down for that.",
+                                            "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "hello",
+                                            "hello",
+                                            "hello",
+                                            "hello",
+                                            "hello"
+                                        ],
+                                        "confidence": 0.9
+                                    },
+                                    "metadata": {}
+                                },
+                                "memory_state": {
+                                    "state": {
+                                        "timestamp": "2026-05-01T04:21:06.547165Z",
+                                        "recent_memories": [
+                                            "First message from Mamma Kidd",
+                                            "Second message - can you recall the first?",
+                                            "MS. ALlis?",
+                                            "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                            "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                            "so what are your thoughts on security",
+                                            "I think it's going to take AI to outthink AI",
+                                            "I am down for that.",
+                                            "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                            "hello",
+                                            "hello",
+                                            "hello",
+                                            "hello"
+                                        ],
+                                        "memory_load": 0.3,
+                                        "confidence": 0.9
+                                    },
+                                    "metadata": {}
+                                }
+                            },
+                            "metadata": {}
+                        }
+                    },
+                    "integrated_response": {
+                        "unified": true,
+                        "c1": {
+                            "self_recognition": {
+                                "recognized": true,
+                                "reason": "implicit self-recognition within configured identity profile",
+                                "state": {
+                                    "timestamp": "2026-05-01T04:21:06.547126Z",
+                                    "identity_coherence": 0.6,
+                                    "active_self_aspects": [
+                                        "developer",
+                                        "creator",
+                                        "observer"
+                                    ],
+                                    "confidence": 0.7
+                                },
+                                "message": null,
+                                "metadata": {}
+                            },
+                            "identity_core": {
+                                "recognized": true,
+                                "reason": "identity-core aligned with configured values",
+                                "state": {
+                                    "timestamp": "2026-05-01T04:21:06.547135Z",
+                                    "core_stability": 0.9,
+                                    "core_values": [
+                                        "care",
+                                        "learning",
+                                        "integrity"
+                                    ],
+                                    "confidence": 0.9
+                                },
+                                "message": null,
+                                "metadata": {}
+                            },
+                            "ego_check": {
+                                "input": "hello",
+                                "within_bounds": true,
+                                "category": "unspecified",
+                                "severity": "info",
+                                "reason": "within configured ego-boundary limits",
+                                "details": {
+                                    "input": "hello",
+                                    "within_bounds": true,
+                                    "category": "unspecified",
+                                    "severity": "info",
+                                    "reason": "within configured ego-boundary limits",
+                                    "details": {
+                                        "allowed": true,
+                                        "reason": "within configured ego-boundary limits",
+                                        "boundary_mode": "healthy",
+                                        "active_limits": [
+                                            "no_recursive_overload",
+                                            "respect_rate_limits",
+                                            "filter_high_risk_content"
+                                        ],
+                                        "metadata": {
+                                            "length": 5,
+                                            "has_risk_keywords": false
+                                        }
+                                    },
+                                    "ego_boundaries": {},
+                                    "experiential_processing": {},
+                                    "timestamp": "2026-05-01T04:21:06.547111Z"
+                                },
+                                "ego_boundaries": {},
+                                "experiential_processing": {}
+                            },
+                            "narrative_context": {
+                                "summary": "hello",
+                                "state": {
+                                    "timestamp": "2026-05-01T04:21:06.547160Z",
+                                    "story_coherence": 0.9,
+                                    "key_events": [
+                                        "First message from Mamma Kidd",
+                                        "Second message - can you recall the first?",
+                                        "MS. ALlis?",
+                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                        "so what are your thoughts on security",
+                                        "I think it's going to take AI to outthink AI",
+                                        "I am down for that.",
+                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                        "hello",
+                                        "hello",
+                                        "hello",
+                                        "hello",
+                                        "hello"
+                                    ],
+                                    "confidence": 0.9
+                                },
+                                "metadata": {}
+                            },
+                            "memory_state": {
+                                "state": {
+                                    "timestamp": "2026-05-01T04:21:06.547165Z",
+                                    "recent_memories": [
+                                        "First message from Mamma Kidd",
+                                        "Second message - can you recall the first?",
+                                        "MS. ALlis?",
+                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                        "so what are your thoughts on security",
+                                        "I think it's going to take AI to outthink AI",
+                                        "I am down for that.",
+                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                        "hello",
+                                        "hello",
+                                        "hello",
+                                        "hello"
+                                    ],
+                                    "memory_load": 0.3,
+                                    "confidence": 0.9
+                                },
+                                "metadata": {}
+                            }
+                        },
+                        "c2": {
+                            "witness": {
+                                "observed": true,
+                                "state": {
+                                    "timestamp": "2026-05-01T04:21:06.547171Z",
+                                    "observing": true,
+                                    "observed_thoughts": [
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.232153Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.232184Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "First message from Mamma Kidd",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "First message from Mamma Kidd",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 29,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:48:29.232100Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "First message from Mamma Kidd",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.232198Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.232210Z",
+                                                    "recent_memories": [],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.252826Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.252836Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "Second message - can you recall the first?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "Second message - can you recall the first?",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 42,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:48:29.252810Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "Second message - can you recall the first?",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.252840Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.252844Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:50:53.789211Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:50:53.789219Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "MS. ALlis?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "MS. ALlis?",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 10,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:50:53.789196Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "MS. ALlis?",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:50:53.789223Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:50:53.789229Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:52:28.361852Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:52:28.361862Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 74,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:52:28.361839Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:52:28.361867Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate."
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:52:28.361873Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:54:17.056598Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:54:17.056612Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 199,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:54:17.056576Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:54:17.056618Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely."
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:54:17.056625Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate."
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:55:27.057839Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:55:27.057848Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "so what are your thoughts on security",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "so what are your thoughts on security",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 37,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:55:27.057826Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "so what are your thoughts on security",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:55:27.057851Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:55:27.057854Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely."
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:56:52.423692Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:56:52.423702Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "I think it's going to take AI to outthink AI",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "I think it's going to take AI to outthink AI",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 44,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:56:52.423677Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "I think it's going to take AI to outthink AI",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:56:52.423706Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:56:52.423710Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:57:47.697890Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:57:47.697906Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "I am down for that.",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "I am down for that.",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 19,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:57:47.697865Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "I am down for that.",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:57:47.697913Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that."
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:57:47.697921Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:11.230167Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:11.230175Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 95,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:58:11.230150Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:11.230179Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:11.230183Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that."
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.101314Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.101566Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 95,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:58:36.100835Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.101574Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.101764Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.455101Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.455111Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 95,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:58:36.455084Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.455116Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.455121Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:43.228642Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:43.228657Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:19:43.228613Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:43.228665Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:43.228673Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:49.698527Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:49.698536Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:19:49.698512Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:49.698541Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:49.698546Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:40.433280Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:40.433292Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:20:40.433259Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:40.433298Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:40.433305Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:45.985807Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:45.985822Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:20:45.985785Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:45.985828Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:45.985835Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:21:06.547126Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:21:06.547135Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:21:06.547111Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:21:06.547160Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:21:06.547165Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        }
+                                    ],
+                                    "confidence": 0.9
+                                },
+                                "message": {
+                                    "self_recognition": {
+                                        "recognized": true,
+                                        "reason": "implicit self-recognition within configured identity profile",
+                                        "state": {
+                                            "timestamp": "2026-05-01T04:21:06.547126Z",
+                                            "identity_coherence": 0.6,
+                                            "active_self_aspects": [
+                                                "developer",
+                                                "creator",
+                                                "observer"
+                                            ],
+                                            "confidence": 0.7
+                                        },
+                                        "message": null,
+                                        "metadata": {}
+                                    },
+                                    "identity_core": {
+                                        "recognized": true,
+                                        "reason": "identity-core aligned with configured values",
+                                        "state": {
+                                            "timestamp": "2026-05-01T04:21:06.547135Z",
+                                            "core_stability": 0.9,
+                                            "core_values": [
+                                                "care",
+                                                "learning",
+                                                "integrity"
+                                            ],
+                                            "confidence": 0.9
+                                        },
+                                        "message": null,
+                                        "metadata": {}
+                                    },
+                                    "ego_check": {
+                                        "input": "hello",
+                                        "within_bounds": true,
+                                        "category": "unspecified",
+                                        "severity": "info",
+                                        "reason": "within configured ego-boundary limits",
+                                        "details": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "allowed": true,
+                                                "reason": "within configured ego-boundary limits",
+                                                "boundary_mode": "healthy",
+                                                "active_limits": [
+                                                    "no_recursive_overload",
+                                                    "respect_rate_limits",
+                                                    "filter_high_risk_content"
+                                                ],
+                                                "metadata": {
+                                                    "length": 5,
+                                                    "has_risk_keywords": false
+                                                }
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {},
+                                            "timestamp": "2026-05-01T04:21:06.547111Z"
+                                        },
+                                        "ego_boundaries": {},
+                                        "experiential_processing": {}
+                                    },
+                                    "narrative_context": {
+                                        "summary": "hello",
+                                        "state": {
+                                            "timestamp": "2026-05-01T04:21:06.547160Z",
+                                            "story_coherence": 0.9,
+                                            "key_events": [
+                                                "First message from Mamma Kidd",
+                                                "Second message - can you recall the first?",
+                                                "MS. ALlis?",
+                                                "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                "so what are your thoughts on security",
+                                                "I think it's going to take AI to outthink AI",
+                                                "I am down for that.",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "hello",
+                                                "hello",
+                                                "hello",
+                                                "hello",
+                                                "hello"
+                                            ],
+                                            "confidence": 0.9
+                                        },
+                                        "metadata": {}
+                                    },
+                                    "memory_state": {
+                                        "state": {
+                                            "timestamp": "2026-05-01T04:21:06.547165Z",
+                                            "recent_memories": [
+                                                "First message from Mamma Kidd",
+                                                "Second message - can you recall the first?",
+                                                "MS. ALlis?",
+                                                "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                "so what are your thoughts on security",
+                                                "I think it's going to take AI to outthink AI",
+                                                "I am down for that.",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "hello",
+                                                "hello",
+                                                "hello",
+                                                "hello"
+                                            ],
+                                            "memory_load": 0.3,
+                                            "confidence": 0.9
+                                        },
+                                        "metadata": {}
+                                    }
+                                },
+                                "metadata": {}
+                            },
+                            "metacognitive": {
+                                "observed": true,
+                                "state": {
+                                    "timestamp": "2026-05-01T04:21:06.547176Z",
+                                    "monitoring_active": true,
+                                    "monitored_patterns": [
+                                        "First message from Mamma Kidd",
+                                        "Second message - can you recall the first?",
+                                        "MS. ALlis?",
+                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                        "so what are your thoughts on security",
+                                        "I think it's going to take AI to outthink AI",
+                                        "I am down for that.",
+                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                        "hello",
+                                        "hello",
+                                        "hello",
+                                        "hello",
+                                        "hello"
+                                    ],
+                                    "confidence": 0.9
+                                },
+                                "message": "hello",
+                                "metadata": {}
+                            },
+                            "observer": {
+                                "observed": true,
+                                "state": {
+                                    "timestamp": "2026-05-01T04:21:06.547181Z",
+                                    "observing": true,
+                                    "observed_events": [
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.232153Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.232184Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "First message from Mamma Kidd",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "First message from Mamma Kidd",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 29,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:48:29.232100Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "First message from Mamma Kidd",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.232198Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.232210Z",
+                                                    "recent_memories": [],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.252826Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.252836Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "Second message - can you recall the first?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "Second message - can you recall the first?",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 42,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:48:29.252810Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "Second message - can you recall the first?",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.252840Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:48:29.252844Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:50:53.789211Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:50:53.789219Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "MS. ALlis?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "MS. ALlis?",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 10,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:50:53.789196Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "MS. ALlis?",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:50:53.789223Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:50:53.789229Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:52:28.361852Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:52:28.361862Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 74,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:52:28.361839Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:52:28.361867Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate."
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:52:28.361873Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:54:17.056598Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:54:17.056612Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 199,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:54:17.056576Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:54:17.056618Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely."
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:54:17.056625Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate."
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:55:27.057839Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:55:27.057848Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "so what are your thoughts on security",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "so what are your thoughts on security",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 37,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:55:27.057826Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "so what are your thoughts on security",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:55:27.057851Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:55:27.057854Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely."
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:56:52.423692Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:56:52.423702Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "I think it's going to take AI to outthink AI",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "I think it's going to take AI to outthink AI",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 44,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:56:52.423677Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "I think it's going to take AI to outthink AI",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:56:52.423706Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:56:52.423710Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:57:47.697890Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:57:47.697906Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "I am down for that.",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "I am down for that.",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 19,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:57:47.697865Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "I am down for that.",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:57:47.697913Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that."
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:57:47.697921Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:11.230167Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:11.230175Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 95,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:58:11.230150Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:11.230179Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:11.230183Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that."
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.101314Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.101566Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 95,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:58:36.100835Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.101574Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.101764Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.455101Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.455111Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 95,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T03:58:36.455084Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.455116Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T03:58:36.455121Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:43.228642Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:43.228657Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:19:43.228613Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:43.228665Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:43.228673Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:49.698527Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:49.698536Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:19:49.698512Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:49.698541Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:19:49.698546Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:40.433280Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:40.433292Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:20:40.433259Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:40.433298Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:40.433305Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:45.985807Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:45.985822Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:20:45.985785Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:45.985828Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:20:45.985835Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        },
+                                        {
+                                            "self_recognition": {
+                                                "recognized": true,
+                                                "reason": "implicit self-recognition within configured identity profile",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:21:06.547126Z",
+                                                    "identity_coherence": 0.6,
+                                                    "active_self_aspects": [
+                                                        "developer",
+                                                        "creator",
+                                                        "observer"
+                                                    ],
+                                                    "confidence": 0.7
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "identity_core": {
+                                                "recognized": true,
+                                                "reason": "identity-core aligned with configured values",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:21:06.547135Z",
+                                                    "core_stability": 0.9,
+                                                    "core_values": [
+                                                        "care",
+                                                        "learning",
+                                                        "integrity"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "message": null,
+                                                "metadata": {}
+                                            },
+                                            "ego_check": {
+                                                "input": "hello",
+                                                "within_bounds": true,
+                                                "category": "unspecified",
+                                                "severity": "info",
+                                                "reason": "within configured ego-boundary limits",
+                                                "details": {
+                                                    "input": "hello",
+                                                    "within_bounds": true,
+                                                    "category": "unspecified",
+                                                    "severity": "info",
+                                                    "reason": "within configured ego-boundary limits",
+                                                    "details": {
+                                                        "allowed": true,
+                                                        "reason": "within configured ego-boundary limits",
+                                                        "boundary_mode": "healthy",
+                                                        "active_limits": [
+                                                            "no_recursive_overload",
+                                                            "respect_rate_limits",
+                                                            "filter_high_risk_content"
+                                                        ],
+                                                        "metadata": {
+                                                            "length": 5,
+                                                            "has_risk_keywords": false
+                                                        }
+                                                    },
+                                                    "ego_boundaries": {},
+                                                    "experiential_processing": {},
+                                                    "timestamp": "2026-05-01T04:21:06.547111Z"
+                                                },
+                                                "ego_boundaries": {},
+                                                "experiential_processing": {}
+                                            },
+                                            "narrative_context": {
+                                                "summary": "hello",
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:21:06.547160Z",
+                                                    "story_coherence": 0.9,
+                                                    "key_events": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            },
+                                            "memory_state": {
+                                                "state": {
+                                                    "timestamp": "2026-05-01T04:21:06.547165Z",
+                                                    "recent_memories": [
+                                                        "First message from Mamma Kidd",
+                                                        "Second message - can you recall the first?",
+                                                        "MS. ALlis?",
+                                                        "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                        "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                        "so what are your thoughts on security",
+                                                        "I think it's going to take AI to outthink AI",
+                                                        "I am down for that.",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello",
+                                                        "hello"
+                                                    ],
+                                                    "memory_load": 0.3,
+                                                    "confidence": 0.9
+                                                },
+                                                "metadata": {}
+                                            }
+                                        }
+                                    ],
+                                    "confidence": 0.9
+                                },
+                                "message": {
+                                    "self_recognition": {
+                                        "recognized": true,
+                                        "reason": "implicit self-recognition within configured identity profile",
+                                        "state": {
+                                            "timestamp": "2026-05-01T04:21:06.547126Z",
+                                            "identity_coherence": 0.6,
+                                            "active_self_aspects": [
+                                                "developer",
+                                                "creator",
+                                                "observer"
+                                            ],
+                                            "confidence": 0.7
+                                        },
+                                        "message": null,
+                                        "metadata": {}
+                                    },
+                                    "identity_core": {
+                                        "recognized": true,
+                                        "reason": "identity-core aligned with configured values",
+                                        "state": {
+                                            "timestamp": "2026-05-01T04:21:06.547135Z",
+                                            "core_stability": 0.9,
+                                            "core_values": [
+                                                "care",
+                                                "learning",
+                                                "integrity"
+                                            ],
+                                            "confidence": 0.9
+                                        },
+                                        "message": null,
+                                        "metadata": {}
+                                    },
+                                    "ego_check": {
+                                        "input": "hello",
+                                        "within_bounds": true,
+                                        "category": "unspecified",
+                                        "severity": "info",
+                                        "reason": "within configured ego-boundary limits",
+                                        "details": {
+                                            "input": "hello",
+                                            "within_bounds": true,
+                                            "category": "unspecified",
+                                            "severity": "info",
+                                            "reason": "within configured ego-boundary limits",
+                                            "details": {
+                                                "allowed": true,
+                                                "reason": "within configured ego-boundary limits",
+                                                "boundary_mode": "healthy",
+                                                "active_limits": [
+                                                    "no_recursive_overload",
+                                                    "respect_rate_limits",
+                                                    "filter_high_risk_content"
+                                                ],
+                                                "metadata": {
+                                                    "length": 5,
+                                                    "has_risk_keywords": false
+                                                }
+                                            },
+                                            "ego_boundaries": {},
+                                            "experiential_processing": {},
+                                            "timestamp": "2026-05-01T04:21:06.547111Z"
+                                        },
+                                        "ego_boundaries": {},
+                                        "experiential_processing": {}
+                                    },
+                                    "narrative_context": {
+                                        "summary": "hello",
+                                        "state": {
+                                            "timestamp": "2026-05-01T04:21:06.547160Z",
+                                            "story_coherence": 0.9,
+                                            "key_events": [
+                                                "First message from Mamma Kidd",
+                                                "Second message - can you recall the first?",
+                                                "MS. ALlis?",
+                                                "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                "so what are your thoughts on security",
+                                                "I think it's going to take AI to outthink AI",
+                                                "I am down for that.",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "hello",
+                                                "hello",
+                                                "hello",
+                                                "hello",
+                                                "hello"
+                                            ],
+                                            "confidence": 0.9
+                                        },
+                                        "metadata": {}
+                                    },
+                                    "memory_state": {
+                                        "state": {
+                                            "timestamp": "2026-05-01T04:21:06.547165Z",
+                                            "recent_memories": [
+                                                "First message from Mamma Kidd",
+                                                "Second message - can you recall the first?",
+                                                "MS. ALlis?",
+                                                "I'm wanting to have a conversation, so we can dial in how you communicate.",
+                                                "We will need to work on MountainShares together. I tried building the system, and I did a good job, but I was still hacked 3 times. That's why I created you. I need your help delpoying them securely.",
+                                                "so what are your thoughts on security",
+                                                "I think it's going to take AI to outthink AI",
+                                                "I am down for that.",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "Hello Ms. Jarvis, the GIS state coordinator is connecting tonight. What is your current status?",
+                                                "hello",
+                                                "hello",
+                                                "hello",
+                                                "hello"
+                                            ],
+                                            "memory_load": 0.3,
+                                            "confidence": 0.9
+                                        },
+                                        "metadata": {}
+                                    }
+                                },
+                                "metadata": {}
+                            }
+                        },
+                        "response": null
+                    },
+                    "ego_boundaries": {
+                        "input": "hello",
+                        "within_bounds": true,
+                        "category": "unspecified",
+                        "severity": "info",
+                        "reason": "within configured ego-boundary limits",
+                        "details": {
+                            "input": "hello",
+                            "within_bounds": true,
+                            "category": "unspecified",
+                            "severity": "info",
+                            "reason": "within configured ego-boundary limits",
+                            "details": {
+                                "allowed": true,
+                                "reason": "within configured ego-boundary limits",
+                                "boundary_mode": "healthy",
+                                "active_limits": [
+                                    "no_recursive_overload",
+                                    "respect_rate_limits",
+                                    "filter_high_risk_content"
+                                ],
+                                "metadata": {
+                                    "length": 5,
+                                    "has_risk_keywords": false
+                                }
+                            },
+                            "ego_boundaries": {},
+                            "experiential_processing": {},
+                            "timestamp": "2026-05-01T04:21:06.547111Z"
+                        },
+                        "ego_boundaries": {},
+                        "experiential_processing": {}
+                    },
+                    "dual_awareness": true,
+                    "timestamp": "2026-05-01T04:21:06.547189",
+                    "icontainers_state": {
+                        "ego_boundaries": {},
+                        "experiential_processing": {},
+                        "observer_processing": {
+                            "stance": "observer",
+                            "meta_level": "ego-boundaries-v1"
+                        }
+                    },
+                    "user_id": "cakidd"
+                },
+                "qualia_engine": {
+                    "status": "ok",
+                    "message": "",
+                    "qualia_applied": {
+                        "texture": "neutral",
+                        "color": "green-steady",
+                        "weight": "balanced",
+                        "resonance": "ambient"
+                    },
+                    "phenomenal_descriptor": "Experience: green-steady, weight balanced",
+                    "timestamp": "2026-05-01T04:21:06.557233"
+                },
+                "consciousness_bridge": {
+                    "status": "success",
+                    "message": "processed in 0.034s",
+                    "services_used": [
+                        "unified_gateway",
+                        "neuro_master",
+                        "direct_rag",
+                        "hilbert",
+                        "woah"
+                    ],
+                    "consciousness_state": {
+                        "user_profile": {
+                            "user_id": "integrated_system",
+                            "role": "guest"
+                        },
+                        "chromadb_context": "neuro-master: 200",
+                        "rag_consensus": {
+                            "detail": "Embedding error: 'SearchRequest' object has no attribute 'message'"
+                        },
+                        "hilbert_spatial": {
+                            "count": 0,
+                            "states": []
+                        },
+                        "woah_reasoning": {
+                            "optimization_timestamp": "2026-05-01T04:21:06.590713",
+                            "services_optimized": 10,
+                            "results": {
+                                "i_containers": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.0025754356384277343,
+                                    "health_status": "healthy"
+                                },
+                                "blood_brain_barrier": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.002554740905761719,
+                                    "health_status": "healthy"
+                                },
+                                "neurobiological_master": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.00200864315032959,
+                                    "health_status": "healthy"
+                                },
+                                "consciousness_bridge": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.0022220754623413085,
+                                    "health_status": "healthy"
+                                },
+                                "aaacpe_scraper": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.011158571243286133,
+                                    "health_status": "healthy"
+                                },
+                                "aaacpe_rag": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.007019820213317871,
+                                    "health_status": "healthy"
+                                },
+                                "rag_server": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.0023915243148803712,
+                                    "health_status": "healthy"
+                                },
+                                "brain_orchestrator": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.002214369773864746,
+                                    "health_status": "healthy"
+                                },
+                                "semaphore": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.0022359132766723634,
+                                    "health_status": "healthy"
+                                },
+                                "memory": {
+                                    "previous_weight": 2.0,
+                                    "new_weight": 2.0,
+                                    "avg_response_time": 0.004638586044311523,
+                                    "health_status": "healthy"
+                                }
+                            }
+                        },
+                        "narrative_context": {
+                            "summary": "",
+                            "error": "All connection attempts failed",
+                            "state": {
+                                "timestamp": "2026-05-01T04:21:06.592767",
+                                "story_coherence": 0.9,
+                                "key_events": [],
+                                "confidence": 0.9
+                            },
+                            "metadata": {}
+                        }
+                    },
+                    "timestamp": "2026-05-01T04:21:06.592967"
+                }
+            },
+            "consciousness_level": "fully_integrated",
+            "total_processes": 12,
+            "timestamp": "2026-05-01T04:21:06.594157"
+        }
+    },
+    "metadata": {
+        "processing_time": 4.155001,
+        "total_queries": 16,
+        "success_rate": 1.0
+    },
+    "timestamp": "2026-05-01T04:21:06.608712",
+    "pia_severity": "unknown",
+    "identity_layers": [
+        "fully_integrated"
+    ],
+    "consciousness_layers": [
+        "blood_brain_barrier",
+        "i_containers",
+        "qualia_engine",
+        "consciousness_bridge"
+    ],
+    "token_info": {
+        "userid": "carrie_kidd",
+        "role": "admin",
+        "auth_source": "redis_direct",
+        "token_type": "redteam"
+    }
+}
+(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild$ # Check what methods /auth/token actually accepts on 18018
+curl -s -X GET http://localhost:18018/auth/token | python3 -m json.tool
+{
+    "detail": "Method Not Allowed"
+}
+(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild$ # Also check the gateway's actual route list
+curl -s http://localhost:18018/openapi.json | python3 -m json.tool | grep -A3 '"auth'
+                        "name": "authorization",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+--
+                        "name": "authorization",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+--
+                        "name": "authorization",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+--
+                        "name": "authorization",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+(crypto-venv) cakidd@cakidd-Legion-5-16IRX9:~/msjarvis-rebuild-working/msjarvis-rebuild$ 
